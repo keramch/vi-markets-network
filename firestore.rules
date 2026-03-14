@@ -1,0 +1,169 @@
+rules_version = '2';
+
+// ─── VI Markets — Firestore Security Rules ───────────────────────────────────
+//
+// Architecture note:
+//   All Firestore reads and writes initiated by the Express backend use the
+//   Firebase Admin SDK, which bypasses these rules entirely. These rules
+//   protect against direct client-SDK access to Firestore (e.g. someone
+//   calling the Firestore REST API or client library directly with a valid
+//   auth token, bypassing the backend).
+//
+// Admin identification:
+//   Currently uses the `isAdmin` boolean on the users/{uid} document.
+//   For production, prefer Firebase custom claims (set via Admin SDK on login)
+//   to avoid the extra Firestore read on every admin rule evaluation.
+//
+// Deployment:
+//   firebase deploy --only firestore:rules
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Checks the isAdmin flag on the caller's user document.
+    // NOTE: costs one extra Firestore read per evaluation.
+    function isAdmin() {
+      return isSignedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
+    // ── users ───────────────────────────────────────────────────────────────
+    // Document ID == Firebase Auth UID.
+    // Users can read their own doc. Admins can read all.
+    // No direct client writes — account management goes through the backend.
+
+    match /users/{userId} {
+      allow get:   if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow list:  if isAdmin();
+      allow write: if false;
+    }
+
+    // ── markets ─────────────────────────────────────────────────────────────
+    // Public data — all reads are open so the homepage/search can work
+    // directly if the frontend ever uses the client SDK. The backend already
+    // filters by status == 'active'; we don't repeat that here so that
+    // market owners can also read their own suspended/archived market.
+    // All writes go through the backend (Admin SDK).
+
+    match /markets/{marketId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // ── vendors ─────────────────────────────────────────────────────────────
+
+    match /vendors/{vendorId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // ── marketEvents ────────────────────────────────────────────────────────
+    // Published events are public (shown on the calendar).
+    // Draft / cancelled / archived events are visible only to the organizer
+    // who created them and to admins.
+    // Queries that filter by status == 'published' are allowed for everyone;
+    // unfiltered list queries are blocked for non-organizers.
+
+    match /marketEvents/{eventId} {
+      allow get:  if resource.data.status == 'published'
+                  || isAdmin()
+                  || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
+
+      // list: allow queries filtered to published status; organizers/admins
+      // can query broader (Firestore will evaluate per-document).
+      allow list: if resource.data.status == 'published'
+                  || isAdmin()
+                  || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
+
+      allow write: if false;
+    }
+
+    // ── organizerAccounts ───────────────────────────────────────────────────
+    // Document ID == Firebase Auth UID of the organizer.
+    // Organizers can read their own account; admins can read all.
+
+    match /organizerAccounts/{accountId} {
+      allow get:   if isAdmin() || (isSignedIn() && request.auth.uid == accountId);
+      allow list:  if isAdmin();
+      allow write: if false;
+    }
+
+    // ── marketApplications ──────────────────────────────────────────────────
+    // Open/closed applications are semi-public (organizers advertise them to
+    // vendors). Organizers can read all their own; admins can read all.
+
+    match /marketApplications/{appId} {
+      allow get:  if resource.data.status in ['open', 'closed']
+                  || isAdmin()
+                  || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
+
+      allow list: if resource.data.status in ['open', 'closed']
+                  || isAdmin()
+                  || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
+
+      allow write: if false;
+    }
+
+    // ── vendorApplications ──────────────────────────────────────────────────
+    // A vendor can read their own applications.
+    // Organizers need to read applications for their market — handled by the
+    // backend (Admin SDK); direct client list access is limited to the vendor.
+
+    match /vendorApplications/{appId} {
+      allow get:   if isAdmin()
+                   || (isSignedIn() && request.auth.uid == resource.data.vendorUid);
+
+      allow list:  if isAdmin()
+                   || (isSignedIn() && resource.data.vendorUid == request.auth.uid);
+
+      allow write: if false;
+    }
+
+    // ── applications (legacy vendor↔market applications) ────────────────────
+    // Kept for backward compatibility. Access through backend only.
+
+    match /applications/{appId} {
+      allow read:  if isAdmin();
+      allow write: if false;
+    }
+
+    // ── reviews ─────────────────────────────────────────────────────────────
+    // Approved reviews are public (embedded on market/vendor profiles).
+    // Pending and declined reviews are visible to admins only.
+
+    match /reviews/{reviewId} {
+      allow get:   if resource.data.status == 'approved' || isAdmin();
+      allow list:  if resource.data.status == 'approved' || isAdmin();
+      allow write: if false;
+    }
+
+    // ── follows ─────────────────────────────────────────────────────────────
+    // Each user can read their own follow records. No others.
+
+    match /follows/{followId} {
+      allow get:   if isAdmin()
+                   || (isSignedIn() && resource.data.followerUid == request.auth.uid);
+
+      allow list:  if isAdmin()
+                   || (isSignedIn() && resource.data.followerUid == request.auth.uid);
+
+      allow write: if false;
+    }
+
+    // ── catch-all ───────────────────────────────────────────────────────────
+    // Deny direct client access to any collection not explicitly listed above.
+    // This covers future collections until rules are explicitly added.
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

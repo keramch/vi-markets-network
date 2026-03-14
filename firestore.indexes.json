@@ -1,0 +1,70 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "marketEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "marketPageId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "schedule.startDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "marketEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "marketPageId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "marketApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "marketEventId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "marketApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "marketPageId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "vendorApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "marketApplicationId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "vendorApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "vendorUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "follows",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "followerUid", "order": "ASCENDING" },
+        { "fieldPath": "targetType", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "follows",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "followerUid", "order": "ASCENDING" },
+        { "fieldPath": "targetId", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,434 @@
+
+import React, { useState, useEffect } from 'react';
+import type { Market, Vendor, Review, User, MemberStatus } from '../types';
+import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon } from './Icons';
+
+interface AdminPanelProps {
+  markets: Market[];
+  vendors: Vendor[];
+  users: User[];
+  onModerateReview: (entityType: 'market' | 'vendor', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => void;
+  onEditProfile: (profileId: string, profileType: 'market' | 'vendor') => void;
+  onUpdateMemberStatus: (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => void;
+  onHardDeleteMember: (memberId: string, type: 'market' | 'vendor') => void;
+  onToggleFoundingMember: (userId: string, isCurrentlyFounding: boolean) => void;
+  onSendMessage: (to: string, subject: string, body: string) => Promise<void>;
+  initialTab?: 'reviews' | 'memberships';
+  onTabChange?: (tab: 'reviews' | 'memberships') => void;
+}
+
+const AdminPanel: React.FC<AdminPanelProps> = ({
+  markets,
+  vendors,
+  users,
+  onModerateReview,
+  onEditProfile,
+  onUpdateMemberStatus,
+  onHardDeleteMember,
+  onToggleFoundingMember,
+  onSendMessage,
+  initialTab = 'reviews',
+  onTabChange,
+}) => {
+  const [activeMainTab, setActiveMainTab] = useState<'reviews' | 'memberships'>(initialTab);
+
+  const switchTab = (tab: 'reviews' | 'memberships') => {
+    setActiveMainTab(tab);
+    onTabChange?.(tab);
+  };
+  const [activeReviewTab, setActiveReviewTab] = useState<'pending' | 'approved'>('pending');
+
+  // Dropdown
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // Message modal
+  const [messageTarget, setMessageTarget] = useState<{ email: string; name: string } | null>(null);
+  const [msgSubject, setMsgSubject] = useState('');
+  const [msgBody, setMsgBody] = useState('');
+  const [msgSending, setMsgSending] = useState(false);
+  const [msgError, setMsgError] = useState('');
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!openDropdownId) return;
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('[data-dropdown]')) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openDropdownId]);
+
+  const closeMessageModal = () => {
+    setMessageTarget(null);
+    setMsgSubject('');
+    setMsgBody('');
+    setMsgError('');
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageTarget || !msgSubject.trim() || !msgBody.trim()) {
+      setMsgError('Subject and message are required.');
+      return;
+    }
+    setMsgSending(true);
+    setMsgError('');
+    try {
+      await onSendMessage(messageTarget.email, msgSubject.trim(), msgBody.trim());
+      closeMessageModal();
+    } catch {
+      setMsgError('Failed to send message. Please try again.');
+    } finally {
+      setMsgSending(false);
+    }
+  };
+
+  // ── Data ─────────────────────────────────────────────────────────────────
+
+  const allReviews: { entityType: 'market' | 'vendor'; entity: Market | Vendor; review: Review }[] = [];
+  markets.forEach(m => m.reviews.forEach(r => allReviews.push({ entityType: 'market', entity: m, review: r })));
+  vendors.forEach(v => v.reviews.forEach(r => allReviews.push({ entityType: 'vendor', entity: v, review: r })));
+
+  const filteredReviews = allReviews
+    .filter(item => item.review.status === activeReviewTab)
+    .sort((a, b) => new Date(b.review.date).getTime() - new Date(a.review.date).getTime());
+
+  const members: ({ type: 'market'; data: Market } | { type: 'vendor'; data: Vendor })[] = [
+    ...markets.map(m => ({ type: 'market' as const, data: m })),
+    ...vendors.map(v => ({ type: 'vendor' as const, data: v })),
+  ].sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
+
+  const membershipPrices: { [key: string]: number } = {
+    'vendor-annual': 100,
+    'vendor-pro-annual': 250,
+    'market-annual': 400,
+    'market-pro-annual': 800,
+  };
+  const totalRevenue = users.reduce((acc, user) => acc + (membershipPrices[user.membership] || 0), 0);
+
+  const getStatusChipClass = (status: MemberStatus) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'suspended': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // ── Shared dropdown item styles ───────────────────────────────────────────
+
+  const ddItem = 'flex w-full items-center gap-2 px-3 py-2 text-sm text-left rounded-md hover:bg-gray-50 transition-colors';
+  const ddDanger = 'flex w-full items-center gap-2 px-3 py-2 text-sm text-left rounded-md text-red-600 hover:bg-red-50 transition-colors';
+
+  // ── Sub-panels ────────────────────────────────────────────────────────────
+
+  const ReviewPanel = () => (
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="mb-6 border-b border-gray-300">
+        <nav className="-mb-px flex space-x-8">
+          {(['pending', 'approved'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveReviewTab(tab)}
+              className={`${
+                activeReviewTab === tab
+                  ? 'border-brand-blue text-brand-blue'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize`}
+            >
+              {tab === 'pending' ? 'Pending Reviews' : 'Approved Reviews'}
+            </button>
+          ))}
+        </nav>
+      </div>
+      {filteredReviews.length > 0 ? (
+        <div className="space-y-6">
+          {filteredReviews.map(({ entityType, entity, review }) => (
+            <div key={review.id} className="p-4 border rounded-md">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-bold">
+                    {review.author} reviewed <span className="text-brand-blue">{entity.name}</span>
+                  </p>
+                  <p className="text-sm text-gray-500">Rating: {review.rating}/5 | Date: {review.date}</p>
+                  <p className="mt-2 text-gray-700">{review.comment}</p>
+                </div>
+                <div className="flex space-x-2 flex-shrink-0 ml-4">
+                  {review.status === 'pending' && (
+                    <button
+                      onClick={() => onModerateReview(entityType, entity.id, review.id, 'approved')}
+                      className="bg-green-100 text-green-800 hover:bg-green-200 p-2 rounded-full"
+                      title="Approve"
+                    >
+                      <CheckIcon className="w-5 h-5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onModerateReview(entityType, entity.id, review.id, 'declined')}
+                    className="bg-red-100 text-red-800 hover:bg-red-200 p-2 rounded-full"
+                    title={review.status === 'pending' ? 'Decline' : 'Remove'}
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <AlertCircleIcon className="w-12 h-12 mx-auto text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No {activeReviewTab} reviews</h3>
+          <p className="mt-1 text-sm text-gray-500">There are currently no reviews with this status.</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const MembershipPanel = () => (
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-brand-cream p-4 rounded-lg text-center">
+          <h3 className="text-sm font-medium text-brand-light-blue">Total Members</h3>
+          <p className="text-3xl font-bold text-brand-blue">{members.length}</p>
+        </div>
+        <div className="bg-brand-cream p-4 rounded-lg text-center">
+          <h3 className="text-sm font-medium text-brand-light-blue">Total Annual Revenue</h3>
+          <p className="text-3xl font-bold text-brand-blue">${totalRevenue.toLocaleString()}</p>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {members.map(member => {
+              const user = users.find(
+                u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id
+              );
+              const isOpen = openDropdownId === member.data.id;
+
+              return (
+                <tr key={member.data.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium text-gray-900">{member.data.name}</span>
+                      {user?.isFoundingMember && (
+                        <span title="Founding Member">
+                          <RibbonIcon className="w-4 h-4 text-brand-gold" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-500">{user?.email ?? '—'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user?.membership.replace(/-/g, ' ') ?? '—'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusChipClass(member.data.status)}`}>
+                      {member.data.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {/* Three-dots dropdown */}
+                    <div className="relative inline-block" data-dropdown>
+                      <button
+                        type="button"
+                        onClick={() => setOpenDropdownId(isOpen ? null : member.data.id)}
+                        className="px-3 py-1.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors leading-none tracking-widest"
+                        title="More actions"
+                      >
+                        •••
+                      </button>
+
+                      {isOpen && (
+                        <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 divide-y divide-gray-100">
+                          {/* Edit Profile */}
+                          <div className="py-1 px-1">
+                            <button
+                              className={ddItem}
+                              onClick={() => { onEditProfile(member.data.id, member.type); setOpenDropdownId(null); }}
+                            >
+                              ✏️ Edit Profile
+                            </button>
+
+                            <button
+                              className={ddItem}
+                              onClick={() => {
+                                const email = user?.email ?? member.data.contact?.email ?? '';
+                                setMessageTarget({ email, name: member.data.name });
+                                setOpenDropdownId(null);
+                              }}
+                            >
+                              ✉️ Message Member
+                            </button>
+
+                            <button
+                              className={ddItem}
+                              onClick={() => {
+                                if (!user) return;
+                                onToggleFoundingMember(user.id, !!user.isFoundingMember);
+                                setOpenDropdownId(null);
+                              }}
+                            >
+                              ⭐ {user?.isFoundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
+                            </button>
+                          </div>
+
+                          {/* Status actions */}
+                          <div className="py-1 px-1">
+                            {member.data.status === 'active' && (
+                              <button
+                                className={ddItem}
+                                onClick={() => {
+                                  if (window.confirm(`Suspend ${member.data.name}? They will lose access until reactivated.`)) {
+                                    onUpdateMemberStatus(member.data.id, member.type, 'suspended');
+                                    setOpenDropdownId(null);
+                                  }
+                                }}
+                              >
+                                ⏸️ Suspend Account
+                              </button>
+                            )}
+                            {member.data.status === 'suspended' && (
+                              <button
+                                className={ddItem}
+                                onClick={() => { onUpdateMemberStatus(member.data.id, member.type, 'active'); setOpenDropdownId(null); }}
+                              >
+                                ▶️ Reactivate Account
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Destructive */}
+                          <div className="py-1 px-1">
+                            <button
+                              className={ddDanger}
+                              onClick={() => {
+                                if (window.confirm(`Permanently delete ${member.data.name}? This will remove their profile, user account, and Firebase Auth login. This cannot be undone.`)) {
+                                  onHardDeleteMember(member.data.id, member.type);
+                                  setOpenDropdownId(null);
+                                }
+                              }}
+                            >
+                              🗑️ Delete Account
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-4xl font-bold font-serif text-brand-blue mb-8">Market HQ</h1>
+
+      <div className="mb-6 border-b border-gray-300">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => switchTab('reviews')}
+            className={`${
+              activeMainTab === 'reviews'
+                ? 'border-brand-blue text-brand-blue'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            <AlertCircleIcon className="w-5 h-5" /> Review Moderation
+          </button>
+          <button
+            onClick={() => switchTab('memberships')}
+            className={`${
+              activeMainTab === 'memberships'
+                ? 'border-brand-blue text-brand-blue'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            <UsersIcon className="w-5 h-5" /> Memberships
+          </button>
+        </nav>
+      </div>
+
+      {activeMainTab === 'reviews' && <ReviewPanel />}
+      {activeMainTab === 'memberships' && <MembershipPanel />}
+
+      {/* Message modal */}
+      {messageTarget && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+          onMouseDown={e => { if (e.target === e.currentTarget) closeMessageModal(); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-brand-blue mb-4">Message Member</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                <input
+                  readOnly
+                  value={`${messageTarget.name} <${messageTarget.email}>`}
+                  className="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm bg-gray-50 text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <input
+                  type="text"
+                  value={msgSubject}
+                  onChange={e => setMsgSubject(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue"
+                  placeholder="Enter subject…"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  rows={5}
+                  value={msgBody}
+                  onChange={e => setMsgBody(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg py-2 px-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue"
+                  placeholder="Write your message…"
+                />
+              </div>
+              {msgError && <p className="text-sm text-red-600">{msgError}</p>}
+              <div className="flex justify-end gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={closeMessageModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendMessage}
+                  disabled={msgSending}
+                  className="px-5 py-2 text-sm font-semibold bg-brand-blue text-white rounded-full hover:bg-brand-blue/90 disabled:opacity-40 transition-colors"
+                >
+                  {msgSending ? 'Sending…' : 'Send'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminPanel;

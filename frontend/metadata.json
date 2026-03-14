@@ -1,0 +1,7 @@
+{
+  "name": "VI Markets Network",
+  "description": "A geo-located directory of local farmer and artisan markets on Vancouver Island. Discover fresh produce and handmade goods near you. Market organizers and vendors can create profiles, connect, and reach a wider audience.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
