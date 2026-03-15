@@ -98,14 +98,16 @@ service cloud.firestore {
 
     // ── marketApplications ──────────────────────────────────────────────────
     // Open/closed applications are semi-public (organizers advertise them to
-    // vendors). Organizers can read all their own; admins can read all.
+    // vendors). Any signed-in user can read open/closed applications.
+    // Organizers can read all their own; admins can read all.
+    // Authentication is always required — unauthenticated access is blocked.
 
     match /marketApplications/{appId} {
-      allow get:  if resource.data.status in ['open', 'closed']
+      allow get:  if (isSignedIn() && resource.data.status in ['open', 'closed'])
                   || isAdmin()
                   || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
 
-      allow list: if resource.data.status in ['open', 'closed']
+      allow list: if (isSignedIn() && resource.data.status in ['open', 'closed'])
                   || isAdmin()
                   || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
 
@@ -136,7 +138,8 @@ service cloud.firestore {
     }
 
     // ── reviews ─────────────────────────────────────────────────────────────
-    // Approved reviews are public (embedded on market/vendor profiles).
+    // Approved reviews are intentionally public — no auth required.
+    // They appear on market and vendor profile pages visible to all visitors.
     // Pending and declined reviews are visible to admins only.
 
     match /reviews/{reviewId} {

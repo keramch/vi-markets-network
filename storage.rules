@@ -7,16 +7,35 @@ service firebase.storage {
       allow read: if request.auth != null;
     }
 
-    // Market profile images — any authenticated user can write to markets/{marketId}/
-    // (The backend enforces ownership; storage rules just require login)
+    // Market profile images
+    // Public read: unauthenticated visitors need to see market images on the homepage.
+    //
+    // KNOWN GAP — ownership check on write:
+    //   Ideally the write rule would verify that request.auth.uid matches the
+    //   market's owner. This requires a firestore.get() check against the
+    //   market document's ownerId field. However, ownerId currently stores the
+    //   Firestore auto-generated document ID from users.add(), which is not the
+    //   same as the Firebase Auth UID exposed as request.auth.uid in rules.
+    //   Fix needed in backend/src/routes/users.ts: capture the Auth UID from
+    //   auth.createUser() and use db.collection("users").doc(authUid).set(...)
+    //   so that ownerId aligns with request.auth.uid. Once fixed, replace the
+    //   write rule below with an ownership check.
     match /markets/{marketId}/{fileName} {
+      allow read:  if true;
       allow write: if request.auth != null
                    && request.resource.size <= 5 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }
 
     // Vendor profile images
+    // Public read: same reason as markets above.
+    //
+    // KNOWN GAP — ownership check on write:
+    //   Same root cause as markets above. ownerId on vendor documents stores
+    //   the Firestore auto-generated user document ID, not the Firebase Auth
+    //   UID. Ownership check cannot be written until users.ts is fixed.
     match /vendors/{vendorId}/{fileName} {
+      allow read:  if true;
       allow write: if request.auth != null
                    && request.resource.size <= 5 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
