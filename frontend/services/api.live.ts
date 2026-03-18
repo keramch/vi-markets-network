@@ -6,7 +6,6 @@ import type {
   User,
   Review,
   Application,
-  MembershipPlan,
   NotificationSettings,
   MemberStatus,
   MarketEvent
@@ -141,7 +140,7 @@ export const register = (data: {
   businessName: string;
   city: string;
   description?: string;
-  plan: string;
+  plan?: string;
 }): Promise<User> => {
   return request<User>("/users/register", {
     method: "POST",
@@ -161,8 +160,8 @@ export const updateUser = (
   });
 };
 
-export const setFoundingMember = (userId: string): Promise<User> => {
-  return updateUser(userId, { isFoundingMember: true });
+export const setFoundingMember = (userId: string, currentSub: User['subscription']): Promise<User> => {
+  return updateUser(userId, { subscription: { ...currentSub, tier: 'pro', foundingMember: true } });
 };
 
 // MARKETS

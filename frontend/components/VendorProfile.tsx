@@ -37,7 +37,7 @@ const RatingStars: React.FC<{ rating: number }> = ({ rating }) => {
 const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, onSelectMarket, onBack, isFavorited, onToggleFavorite, currentUser, onAddReview, onFeatureVendor, onContactSubmit }) => {
   const vendorMarkets = markets.filter(m => vendor.attendingMarketIds.includes(m.id));
   const approvedReviews = vendor.reviews.filter(r => r.status === 'approved');
-  const isFoundingMember = owner?.isFoundingMember;
+  const isFoundingMember = owner?.subscription?.foundingMember;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">

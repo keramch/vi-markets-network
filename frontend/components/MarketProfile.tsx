@@ -63,7 +63,7 @@ const InfoRow: React.FC<{ label: string; value: string; icon: React.ReactNode }>
 const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applications, owner, onSelectVendor, onBack, isFavorited, onToggleFavorite, currentUser, onAddReview, onFeatureMarket, onContactSubmit, onApply }) => {
   const marketVendors = vendors.filter(v => (market.vendorIds || []).includes(v.id));  const approvedReviews = market.reviews.filter(r => r.status === 'approved');
   const currentUserVendor = currentUser && currentUser.ownedVendorId ? vendors.find(v => v.id === currentUser.ownedVendorId) : null;
-  const isProVendor = currentUser?.membership.includes('pro');
+  const isProVendor = currentUser?.subscription?.tier === 'pro' || currentUser?.subscription?.tier === 'superPro' || currentUser?.subscription?.foundingMember === true;
   const hasApplied = applications.some(app => app.vendorId === currentUserVendor?.id && app.marketId === market.id);
 
   let canApply = true;
@@ -74,7 +74,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
       applicationDisabledReason = `This market does not accept applications from the "${currentUserVendor?.category || 'your'}" category.`;
     }
   }
-  const isFoundingMember = owner?.isFoundingMember;
+  const isFoundingMember = owner?.subscription?.foundingMember;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">

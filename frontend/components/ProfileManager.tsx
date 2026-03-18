@@ -53,7 +53,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [uploadProgress, setUploadProgress]           = useState<number | null>(null);
   const [uploadError, setUploadError]                 = useState<string | null>(null);
 
-  const isProMember = user?.membership.includes('pro') || user?.isFoundingMember;
+  const isProMember = user?.subscription?.tier === 'pro' || user?.subscription?.tier === 'superPro' || user?.subscription?.foundingMember === true;
 
   useEffect(() => {
     if (!isMarket(formData)) return;
@@ -272,7 +272,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     const nextRenewalDate = new Date();
     nextRenewalDate.setFullYear(nextRenewalDate.getFullYear() + 1);
 
-    if (user.isFoundingMember) {
+    if (user.subscription?.foundingMember) {
       return (
         <div className="bg-brand-gold/10 border-l-4 border-brand-gold text-brand-blue p-4 rounded-r-lg">
             <div className="flex">
@@ -288,7 +288,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
     return (
       <div>
-        <h3 className="text-lg font-semibold text-brand-blue mb-4">Current Plan: <span className="font-normal">{user.membership.replace(/-/g, ' ')}</span></h3>
+        <h3 className="text-lg font-semibold text-brand-blue mb-4">Current Plan: <span className="font-normal capitalize">{user.subscription?.tier ?? 'free'}</span></h3>
         <div className="bg-brand-cream/60 p-4 rounded-lg">
           <div className="flex items-center justify-between">
             <div>

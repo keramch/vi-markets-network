@@ -1,7 +1,7 @@
 
 
 import React, { useState, useMemo, useEffect } from 'react';
-import type { View, Market, Vendor, User, Review, MembershipPlan, NotificationSettings, Application, MemberStatus } from './types';
+import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus } from './types';
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
@@ -29,7 +29,12 @@ import TermsOfServicePage from './components/TermsOfServicePage';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import ForgotPasswordForm from './components/ForgotPasswordForm';
 import SignupPage from './components/SignupPage';
+import BrowsePage from './components/BrowsePage';
+import PricingPage from './components/PricingPage';
 
+
+// Local type kept for the membership modal UI (not tied to User data model)
+type MembershipPlan = string;
 
 interface Promotion {
     title: string;
@@ -442,7 +447,11 @@ const App: React.FC = () => {
   
   const handleToggleFoundingMember = async (userId: string, isCurrentlyFounding: boolean) => {
       try {
-        const updatedUser = await api.updateUser(userId, { isFoundingMember: !isCurrentlyFounding });
+        const targetUser = users.find(u => u.id === userId);
+        const currentSub = targetUser?.subscription ?? { tier: 'free' as const, billingCycle: null, foundingMember: false };
+        const updatedUser = await api.updateUser(userId, {
+          subscription: { ...currentSub, foundingMember: !isCurrentlyFounding },
+        });
         setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
         showNotification(isCurrentlyFounding ? 'Founding Member status removed.' : `${updatedUser.email} is now a Founding Member!`);
       } catch (error) {
@@ -465,9 +474,12 @@ const renderView = () => {
         return <div className="text-center p-20">Loading...</div>;
     }
 
-    const isProAccess = (user: User | null) => user?.membership.includes('pro') || user?.isFoundingMember;
+    const isProAccess = (user: User | null) =>
+      user?.subscription?.tier === 'pro' ||
+      user?.subscription?.tier === 'superPro' ||
+      user?.subscription?.foundingMember === true;
 
-    const homePage = <HomePage markets={markets} vendors={vendors} onSelectMarket={(id) => handleNavigate({ type: 'marketProfile', id })} onSelectVendor={(id) => handleNavigate({ type: 'vendorProfile', id })} />;
+    const homePage = <HomePage markets={markets} vendors={vendors} onSelectMarket={(id) => handleNavigate({ type: 'marketProfile', id })} onSelectVendor={(id) => handleNavigate({ type: 'vendorProfile', id })} onViewAllMarkets={() => handleNavigate({ type: 'browseMarkets' })} onViewAllVendors={() => handleNavigate({ type: 'browseVendors' })} />;
 
     switch (view.type) {
       case 'home':
@@ -605,16 +617,44 @@ const renderView = () => {
         return <TermsOfServicePage onBack={() => handleNavigate({ type: 'home' })} />;
       case 'forgotPassword':
         return null;
+      case 'browseMarkets':
+        return <BrowsePage
+          mode="markets"
+          items={markets.filter(m => m.status === 'active')}
+          onSelect={(id) => handleNavigate({ type: 'marketProfile', id })}
+          onBack={() => handleNavigate({ type: 'home' })}
+          onSwitchMode={() => handleNavigate({ type: 'browseVendors' })}
+        />;
+      case 'browseVendors':
+        return <BrowsePage
+          mode="vendors"
+          items={vendors.filter(v => v.status === 'active')}
+          onSelect={(id) => handleNavigate({ type: 'vendorProfile', id })}
+          onBack={() => handleNavigate({ type: 'home' })}
+          onSwitchMode={() => handleNavigate({ type: 'browseMarkets' })}
+        />;
       case 'signup':
         return <SignupPage
           onNavigate={handleNavigate}
           onLogin={() => setLoginModalOpen(true)}
           isFoundingMemberOfferActive={true}
-          onSignupSuccess={(user: User) => {
+          onSignupSuccess={async (user: User) => {
             setCurrentUser(user);
             showNotification(`Welcome to VI Markets, ${user.email}!`);
+            try {
+              const [marketsData, vendorsData] = await Promise.all([
+                api.getMarkets(),
+                api.getVendors(),
+              ]);
+              setMarkets(marketsData);
+              setVendors(vendorsData);
+            } catch {
+              // non-fatal — profile will load on next navigation
+            }
           }}
         />;
+      case 'pricing':
+        return <PricingPage onBack={() => handleNavigate({ type: 'home' })} />;
       default:
         return homePage;
     }
@@ -767,7 +807,7 @@ const renderView = () => {
     <div className="flex flex-col min-h-screen bg-brand-cream">
       <Header
         onNavigate={handleNavigate}
-        onMembership={() => setMembershipModalOpen(true)}
+        onMembership={() => handleNavigate({ type: 'pricing' })}
         onLogin={() => setLoginModalOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
@@ -800,6 +840,8 @@ const renderView = () => {
                     <button onClick={() => handleNavigate({ type: 'termsOfService' })} className="hover:underline">Terms of Service</button>
                     <span>|</span>
                     <button onClick={() => handleNavigate({ type: 'privacyPolicy' })} className="hover:underline">Privacy Policy</button>
+                    <span>|</span>
+                    <button onClick={() => handleNavigate({ type: 'pricing' })} className="hover:underline">Membership & Pricing</button>
                 </div>
                 &copy; {new Date().getFullYear()} VI Markets Network. All rights reserved.
             </div>

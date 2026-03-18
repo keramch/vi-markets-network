@@ -7,81 +7,18 @@ import { CheckIcon } from './Icons';
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type AccountType = 'vendor' | 'market';
-type PlanKey = 'free' | 'standard' | 'pro' | 'founding';
 
 interface SignupPageProps {
   onNavigate: (view: View) => void;
   onLogin: () => void;
   onSignupSuccess: (user: User) => void;
-  isFoundingMemberOfferActive?: boolean;
+  isFoundingMemberOfferActive?: boolean; // kept for API compatibility, unused during beta
 }
-
-// ── Plan definitions ─────────────────────────────────────────────────────────
-
-interface PlanDef {
-  label: string;
-  price: string;
-  period: string;
-  tagline: string;
-  features: string[];
-  badge?: string;
-}
-
-const PLANS: Record<PlanKey, PlanDef> = {
-  free: {
-    label: 'Free',
-    price: '$0',
-    period: 'forever',
-    tagline: 'Get started at no cost',
-    features: [
-      'Basic profile with photos',
-      'Visible in search & discovery',
-      'Community member access',
-      'Connect with local shoppers',
-    ],
-  },
-  standard: {
-    label: 'Standard',
-    price: '$5',
-    period: '/month',
-    tagline: 'Grow your presence',
-    features: [
-      'Everything in Free',
-      'Priority search placement',
-      'Featured badge on profile',
-      'Monthly analytics summary',
-    ],
-  },
-  pro: {
-    label: 'Pro',
-    price: '$12',
-    period: '/month',
-    tagline: 'Full power tools',
-    features: [
-      'Everything in Standard',
-      'Application management',
-      'Promotional campaigns',
-      'Priority support',
-    ],
-    badge: 'Most Popular',
-  },
-  founding: {
-    label: 'Founding Member',
-    price: '$7',
-    period: '/month',
-    tagline: 'Rate locked in for life',
-    features: [
-      'All Pro features, forever',
-      'Exclusive Founding Member badge',
-      'First access to new features',
-      'Price locked in permanently',
-    ],
-  },
-};
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 4;
+const BETA_INVITE_CODE = 'VIMARKETS2026';
+const TOTAL_STEPS = 3;
 
 function StepDots({ step }: { step: number }) {
   return (
@@ -121,42 +58,42 @@ function StepDots({ step }: { step: number }) {
 
 const STEP_TITLES: Record<number, string> = {
   1: 'What brings you to VI Markets?',
-  2: 'Choose your plan',
-  3: 'Create your account',
-  4: 'Your profile basics',
+  2: 'Create your account',
+  3: 'Your profile basics',
 };
 
 const SignupPage: React.FC<SignupPageProps> = ({
   onNavigate,
   onLogin,
   onSignupSuccess,
-  isFoundingMemberOfferActive = false,
 }) => {
+  // Invite code gate
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCodeError, setInviteCodeError] = useState('');
+  const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
+
   // Wizard navigation
-  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Step 1
   const [accountType, setAccountType] = useState<AccountType | null>(null);
 
   // Step 2
-  const [selectedPlan, setSelectedPlan] = useState<PlanKey>('free');
-
-  // Step 3
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [googleMsg, setGoogleMsg] = useState('');
-  const [errors3, setErrors3] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
+  const [errors2, setErrors2] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
 
-  // Step 4
+  // Step 3
   const [businessName, setBusinessName] = useState('');
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
-  const [errors4, setErrors4] = useState<Partial<Record<'businessName' | 'city', string>>>({});
+  const [errors3, setErrors3] = useState<Partial<Record<'businessName' | 'city', string>>>({});
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,22 +103,21 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   const validate = (): boolean => {
     if (wizardStep === 1) return accountType !== null;
-    if (wizardStep === 2) return true;
-    if (wizardStep === 3) {
-      const e: typeof errors3 = {};
+    if (wizardStep === 2) {
+      const e: typeof errors2 = {};
       if (!firstName.trim()) e.firstName = 'First name is required';
       if (!lastName.trim()) e.lastName = 'Last name is required';
       if (!/\S+@\S+\.\S+/.test(email.trim())) e.email = 'Enter a valid email address';
       if (password.length < 8) e.password = 'Password must be at least 8 characters';
-      setErrors3(e);
+      setErrors2(e);
       return Object.keys(e).length === 0;
     }
-    if (wizardStep === 4) {
-      const e: typeof errors4 = {};
+    if (wizardStep === 3) {
+      const e: typeof errors3 = {};
       if (!businessName.trim())
         e.businessName = accountType === 'market' ? 'Market name is required' : 'Business name is required';
       if (!city.trim()) e.city = 'City is required';
-      setErrors4(e);
+      setErrors3(e);
       return Object.keys(e).length === 0;
     }
     return true;
@@ -189,7 +125,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   const goNext = async () => {
     if (!validate()) return;
-    if (wizardStep === 4) {
+    if (wizardStep === 3) {
       setIsSubmitting(true);
       setSubmitError('');
       try {
@@ -202,7 +138,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
           businessName: businessName.trim(),
           city: city.trim(),
           description: description.trim() || undefined,
-          plan: selectedPlan,
         });
         onSignupSuccess(user);
         setIsSuccess(true);
@@ -212,12 +147,16 @@ const SignupPage: React.FC<SignupPageProps> = ({
         setIsSubmitting(false);
       }
     } else {
-      setWizardStep((s) => (s + 1) as 1 | 2 | 3 | 4);
+      setWizardStep((s) => (s + 1) as 1 | 2 | 3);
     }
   };
 
   const goBack = () => {
-    if (wizardStep > 1) setWizardStep((s) => (s - 1) as 1 | 2 | 3 | 4);
+    if (wizardStep > 1) setWizardStep((s) => (s - 1) as 1 | 2 | 3);
+  };
+
+  const handleStepEnter = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') goNext();
   };
 
   // ── Shared style tokens ───────────────────────────────────────────────────
@@ -240,8 +179,63 @@ const SignupPage: React.FC<SignupPageProps> = ({
       </div>
 
       <div className="container mx-auto px-4 py-10 max-w-2xl">
+
+        {/* ── Invite code gate ──────────────────────────────────────────── */}
+        {!inviteCodeVerified && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 mb-6">
+            <h2 className="text-2xl font-bold font-serif text-brand-blue text-center mb-2">
+              Enter Your Invite Code
+            </h2>
+            <p className="text-center text-sm text-gray-500 mb-6">
+              VI Markets Network is currently invite-only.
+            </p>
+            <div className="mb-1">
+              <label className={labelCls}>Invite Code</label>
+              <input
+                type="password"
+                value={inviteCode}
+                onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setInviteCodeError(''); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (inviteCode.trim() === BETA_INVITE_CODE) {
+                      setInviteCodeVerified(true);
+                    } else {
+                      setInviteCodeError('Invalid invite code. VI Markets Network is currently invite-only.');
+                    }
+                  }
+                }}
+                className={inputCls}
+                placeholder="Enter your invite code"
+                autoComplete="off"
+              />
+              {inviteCodeError && <p className={errCls}>{inviteCodeError}</p>}
+              <p className="text-xs text-gray-400 mt-1.5">
+                Don't have an invite code?{' '}
+                <a href="https://vimarkets.ca" target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline">
+                  Join the waitlist at vimarkets.ca
+                </a>
+              </p>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (inviteCode.trim() === BETA_INVITE_CODE) {
+                    setInviteCodeVerified(true);
+                  } else {
+                    setInviteCodeError('Invalid invite code. VI Markets Network is currently invite-only.');
+                  }
+                }}
+                className="bg-brand-blue text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-blue/90 transition-colors"
+              >
+                Continue →
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl shadow-lg">
-          {!isSuccess ? (
+          {!inviteCodeVerified ? null : !isSuccess ? (
             <div className="p-6 md:p-10">
               {/* Step counter + dots */}
               <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
@@ -254,7 +248,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
               {/* ── Step 1: Account type ─────────────────────────────────── */}
               {wizardStep === 1 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" onKeyDown={handleStepEnter}>
                   {(
                     [
                       {
@@ -300,121 +294,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 </div>
               )}
 
-              {/* ── Step 2: Plans ────────────────────────────────────────── */}
+              {/* ── Step 2: Create account ───────────────────────────────── */}
               {wizardStep === 2 && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {(['free', 'standard', 'pro'] as PlanKey[]).map((key) => {
-                      const plan = PLANS[key];
-                      const isSelected = selectedPlan === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setSelectedPlan(key)}
-                          className={`relative text-left p-4 rounded-xl border-2 transition-all flex flex-col ${
-                            isSelected
-                              ? 'border-brand-blue bg-brand-blue/5 ring-2 ring-brand-blue/20'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {plan.badge && (
-                            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand-gold text-white text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                              {plan.badge}
-                            </span>
-                          )}
-                          <div className="font-bold text-gray-800 mb-1">{plan.label}</div>
-                          <div className="mb-1">
-                            <span
-                              className={`text-2xl font-extrabold ${
-                                isSelected ? 'text-brand-blue' : 'text-gray-800'
-                              }`}
-                            >
-                              {plan.price}
-                            </span>
-                            <span className="text-xs text-gray-500 ml-1">{plan.period}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mb-3">{plan.tagline}</p>
-                          <ul className="space-y-1.5 mt-auto">
-                            {plan.features.map((f) => (
-                              <li key={f} className="flex items-start gap-1.5 text-xs text-gray-600">
-                                <CheckIcon
-                                  className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${
-                                    isSelected ? 'text-brand-blue' : 'text-brand-gold'
-                                  }`}
-                                />
-                                {f}
-                              </li>
-                            ))}
-                          </ul>
-                          {isSelected && (
-                            <p className="mt-3 text-xs font-semibold text-brand-blue">✓ Selected</p>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Founding Member highlight card */}
-                  {isFoundingMemberOfferActive && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPlan('founding')}
-                      className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
-                        selectedPlan === 'founding'
-                          ? 'border-brand-gold bg-amber-50 ring-2 ring-brand-gold/30'
-                          : 'border-brand-gold/50 bg-amber-50/50 hover:bg-amber-50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-grow">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className="text-lg">⭐</span>
-                            <span className="font-bold text-brand-blue">Founding Member Offer</span>
-                            <span className="bg-brand-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                              Limited Time
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-3">
-                            Lock in all Pro features at{' '}
-                            <strong className="text-brand-blue">$7/month — forever.</strong> Only
-                            available to early members.
-                          </p>
-                          <ul className="grid grid-cols-2 gap-x-4 gap-y-1">
-                            {PLANS.founding.features.map((f) => (
-                              <li key={f} className="flex items-center gap-1.5 text-xs text-gray-600">
-                                <CheckIcon className="w-3 h-3 text-brand-gold flex-shrink-0" />
-                                {f}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-2xl font-extrabold text-brand-blue">$7</div>
-                          <div className="text-xs text-gray-500">/month</div>
-                        </div>
-                      </div>
-                      {selectedPlan === 'founding' && (
-                        <p className="mt-2 text-xs font-semibold text-brand-gold">✓ Selected</p>
-                      )}
-                    </button>
-                  )}
-
-                  <p className="text-center text-xs text-gray-400 pt-1">
-                    Not sure?{' '}
-                    <button
-                      type="button"
-                      onClick={() => onNavigate({ type: 'home' })}
-                      className="text-brand-blue hover:underline"
-                    >
-                      See full pricing details
-                    </button>
-                  </p>
-                </div>
-              )}
-
-              {/* ── Step 3: Create account ───────────────────────────────── */}
-              {wizardStep === 3 && (
                 <div className="space-y-4">
                   {/* Google sign-in */}
                   <button
@@ -466,11 +347,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
+                        onKeyDown={handleStepEnter}
                         className={inputCls}
                         placeholder="Jane"
                         autoComplete="given-name"
                       />
-                      {errors3.firstName && <p className={errCls}>{errors3.firstName}</p>}
+                      {errors2.firstName && <p className={errCls}>{errors2.firstName}</p>}
                     </div>
                     <div>
                       <label className={labelCls}>Last Name</label>
@@ -478,11 +360,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         type="text"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
+                        onKeyDown={handleStepEnter}
                         className={inputCls}
                         placeholder="Smith"
                         autoComplete="family-name"
                       />
-                      {errors3.lastName && <p className={errCls}>{errors3.lastName}</p>}
+                      {errors2.lastName && <p className={errCls}>{errors2.lastName}</p>}
                     </div>
                   </div>
 
@@ -492,20 +375,23 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={handleStepEnter}
                       className={inputCls}
                       placeholder="jane@example.com"
                       autoComplete="email"
                     />
-                    {errors3.email && <p className={errCls}>{errors3.email}</p>}
+                    {errors2.email && <p className={errCls}>{errors2.email}</p>}
                   </div>
 
                   <div>
                     <label className={labelCls}>Password</label>
                     <div className="relative">
                       <input
+                        id="password"
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={handleStepEnter}
                         className={`${inputCls} pr-14`}
                         placeholder="At least 8 characters"
                         autoComplete="new-password"
@@ -519,13 +405,13 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         {showPassword ? 'Hide' : 'Show'}
                       </button>
                     </div>
-                    {errors3.password && <p className={errCls}>{errors3.password}</p>}
+                    {errors2.password && <p className={errCls}>{errors2.password}</p>}
                   </div>
                 </div>
               )}
 
-              {/* ── Step 4: Basic profile ────────────────────────────────── */}
-              {wizardStep === 4 && (
+              {/* ── Step 3: Basic profile ────────────────────────────────── */}
+              {wizardStep === 3 && (
                 <div className="space-y-5">
                   <div>
                     <label className={labelCls}>
@@ -535,6 +421,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       type="text"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
+                      onKeyDown={handleStepEnter}
                       className={inputCls}
                       placeholder={
                         accountType === 'market'
@@ -542,7 +429,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                           : 'e.g. Green Thumb Organics'
                       }
                     />
-                    {errors4.businessName && <p className={errCls}>{errors4.businessName}</p>}
+                    {errors3.businessName && <p className={errCls}>{errors3.businessName}</p>}
                   </div>
 
                   <div>
@@ -551,10 +438,11 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
+                      onKeyDown={handleStepEnter}
                       className={inputCls}
                       placeholder="e.g. Victoria, BC"
                     />
-                    {errors4.city && <p className={errCls}>{errors4.city}</p>}
+                    {errors3.city && <p className={errCls}>{errors3.city}</p>}
                   </div>
 
                   <ImageUploader
@@ -575,6 +463,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}
                       rows={3}
                       className={`${inputCls} resize-none`}
                       placeholder={
@@ -612,7 +501,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   disabled={(wizardStep === 1 && accountType === null) || isSubmitting}
                   className="bg-brand-blue text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-blue/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Creating…' : wizardStep === 4 ? 'Create Profile' : 'Continue →'}
+                  {isSubmitting ? 'Creating…' : wizardStep === 3 ? 'Create Profile' : 'Continue →'}
                 </button>
               </div>
             </div>

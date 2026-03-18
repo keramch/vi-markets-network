@@ -1,4 +1,4 @@
-import type { Market, Vendor, User, Review, Application, MembershipPlan, NotificationSettings, MemberStatus } from '../types';
+import type { Market, Vendor, User, Review, Application, NotificationSettings, MemberStatus } from '../types';
 import { markets as mockMarkets, vendors as mockVendors, applications as mockApplications, users as mockUsers } from '../data/mockData';
 
 // --- SIMULATED DATABASE ---
@@ -32,14 +32,13 @@ export const login = (email: string, postalCode: string): Promise<User> => {
                 resolve(user);
             } else {
                 // Auto-create a new "free" user if they don't exist
-                 const newUser: User = { 
-                    id: `user-${Date.now()}`, 
+                 const newUser: User = {
+                    id: `user-${Date.now()}`,
                     email,
                     postalCode,
-                    membership: 'free',
+                    subscription: { tier: 'free', billingCycle: null, foundingMember: false },
                     isAdmin: false,
                     autoRenew: false,
-                    isFoundingMember: false,
                     notificationSettings: {
                         favoriteMarket: true,
                         favoriteVendor: true,
@@ -73,11 +72,9 @@ export const setFoundingMember = (userId: string): Promise<User> => {
             let userIndex = users.findIndex(u => u.id === userId);
             if (userIndex !== -1) {
                 const user = users[userIndex];
-                const newMembership = user.ownedMarketId ? 'market-pro-lifetime' : 'vendor-pro-lifetime';
-                users[userIndex] = { 
-                    ...user, 
-                    isFoundingMember: true,
-                    membership: newMembership
+                users[userIndex] = {
+                    ...user,
+                    subscription: { ...user.subscription, tier: 'pro', foundingMember: true },
                 };
                 resolve(users[userIndex]);
             } else {

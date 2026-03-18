@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type {
   Market,
   Vendor,
@@ -19,6 +19,8 @@ interface HomePageProps {
   vendors: Vendor[];
   onSelectMarket: (id: string) => void;
   onSelectVendor: (id: string) => void;
+  onViewAllMarkets: () => void;
+  onViewAllVendors: () => void;
 }
 
 interface SearchableMarket extends Market {
@@ -163,6 +165,8 @@ const HomePage: React.FC<HomePageProps> = ({
   vendors,
   onSelectMarket,
   onSelectVendor,
+  onViewAllMarkets,
+  onViewAllVendors,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationTerm, setLocationTerm] = useState("");
@@ -186,6 +190,12 @@ const HomePage: React.FC<HomePageProps> = ({
   const [sortBy, setSortBy] = useState<"match" | "distance">("match");
 
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+
+  // What's New carousel
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  // card width (w-36 = 144px) + gap (gap-3 = 12px)
+  const CARD_STEP = 156;
 
   const handleTagSelection = (tag: VendorTag) => {
     setSelectedVendorTags((prev) =>
@@ -251,7 +261,7 @@ const HomePage: React.FC<HomePageProps> = ({
         (a, b) =>
           new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime()
       )
-      .slice(0, 5);
+      .slice(0, 20);
   }, [activeMarkets, activeVendors]);
 
   useEffect(() => {
@@ -641,40 +651,75 @@ const HomePage: React.FC<HomePageProps> = ({
               <h2 className="text-3xl font-bold font-serif text-brand-blue mb-4">
                 What's New
               </h2>
-              {/* Horizontal scroll row — snaps to tiles on mobile */}
-              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
-                {whatsNewItems.map((item) => {
-                  const imageSrc = item.logoUrl || item.photos?.[0];
-                  // Parse YYYY-MM-DD as local date to avoid UTC-offset "Invalid Date"
-                  const joinLabel = (() => {
-                    if (!item.joinDate) return null;
-                    const parts = item.joinDate.split('-').map(Number);
-                    if (parts.length !== 3 || parts.some(isNaN)) return null;
-                    return new Date(parts[0], parts[1] - 1, parts[2])
-                      .toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
-                  })();
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex-shrink-0 w-36 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => item.type === "market" ? onSelectMarket(item.id) : onSelectVendor(item.id)}
-                    >
-                      {imageSrc
-                        ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
-                        : <div className="w-full h-24 bg-brand-cream flex items-center justify-center">
-                            <span className="text-brand-blue/40 text-3xl font-bold font-serif">{item.name[0]}</span>
+              {/* Carousel */}
+              <div className="relative">
+                {/* Left arrow */}
+                <button
+                  type="button"
+                  onClick={() => setCarouselIdx((i) => (i === 0 ? whatsNewItems.length - 1 : i - 1))}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-blue text-white shadow hover:bg-brand-blue/80 transition-colors"
+                  aria-label="Previous"
+                >
+                  ‹
+                </button>
+
+                {/* Track */}
+                <div className="overflow-hidden mx-9">
+                  <div
+                    className="flex gap-3 transition-transform duration-300 ease-in-out"
+                    style={{ transform: `translateX(-${carouselIdx * CARD_STEP}px)` }}
+                    onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                    onTouchEnd={(e) => {
+                      if (touchStartX.current === null) return;
+                      const delta = touchStartX.current - e.changedTouches[0].clientX;
+                      if (delta > 40) setCarouselIdx((i) => (i === whatsNewItems.length - 1 ? 0 : i + 1));
+                      else if (delta < -40) setCarouselIdx((i) => (i === 0 ? whatsNewItems.length - 1 : i - 1));
+                      touchStartX.current = null;
+                    }}
+                  >
+                    {whatsNewItems.map((item) => {
+                      const imageSrc = item.logoUrl || item.photos?.[0];
+                      const joinLabel = (() => {
+                        if (!item.joinDate) return null;
+                        const parts = item.joinDate.split('-').map(Number);
+                        if (parts.length !== 3 || parts.some(isNaN)) return null;
+                        return new Date(parts[0], parts[1] - 1, parts[2])
+                          .toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+                      })();
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex-shrink-0 w-36 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => item.type === "market" ? onSelectMarket(item.id) : onSelectVendor(item.id)}
+                        >
+                          {imageSrc
+                            ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
+                            : <div className="w-full h-24 bg-brand-cream flex items-center justify-center">
+                                <span className="text-brand-blue/40 text-3xl font-bold font-serif">{item.name[0]}</span>
+                              </div>
+                          }
+                          <div className="p-2">
+                            <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-blue" : "text-brand-light-blue"}`}>
+                              {item.type === "market" ? "Market" : "Vendor"}
+                            </span>
+                            <p className="text-sm font-bold text-brand-blue truncate leading-tight">{item.name}</p>
+                            {joinLabel && <p className="text-xs text-gray-400 mt-0.5">{joinLabel}</p>}
                           </div>
-                      }
-                      <div className="p-2">
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-blue" : "text-brand-light-blue"}`}>
-                          {item.type === "market" ? "Market" : "Vendor"}
-                        </span>
-                        <p className="text-sm font-bold text-brand-blue truncate leading-tight">{item.name}</p>
-                        {joinLabel && <p className="text-xs text-gray-400 mt-0.5">{joinLabel}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right arrow */}
+                <button
+                  type="button"
+                  onClick={() => setCarouselIdx((i) => (i === whatsNewItems.length - 1 ? 0 : i + 1))}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-blue text-white shadow hover:bg-brand-blue/80 transition-colors"
+                  aria-label="Next"
+                >
+                  ›
+                </button>
               </div>
             </section>
 
@@ -682,7 +727,7 @@ const HomePage: React.FC<HomePageProps> = ({
               <h2 className="text-3xl font-bold font-serif text-brand-blue mb-6">
                 Featured Markets & Vendors
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
                 {featuredItems.map((item) =>
                   item.type === "market" ? (
                     <MarketCard
@@ -700,6 +745,20 @@ const HomePage: React.FC<HomePageProps> = ({
                     />
                   )
                 )}
+              </div>
+              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => onViewAllMarkets()}
+                  className="px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
+                >
+                  View all markets →
+                </button>
+                <button
+                  onClick={() => onViewAllVendors()}
+                  className="px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
+                >
+                  View all vendors →
+                </button>
               </div>
             </section>
           </>

@@ -99,13 +99,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     ...vendors.map(v => ({ type: 'vendor' as const, data: v })),
   ].sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
 
-  const membershipPrices: { [key: string]: number } = {
-    'vendor-annual': 100,
-    'vendor-pro-annual': 250,
-    'market-annual': 400,
-    'market-pro-annual': 800,
+  const tierPrices: { [key: string]: number } = {
+    'standard': 60,
+    'pro': 144,
+    'superPro': 240,
   };
-  const totalRevenue = users.reduce((acc, user) => acc + (membershipPrices[user.membership] || 0), 0);
+  const totalRevenue = users.reduce((acc, user) => acc + (tierPrices[user.subscription?.tier ?? ''] || 0), 0);
 
   const getStatusChipClass = (status: MemberStatus) => {
     switch (status) {
@@ -220,7 +219,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-medium text-gray-900">{member.data.name}</span>
-                      {user?.isFoundingMember && (
+                      {user?.subscription?.foundingMember && (
                         <span title="Founding Member">
                           <RibbonIcon className="w-4 h-4 text-brand-gold" />
                         </span>
@@ -229,7 +228,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="text-sm text-gray-500">{user?.email ?? '—'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user?.membership.replace(/-/g, ' ') ?? '—'}
+                    {user?.subscription?.tier ?? '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusChipClass(member.data.status)}`}>
@@ -274,11 +273,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                               className={ddItem}
                               onClick={() => {
                                 if (!user) return;
-                                onToggleFoundingMember(user.id, !!user.isFoundingMember);
+                                onToggleFoundingMember(user.id, !!user.subscription?.foundingMember);
                                 setOpenDropdownId(null);
                               }}
                             >
-                              ⭐ {user?.isFoundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
+                              ⭐ {user?.subscription?.foundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
                             </button>
                           </div>
 

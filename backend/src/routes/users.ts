@@ -56,17 +56,19 @@ router.post("/register", async (req, res) => {
       firstName,
       lastName,
       displayName: `${firstName} ${lastName}`,
-      membership: "free",
+      subscription: {
+        tier: "free",
+        billingCycle: null,
+        foundingMember: false,
+      },
       ownedMarketId: "",
       ownedVendorId: "",
       isAdmin: false,
-      isFoundingMember: plan === "founding",
       autoRenew: false,
       accountType,
       businessName,
       city,
       description: description || "",
-      selectedPlan: plan || "free",
       notificationSettings: {
         favoriteMarket: true,
         favoriteVendor: true,
@@ -75,16 +77,14 @@ router.post("/register", async (req, res) => {
       createdAt: Date.now(),
     };
 
-    // Create Firebase Auth user (enables signInWithEmailAndPassword on the client)
-    await auth.createUser({
+    // Create Firebase Auth user and use its UID as the Firestore document ID
+    const firebaseUser = await auth.createUser({
       email,
       password,
       displayName: `${firstName} ${lastName}`,
     });
-
-    // Create the user document first
-    const userRef = await db.collection("users").add(newUser);
-    const userId = userRef.id;
+    const userId = firebaseUser.uid;
+    await db.collection("users").doc(userId).set(newUser);
 
     // Create the vendor or market profile document
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
@@ -132,7 +132,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Update the user document with the new profile ID
-    await userRef.update({ ownedMarketId, ownedVendorId });
+    await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
 
     return res.status(201).json({
       id: userId,

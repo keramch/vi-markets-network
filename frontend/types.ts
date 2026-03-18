@@ -3,23 +3,6 @@ export interface Coordinates {
   lng: number;
 }
 
-export type MembershipPlan = 
-  | 'free'
-  | 'vendor-monthly'
-  | 'vendor-annual'
-  | 'vendor-lifetime'
-  | 'vendor-pro-monthly'
-  | 'vendor-pro-annual'
-  | 'vendor-pro-lifetime'
-  | 'market-one-time'
-  | 'market-monthly'
-  | 'market-annual'
-  | 'market-lifetime'
-  | 'market-pro-monthly'
-  | 'market-pro-annual'
-  | 'market-pro-lifetime';
-
-
 export interface NotificationSettings {
   favoriteVendor: boolean;
   favoriteMarket: boolean;
@@ -30,18 +13,23 @@ export type UserType = 'community' | 'vendor' | 'organizer' | 'both' | 'admin' |
 
 export type SubscriptionTier = 'free' | 'standard' | 'pro' | 'superPro';
 
+export interface UserSubscription {
+  tier: SubscriptionTier;
+  billingCycle: 'monthly' | 'annual' | null;
+  foundingMember: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
   postalCode: string;
-  membership: MembershipPlan;
+  subscription: UserSubscription;
   userType?: UserType;
   ownedMarketId?: string;
   ownedVendorId?: string;
   isAdmin?: boolean;
   notificationSettings?: NotificationSettings;
   autoRenew?: boolean;
-  isFoundingMember?: boolean;
 }
 
 export interface Review {
@@ -281,7 +269,10 @@ export type View =
   | { type: 'termsOfService' }
   | { type: 'adminEditProfile'; profileId: string; profileType: 'market' | 'vendor' }
   | { type: 'forgotPassword' }
-  | { type: 'signup' };
+  | { type: 'signup' }
+  | { type: 'browseMarkets' }
+  | { type: 'browseVendors' }
+  | { type: 'pricing' };
 
 // ─── Phase 2A: New data model types ─────────────────────────────────────────
 

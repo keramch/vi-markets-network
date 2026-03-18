@@ -16,7 +16,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLogout, currentUser }) => {
   const isOwner = currentUser?.ownedMarketId || currentUser?.ownedVendorId;
   const isVendorOwner = !!currentUser?.ownedVendorId;
-  const isProMember = currentUser?.membership.includes('pro');
+  const isProMember = currentUser?.subscription?.tier === 'pro' || currentUser?.subscription?.tier === 'superPro' || currentUser?.subscription?.foundingMember === true;
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-20">

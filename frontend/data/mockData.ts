@@ -2,32 +2,29 @@ import type { Market, Vendor, Application, User } from '../types';
 import { MarketCategories, VendorCategories, DayOfWeek, MarketAmenities, PaymentOptions, VendorTags } from '../types';
 
 export const users: User[] = [
-    { 
-        id: 'user-owner-market-1', 
-        email: 'manager@citycentermarket.com', 
-        postalCode: 'V9R 1A1', 
-        membership: 'market-pro-annual',
+    {
+        id: 'user-owner-market-1',
+        email: 'manager@citycentermarket.com',
+        postalCode: 'V9R 1A1',
+        subscription: { tier: 'pro', billingCycle: 'annual', foundingMember: false },
         ownedMarketId: 'market-1',
         autoRenew: true,
-        isFoundingMember: false,
     },
-    { 
-        id: 'user-owner-vendor-1', 
-        email: 'contact@greenthumb.com', 
-        postalCode: 'V9S 1B1', 
-        membership: 'vendor-pro-annual',
+    {
+        id: 'user-owner-vendor-1',
+        email: 'contact@greenthumb.com',
+        postalCode: 'V9S 1B1',
+        subscription: { tier: 'pro', billingCycle: 'annual', foundingMember: false },
         ownedVendorId: 'vendor-1',
         autoRenew: false,
-        isFoundingMember: false,
     },
     {
         id: 'user-admin-1',
         email: 'admin@vimarkets.com',
         postalCode: 'V9T 1C1',
-        membership: 'free',
+        subscription: { tier: 'free', billingCycle: null, foundingMember: false },
         isAdmin: true,
         autoRenew: false,
-        isFoundingMember: false,
     }
 ];
 
