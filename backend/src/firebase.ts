@@ -1,12 +1,8 @@
 import admin from "firebase-admin";
 
-// Only initialize once (ts-node-dev can reload code)
 if (!admin.apps.length) {
-  // This uses the JSON file you put in the backend folder
-  // Do NOT commit this file to git later – it's secret.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const serviceAccount = require("../serviceAccountKey.json");
-
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}");
+  
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
