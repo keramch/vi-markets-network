@@ -17,7 +17,7 @@ interface SignupPageProps {
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
-const BETA_INVITE_CODE = 'VIMARKETS2026';
+const BETA_INVITE_CODE = import.meta.env.VITE_BETA_INVITE_CODE ?? '';
 const TOTAL_STEPS = 3;
 
 function StepDots({ step }: { step: number }) {
