@@ -427,7 +427,7 @@ const HomePage: React.FC<HomePageProps> = ({
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 font-serif">
             Your Guide to Island Markets
           </h1>
-          <p className="max-w-2xl mx-auto mb-8 text-lg text-brand-light-blue">
+          <p className="max-w-2xl mx-auto mb-8 text-lg text-brand-teal-light">
             Find farmers markets, artisan goods, and fresh produce on Vancouver
             Island.
           </p>
@@ -462,7 +462,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 />
               </div>
             </div>
-            <div className="flex items-center justify-center mt-3 text-sm text-brand-light-blue">
+            <div className="flex items-center justify-center mt-3 text-sm text-brand-teal-light">
               <span>{locationStatus}</span>
             </div>
           </div>
@@ -590,7 +590,7 @@ const HomePage: React.FC<HomePageProps> = ({
         {showSearchResults ? (
           <>
             <div id="results" />
-            <h2 className="text-3xl font-bold font-serif text-brand-blue mb-6">
+            <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
               Results
             </h2>
             {filteredMarkets.length === 0 && filteredVendors.length === 0 ? (
@@ -610,7 +610,7 @@ const HomePage: React.FC<HomePageProps> = ({
               <>
                 {filteredMarkets.length > 0 && (
                   <section className="mb-12">
-                    <h3 className="text-2xl font-semibold font-serif text-brand-blue mb-4">
+                    <h3 className="text-2xl font-sans font-semibold text-brand-blue mb-4">
                       Markets
                     </h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -627,7 +627,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 )}
                 {filteredVendors.length > 0 && (
                   <section>
-                    <h3 className="text-2xl font-semibold font-serif text-brand-blue mb-4">
+                    <h3 className="text-2xl font-sans font-semibold text-brand-blue mb-4">
                       Vendors
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -648,7 +648,7 @@ const HomePage: React.FC<HomePageProps> = ({
         ) : (
           <>
             <section className="mb-10">
-              <h2 className="text-3xl font-bold font-serif text-brand-blue mb-4">
+              <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-4">
                 What's New
               </h2>
               {/* Carousel */}
@@ -657,7 +657,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 <button
                   type="button"
                   onClick={() => setCarouselIdx((i) => (i === 0 ? whatsNewItems.length - 1 : i - 1))}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-blue text-white shadow hover:bg-brand-blue/80 transition-colors"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-gold text-white shadow hover:bg-brand-gold/80 transition-colors"
                   aria-label="Previous"
                 >
                   ‹
@@ -715,7 +715,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 <button
                   type="button"
                   onClick={() => setCarouselIdx((i) => (i === whatsNewItems.length - 1 ? 0 : i + 1))}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-blue text-white shadow hover:bg-brand-blue/80 transition-colors"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-gold text-white shadow hover:bg-brand-gold/80 transition-colors"
                   aria-label="Next"
                 >
                   ›
@@ -724,7 +724,7 @@ const HomePage: React.FC<HomePageProps> = ({
             </section>
 
             <section className="mb-12">
-              <h2 className="text-3xl font-bold font-serif text-brand-blue mb-6">
+              <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
                 Featured Markets & Vendors
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">

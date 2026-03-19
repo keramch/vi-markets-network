@@ -3,12 +3,12 @@
 import React from 'react';
 
 export const Logo = () => (
-  <div className="flex flex-col items-start leading-none">
-    <span className="font-serif text-2xl font-bold tracking-wider text-brand-blue">
+  <div className="flex flex-col items-center leading-none">
+    <span className="font-serif text-2xl text-brand-blue">
       VI MARKETS
     </span>
-    <span className="text-xs font-semibold tracking-widest text-brand-light-blue">
-      NETWORK
+    <span className="text-xs font-sans tracking-widest text-brand-light-blue uppercase">
+      Guide
     </span>
   </div>
 );
