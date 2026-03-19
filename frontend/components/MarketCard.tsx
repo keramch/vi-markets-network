@@ -57,7 +57,7 @@ const MarketCard: React.FC<MarketCardProps> = ({ market, onSelect, featured = fa
       )}
       <img className="w-full h-36 object-cover" src={imageSrc} alt={market.name} />
       <div className="p-3 flex flex-col flex-grow">
-        <h3 className="text-base font-bold font-serif text-brand-blue mb-1.5 leading-tight">{market.name}</h3>
+        <h3 className="text-base font-serif text-brand-blue mb-1.5 leading-tight">{market.name}</h3>
 
         {(city || distance !== undefined) && (
           <div className="flex items-center text-gray-500 mb-1">
@@ -91,7 +91,7 @@ const MarketCard: React.FC<MarketCardProps> = ({ market, onSelect, featured = fa
         )}
 
         <div className="mt-auto pt-2">
-          <span className="inline-block bg-brand-gold/20 text-brand-blue text-xs font-semibold px-2 py-0.5 rounded-full">
+          <span className="inline-block bg-brand-teal-light text-brand-blue text-xs font-semibold px-2 py-0.5 rounded-full">
             {market.category}
           </span>
         </div>

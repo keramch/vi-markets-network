@@ -472,14 +472,14 @@ const HomePage: React.FC<HomePageProps> = ({
             <div className="flex flex-wrap items-center justify-center gap-2">
               <FilterSelect
                 value={selectedMarketCategory}
-                onChange={setSelectedMarketCategory}
+                onChange={(val) => setSelectedMarketCategory(val as MarketCategory | "all")}
                 placeholder="Market Type"
                 options={Object.values(MarketCategories) as MarketCategory[]}
               />
 
               <FilterSelect
                 value={selectedVendorCategory}
-                onChange={setSelectedVendorCategory}
+                onChange={(val) => setSelectedVendorCategory(val as VendorCategory | "all")}
                 placeholder="Vendor Product"
                 options={Object.values(VendorCategories) as VendorCategory[]}
               />
@@ -699,7 +699,7 @@ const HomePage: React.FC<HomePageProps> = ({
                               </div>
                           }
                           <div className="p-2">
-                            <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-blue" : "text-brand-light-blue"}`}>
+                            <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-gold" : "text-brand-light-blue"}`}>
                               {item.type === "market" ? "Market" : "Vendor"}
                             </span>
                             <p className="text-sm font-bold text-brand-blue truncate leading-tight">{item.name}</p>

@@ -47,7 +47,7 @@ const VendorCard: React.FC<VendorCardProps> = ({
       />
 
       <div className={`p-3 ${compact ? "flex-1" : ""}`}>
-        <h3 className="text-base font-bold text-brand-blue font-serif mb-1 leading-tight">
+        <h3 className="text-base text-brand-blue font-serif mb-1 leading-tight">
           {vendor.name}
         </h3>
 
