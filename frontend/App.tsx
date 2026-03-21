@@ -85,6 +85,10 @@ const App: React.FC = () => {
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [adminActiveTab, setAdminActiveTab] = useState<'reviews' | 'memberships'>('reviews');
 
+  const [footerFirstName, setFooterFirstName] = useState('');
+  const [footerEmail, setFooterEmail] = useState('');
+  const [footerCity, setFooterCity] = useState('');
+
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
     if (!consent) {
@@ -822,16 +826,55 @@ const renderView = () => {
                 <h3 className="text-xl mb-2 font-serif">Stay in the loop!</h3>
                 <p className="text-gray-300">Get updates on new markets, featured vendors, and what's in season. You'll receive notifications for markets in your area and for your favorite vendors and markets.</p>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); showNotification("Thanks for subscribing!"); }} className="flex">
-                <input 
-                type="email"
-                placeholder="your.email@example.com"
-                className="w-full p-3 rounded-l-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 focus:ring-offset-brand-blue"
-                required
-                aria-label="Email for newsletter"
+            <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+                  try {
+                    const res = await fetch(`${BASE_URL}/brevo/subscribe`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email: footerEmail, firstName: footerFirstName, city: footerCity }),
+                    });
+                    if (!res.ok) throw new Error();
+                    showNotification("You're in! Thanks for joining, " + footerFirstName + "!");
+                    setFooterFirstName('');
+                    setFooterEmail('');
+                    setFooterCity('');
+                  } catch {
+                    showNotification("Something went wrong. Please try again.");
+                  }
+                }}
+                className="flex flex-col md:flex-row gap-2"
+              >
+                <input
+                  type="text"
+                  placeholder="First Name"
+                  value={footerFirstName}
+                  onChange={(e) => setFooterFirstName(e.target.value)}
+                  className="p-3 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 focus:ring-offset-brand-blue"
+                  required
+                  aria-label="First name for newsletter"
                 />
-                <button type="submit" className="bg-brand-gold text-white font-semibold px-6 py-3 rounded-r-md hover:bg-opacity-80 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 focus:ring-offset-brand-blue">
-                Subscribe
+                <input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={footerEmail}
+                  onChange={(e) => setFooterEmail(e.target.value)}
+                  className="p-3 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 focus:ring-offset-brand-blue"
+                  required
+                  aria-label="Email for newsletter"
+                />
+                <input
+                  type="text"
+                  placeholder="City"
+                  value={footerCity}
+                  onChange={(e) => setFooterCity(e.target.value)}
+                  className="p-3 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 focus:ring-offset-brand-blue"
+                  aria-label="City for newsletter"
+                />
+                <button type="submit" className="bg-brand-gold text-white font-semibold px-6 py-3 rounded-md hover:bg-opacity-80 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 focus:ring-offset-brand-blue whitespace-nowrap">
+                  Sign Me Up!
                 </button>
             </form>
             </div>
