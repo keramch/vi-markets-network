@@ -86,7 +86,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
           {/* Hero banner */}
           {(market.headerPhotoUrl ?? market.photos?.[0])
             ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt={market.name} />
-            : <div className="w-full h-56 md:h-72 bg-brand-cream flex items-center justify-center"><span className="text-brand-blue/20 text-8xl font-serif font-bold">{market.name[0]}</span></div>
+            : <div className="w-full h-56 md:h-72 bg-brand-cream flex items-center justify-center"><span className="text-brand-blue/20 text-8xl font-serif">{market.name[0]}</span></div>
           }
           {/* Scrim — covers bottom two-thirds for text legibility regardless of photo colour */}
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
@@ -124,11 +124,11 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
         <div className="p-6 md:p-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
-              <h2 className="text-2xl font-bold font-serif text-brand-blue mb-4">About the Market</h2>
+              <h2 className="text-2xl font-serif text-brand-blue mb-4">About the Market</h2>
               <p className="text-brand-text leading-relaxed">{market.description}</p>
               
               <div className="mt-8 border-t pt-6">
-                <h3 className="text-xl font-bold font-serif text-brand-blue mb-4">Good to Know</h3>
+                <h3 className="text-xl font-serif text-brand-blue mb-4">Good to Know</h3>
                 <dl className="space-y-4">
                     {market.accessibility && <InfoRow label="Accessibility" value={market.accessibility} icon={<AccessibilityIcon className="w-5 h-5" />} />}
                     {market.paymentOptions && <InfoRow label="Payments" value={market.paymentOptions.join(', ')} icon={<CreditCardIcon className="w-5 h-5" />} />}
@@ -137,7 +137,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
                 </dl>
               </div>
 
-              <h3 className="text-xl font-bold font-serif text-brand-blue mt-8 mb-4">Hosted Vendors</h3>
+              <h3 className="text-xl font-serif text-brand-blue mt-8 mb-4">Hosted Vendors</h3>
               {marketVendors.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {marketVendors.map(vendor => (
@@ -149,7 +149,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
               )}
             </div>
             <div className="bg-brand-cream rounded-lg p-6">
-              <h3 className="text-xl font-bold font-serif text-brand-blue mb-4">Market Info</h3>
+              <h3 className="text-xl font-serif text-brand-blue mb-4">Market Info</h3>
               <div className="space-y-4">
                 <div className="flex items-start">
                   <MapPinIcon className="w-6 h-6 mr-3 text-brand-light-blue flex-shrink-0 mt-1" />
@@ -214,7 +214,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
 
         {market.photos && market.photos.length > 0 && (
           <div className="p-6 md:p-8 border-t">
-            <h2 className="text-2xl font-bold text-brand-blue font-serif mb-4">Gallery</h2>
+            <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {market.photos.map((photo, i) => (
                 <img
@@ -229,7 +229,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
         )}
 
         <div className="p-6 md:p-8 border-t">
-          <h2 className="text-2xl font-bold text-brand-blue font-serif mb-6">Get in Touch</h2>
+          <h2 className="text-2xl text-brand-blue font-serif mb-6">Get in Touch</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
                 {market.contact?.socials && (
@@ -248,7 +248,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
         </div>
         
          <div className="p-6 md:p-8 border-t">
-            <h2 className="text-2xl font-bold text-brand-blue font-serif mb-4">Reviews</h2>
+            <h2 className="text-2xl text-brand-blue font-serif mb-4">Reviews</h2>
             {currentUser && <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>}
             <div className="space-y-6">
                 {approvedReviews.length > 0 ? approvedReviews.map(review => (

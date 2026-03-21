@@ -337,7 +337,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 <p>You are editing this profile as an administrator. Changes will be saved directly.</p>
             </div>
         )}
-        <h2 className="text-3xl font-bold font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Hub' : 'Vendor Hub'}</h2>
+        <h2 className="text-3xl font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Hub' : 'Vendor Hub'}</h2>
         <p className="text-gray-600 mb-6">Manage your public profile, promotions, and applications.</p>
 
         <div className="border-b mb-6">
@@ -573,7 +573,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
             {activeTab === 'reviews' && (
                  <div>
-                    <h2 className="text-2xl font-bold font-serif text-brand-blue mb-4">Review Moderation</h2>
+                    <h2 className="text-2xl font-serif text-brand-blue mb-4">Review Moderation</h2>
                     {reviewsToModerate.length > 0 ? (
                         <div className="space-y-4">
                             {reviewsToModerate.map(review => (

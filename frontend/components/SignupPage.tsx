@@ -173,7 +173,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
       {/* Hero */}
       <div id="pagetop-header" className="bg-brand-blue text-white py-12 px-4 text-center">
         <h1 className="text-4xl font-extrabold font-serif mb-2">Join VI Markets</h1>
-        <p className="text-brand-light-blue text-lg">
+        <p className="text-brand-teal-light text-lg">
           Connect with local markets and shoppers across Vancouver Island
         </p>
       </div>
@@ -183,7 +183,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         {/* ── Invite code gate ──────────────────────────────────────────── */}
         {!inviteCodeVerified && (
           <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 mb-6">
-            <h2 className="text-2xl font-bold font-serif text-brand-blue text-center mb-2">
+            <h2 className="text-2xl font-serif text-brand-blue text-center mb-2">
               Enter Your Invite Code
             </h2>
             <p className="text-center text-sm text-gray-500 mb-6">
@@ -242,7 +242,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 Step {wizardStep} of {TOTAL_STEPS}
               </p>
               <StepDots step={wizardStep} />
-              <h2 className="text-2xl font-bold font-serif text-brand-blue text-center mb-8">
+              <h2 className="text-2xl font-serif text-brand-blue text-center mb-8">
                 {STEP_TITLES[wizardStep]}
               </h2>
 

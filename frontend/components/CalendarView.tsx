@@ -305,7 +305,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
         >
           {/* Title */}
           <div className="flex items-start justify-between mb-3">
-            <h2 className="text-xl font-bold font-serif text-brand-blue pr-2">{event.name}</h2>
+            <h2 className="text-xl font-serif text-brand-blue pr-2">{event.name}</h2>
             <button
               onClick={() => setSelectedOcc(null)}
               className="text-gray-400 hover:text-gray-600 flex-shrink-0"
@@ -405,7 +405,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
           >
             &larr; Back
           </button>
-          <h1 className="text-4xl font-bold font-serif text-brand-blue">Market Calendar</h1>
+          <h1 className="text-4xl font-serif text-brand-blue">Market Calendar</h1>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

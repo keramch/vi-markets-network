@@ -24,7 +24,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit }) => {
 
     return (
         <form onSubmit={handleSubmit} className="bg-brand-cream/60 p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-brand-blue font-serif mb-4">Write a review</h3>
+            <h3 className="text-xl text-brand-blue font-serif mb-4">Write a review</h3>
             <div className="mb-4">
                 <p className="font-semibold mb-2 text-brand-text">Your Rating:</p>
                 <div className="flex items-center">

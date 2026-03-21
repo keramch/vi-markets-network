@@ -788,13 +788,13 @@ const renderView = () => {
     return (
         <div className="space-y-8">
             <div>
-                <h3 className="text-xl font-bold font-serif text-brand-blue mb-4">For Vendors</h3>
+                <h3 className="text-xl font-serif text-brand-blue mb-4">For Vendors</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {plans.vendor.map(p => <PlanCard key={p.plan} plan={p} />)}
                 </div>
             </div>
             <div>
-                <h3 className="text-xl font-bold font-serif text-brand-blue mb-4">For Markets</h3>
+                <h3 className="text-xl font-serif text-brand-blue mb-4">For Markets</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                      {plans.market.map(p => <PlanCard key={p.plan} plan={p} />)}
                 </div>
@@ -819,7 +819,7 @@ const renderView = () => {
         <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-                <h3 className="text-xl font-bold mb-2 font-serif">Stay in the loop!</h3>
+                <h3 className="text-xl mb-2 font-serif">Stay in the loop!</h3>
                 <p className="text-gray-300">Get updates on new markets, featured vendors, and what's in season. You'll receive notifications for markets in your area and for your favorite vendors and markets.</p>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); showNotification("Thanks for subscribing!"); }} className="flex">

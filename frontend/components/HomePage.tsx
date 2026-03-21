@@ -695,7 +695,7 @@ const HomePage: React.FC<HomePageProps> = ({
                           {imageSrc
                             ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
                             : <div className="w-full h-24 bg-brand-cream flex items-center justify-center">
-                                <span className="text-brand-blue/40 text-3xl font-bold font-serif">{item.name[0]}</span>
+                                <span className="text-brand-blue/40 text-3xl font-serif">{item.name[0]}</span>
                               </div>
                           }
                           <div className="p-2">

@@ -25,7 +25,7 @@ const MyApplications: React.FC<MyApplicationsProps> = ({ applications, markets, 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold font-serif text-brand-blue flex items-center">
+        <h1 className="text-4xl font-serif text-brand-blue flex items-center">
           <FileTextIcon className="w-8 h-8 mr-4 text-brand-light-blue" />
           My Applications
         </h1>

@@ -337,7 +337,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-bold font-serif text-brand-blue mb-8">Market HQ</h1>
+      <h1 className="text-4xl font-serif text-brand-blue mb-8">Market HQ</h1>
 
       <div className="mb-6 border-b border-gray-300">
         <nav className="-mb-px flex space-x-8">

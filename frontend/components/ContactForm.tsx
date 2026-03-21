@@ -25,7 +25,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, 
     if (isSent) {
         return (
             <div className="bg-brand-cream/60 p-6 rounded-lg text-center">
-                <h3 className="text-xl font-bold text-brand-blue font-serif">Thank you!</h3>
+                <h3 className="text-xl text-brand-blue font-serif">Thank you!</h3>
                 <p className="mt-2 text-brand-text">Your message has been sent successfully.</p>
             </div>
         )

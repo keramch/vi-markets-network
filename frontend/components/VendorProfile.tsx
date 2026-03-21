@@ -49,7 +49,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
           <div className="md:col-span-1 p-8 bg-brand-cream flex flex-col items-center justify-center text-center">
               {(vendor.logoUrl || vendor.photos?.[0])
                 ? <img className="w-40 h-40 rounded-full object-cover mb-4 border-4 border-white shadow-lg" src={vendor.logoUrl || vendor.photos[0]} alt={`${vendor.name} logo`} />
-                : <div className="w-40 h-40 rounded-full mb-4 border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center"><span className="text-brand-blue text-5xl font-bold font-serif">{vendor.name[0]}</span></div>
+                : <div className="w-40 h-40 rounded-full mb-4 border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center"><span className="text-brand-blue text-5xl font-serif">{vendor.name[0]}</span></div>
               }
               <span className="text-sm font-semibold text-brand-light-blue uppercase tracking-wider">{vendor.category}</span>
               <div className="flex items-center gap-2">
@@ -96,13 +96,13 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
             <div className="space-y-6">
                 {vendor.originStory && (
                     <div>
-                        <h3 className="text-lg font-bold text-brand-blue font-serif mb-2">Our Story</h3>
+                        <h3 className="text-lg text-brand-blue font-serif mb-2">Our Story</h3>
                         <p className="text-brand-text text-sm">{vendor.originStory}</p>
                     </div>
                 )}
                 {vendor.productHighlights && vendor.productHighlights.length > 0 && (
                     <div>
-                        <h3 className="text-lg font-bold text-brand-blue font-serif mb-2">Product Highlights</h3>
+                        <h3 className="text-lg text-brand-blue font-serif mb-2">Product Highlights</h3>
                         <ul className="list-disc list-inside text-brand-text space-y-1 text-sm">
                             {vendor.productHighlights.map(highlight => <li key={highlight}>{highlight}</li>)}
                         </ul>
@@ -142,19 +142,19 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gray-200">
             <div className="bg-white p-6">
-    <h3 className="text-lg font-bold text-brand-blue font-serif mb-3">Contact</h3>
+    <h3 className="text-lg text-brand-blue font-serif mb-3">Contact</h3>
     {vendor.contact?.email && <a href={`mailto:${vendor.contact?.email}`} className="text-brand-light-blue hover:underline block truncate">{vendor.contact?.email}</a>}
     {vendor.contact?.website && <a href={`https://${vendor.contact?.website}`} target="_blank" rel="noopener noreferrer" className="text-brand-light-blue hover:underline block truncate">{vendor.contact?.website}</a>}
 </div>
              <div className="bg-white p-6">
-                <h3 className="text-lg font-bold text-brand-blue font-serif mb-3">Find Us At</h3>
+                <h3 className="text-lg text-brand-blue font-serif mb-3">Find Us At</h3>
                 {vendorMarkets.map(market => (
                     <p key={market.id} onClick={() => onSelectMarket(market.id)} className="text-brand-text hover:text-brand-blue cursor-pointer">{market.name}</p>
                 ))}
             </div>
             {vendor.photos && vendor.photos.length > 0 && (
               <div className="bg-white p-6">
-                <h3 className="text-lg font-bold text-brand-blue font-serif mb-3">Gallery</h3>
+                <h3 className="text-lg text-brand-blue font-serif mb-3">Gallery</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {vendor.photos.map((photo, index) => (
                     <img key={index} src={photo} alt={`${vendor.name} photo ${index + 1}`} className="w-full h-28 rounded-md object-cover" />
@@ -165,7 +165,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
         </div>
         
         <div className="p-6 md:p-8 border-t">
-          <h2 className="text-2xl font-bold text-brand-blue font-serif mb-6">Get in Touch</h2>
+          <h2 className="text-2xl text-brand-blue font-serif mb-6">Get in Touch</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
     <div>
         {vendor.contact?.socials && (
@@ -185,7 +185,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
         </div>
 
          <div className="p-6 md:p-8 border-t">
-            <h2 className="text-2xl font-bold text-brand-blue font-serif mb-4">Reviews</h2>
+            <h2 className="text-2xl text-brand-blue font-serif mb-4">Reviews</h2>
             {currentUser && <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>}
             <div className="space-y-6">
                 {approvedReviews.length > 0 ? approvedReviews.map(review => (
