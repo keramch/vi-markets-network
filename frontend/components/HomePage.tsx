@@ -734,14 +734,12 @@ const HomePage: React.FC<HomePageProps> = ({
                       key={item.data.id}
                       market={item.data as Market}
                       onSelect={onSelectMarket}
-                      featured
                     />
                   ) : (
                     <VendorCard
                       key={item.data.id}
                       vendor={item.data as Vendor}
                       onSelect={onSelectVendor}
-                      featured
                     />
                   )
                 )}
