@@ -171,7 +171,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   return (
     <main className="min-h-screen bg-brand-cream">
       {/* Hero */}
-      <div className="bg-brand-blue text-white py-12 px-4 text-center">
+      <div id="pagetop-header" className="bg-brand-blue text-white py-12 px-4 text-center">
         <h1 className="text-4xl font-extrabold font-serif mb-2">Join VI Markets</h1>
         <p className="text-brand-light-blue text-lg">
           Connect with local markets and shoppers across Vancouver Island

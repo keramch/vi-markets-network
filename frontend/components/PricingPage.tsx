@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 
 interface PricingPageProps {
   onBack: () => void;
+  onSignup: () => void;
 }
 
-const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
+const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignup }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const monthly = { standard: 5, pro: 12 };
@@ -15,13 +16,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
   return (
     <main className="min-h-screen bg-brand-cream">
       {/* Hero */}
-      <div className="bg-brand-blue text-white py-16 px-4 text-center">
-        <button
-          onClick={onBack}
-          className="absolute left-6 top-6 text-brand-light-blue hover:text-white text-sm font-medium hidden md:block"
-        >
-          ← Back
-        </button>
+      <div id="pagetop-header" className="bg-brand-blue text-white py-16 px-4 text-center">
         <h1 className="text-4xl md:text-5xl font-extrabold font-serif mb-3">
           Simple, Honest Pricing
         </h1>
@@ -150,6 +145,15 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack }) => {
           <p className="text-center text-xs text-gray-500 mt-6">
             All prices in CAD. Annual plans save 25%. Founding beta members pay $0 — forever.
           </p>
+
+          <div className="text-center mt-10">
+            <button
+              onClick={onSignup}
+              className="bg-brand-gold text-white px-8 py-3 rounded-full font-semibold text-lg hover:bg-brand-gold/90 transition-colors"
+            >
+              Claim Your Spot
+            </button>
+          </div>
         </div>
 
         {/* Phase 2 preview */}

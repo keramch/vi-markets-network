@@ -654,7 +654,7 @@ const renderView = () => {
           }}
         />;
       case 'pricing':
-        return <PricingPage onBack={() => handleNavigate({ type: 'home' })} />;
+        return <PricingPage onBack={() => handleNavigate({ type: 'home' })} onSignup={() => handleNavigate({ type: 'signup' })} />;
       default:
         return homePage;
     }

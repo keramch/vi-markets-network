@@ -422,7 +422,7 @@ const HomePage: React.FC<HomePageProps> = ({
   return (
     <main>
       {/* Hero section */}
-      <div className="relative bg-brand-blue text-white py-16 px-4 text-center">
+      <div id="pagetop-header" className="relative bg-brand-blue text-white py-16 px-4 text-center">
         <div className="relative z-10">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 font-serif">
             Your Guide to Island Markets
