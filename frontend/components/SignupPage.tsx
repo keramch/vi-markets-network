@@ -18,7 +18,7 @@ interface SignupPageProps {
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 const BETA_INVITE_CODE = import.meta.env.VITE_BETA_INVITE_CODE ?? '';
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 function StepDots({ step }: { step: number }) {
   return (
@@ -58,8 +58,9 @@ function StepDots({ step }: { step: number }) {
 
 const STEP_TITLES: Record<number, string> = {
   1: 'What brings you to VI Markets?',
-  2: 'Create your account',
-  3: 'Your profile basics',
+  2: 'Before you continue',
+  3: 'Create your account',
+  4: 'Your profile basics',
 };
 
 const SignupPage: React.FC<SignupPageProps> = ({
@@ -73,27 +74,27 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
 
   // Wizard navigation
-  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Step 1
   const [accountType, setAccountType] = useState<AccountType | null>(null);
 
-  // Step 2
+  // Step 3 (account details)
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [googleMsg, setGoogleMsg] = useState('');
-  const [errors2, setErrors2] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
+  const [errors3, setErrors3] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
 
-  // Step 3
+  // Step 4 (profile)
   const [businessName, setBusinessName] = useState('');
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
-  const [errors3, setErrors3] = useState<Partial<Record<'businessName' | 'city', string>>>({});
+  const [errors4, setErrors4] = useState<Partial<Record<'businessName' | 'city', string>>>({});
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,21 +104,22 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   const validate = (): boolean => {
     if (wizardStep === 1) return accountType !== null;
-    if (wizardStep === 2) {
-      const e: typeof errors2 = {};
+    if (wizardStep === 2) return true; // agreements — consent given by clicking the button
+    if (wizardStep === 3) {
+      const e: typeof errors3 = {};
       if (!firstName.trim()) e.firstName = 'First name is required';
       if (!lastName.trim()) e.lastName = 'Last name is required';
       if (!/\S+@\S+\.\S+/.test(email.trim())) e.email = 'Enter a valid email address';
       if (password.length < 8) e.password = 'Password must be at least 8 characters';
-      setErrors2(e);
+      setErrors3(e);
       return Object.keys(e).length === 0;
     }
-    if (wizardStep === 3) {
-      const e: typeof errors3 = {};
+    if (wizardStep === 4) {
+      const e: typeof errors4 = {};
       if (!businessName.trim())
         e.businessName = accountType === 'market' ? 'Market name is required' : 'Business name is required';
       if (!city.trim()) e.city = 'City is required';
-      setErrors3(e);
+      setErrors4(e);
       return Object.keys(e).length === 0;
     }
     return true;
@@ -125,7 +127,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   const goNext = async () => {
     if (!validate()) return;
-    if (wizardStep === 3) {
+    if (wizardStep === 4) {
       setIsSubmitting(true);
       setSubmitError('');
       try {
@@ -147,12 +149,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
         setIsSubmitting(false);
       }
     } else {
-      setWizardStep((s) => (s + 1) as 1 | 2 | 3);
+      setWizardStep((s) => (s + 1) as 1 | 2 | 3 | 4);
     }
   };
 
   const goBack = () => {
-    if (wizardStep > 1) setWizardStep((s) => (s - 1) as 1 | 2 | 3);
+    if (wizardStep > 1) setWizardStep((s) => (s - 1) as 1 | 2 | 3 | 4);
   };
 
   const handleStepEnter = (e: React.KeyboardEvent) => {
@@ -294,8 +296,57 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 </div>
               )}
 
-              {/* ── Step 2: Create account ───────────────────────────────── */}
+              {/* ── Step 2: Agreements ───────────────────────────────────── */}
               {wizardStep === 2 && (
+                <div className="space-y-5">
+                  <p className="text-gray-600 text-sm text-center -mt-4 mb-2">
+                    By creating a VI Markets account you agree to a few simple things:
+                  </p>
+                  <ul className="space-y-3">
+                    {[
+                      'Your profile information should be accurate and kept up to date',
+                      'Be respectful — this is a community platform',
+                      "VI Markets is a directory and toolset — we're not responsible for outcomes between markets, vendors, or the public",
+                      'Free accounts are free forever. Paid subscriptions renew automatically unless you choose manual renewal',
+                      'You can cancel or delete your account any time',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <span className="text-brand-gold mt-0.5 flex-shrink-0">✓</span>
+                        <span className="text-gray-700 text-sm">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-sm text-gray-500 pt-1">
+                    Want to read the full details?{' '}
+                    <button
+                      type="button"
+                      onClick={() => onNavigate({ type: 'terms' })}
+                      className="text-brand-blue hover:underline"
+                    >
+                      Terms of Use
+                    </button>
+                    {', '}
+                    <button
+                      type="button"
+                      onClick={() => onNavigate({ type: 'memberAgreement' })}
+                      className="text-brand-blue hover:underline"
+                    >
+                      Member Agreement
+                    </button>
+                    {', '}
+                    <button
+                      type="button"
+                      onClick={() => onNavigate({ type: 'privacy' })}
+                      className="text-brand-blue hover:underline"
+                    >
+                      Privacy Policy
+                    </button>
+                  </p>
+                </div>
+              )}
+
+              {/* ── Step 3: Create account ───────────────────────────────── */}
+              {wizardStep === 3 && (
                 <div className="space-y-4">
                   {/* Google sign-in */}
                   <button
@@ -352,7 +403,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         placeholder="Jane"
                         autoComplete="given-name"
                       />
-                      {errors2.firstName && <p className={errCls}>{errors2.firstName}</p>}
+                      {errors3.firstName && <p className={errCls}>{errors3.firstName}</p>}
                     </div>
                     <div>
                       <label className={labelCls}>Last Name</label>
@@ -365,7 +416,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         placeholder="Smith"
                         autoComplete="family-name"
                       />
-                      {errors2.lastName && <p className={errCls}>{errors2.lastName}</p>}
+                      {errors3.lastName && <p className={errCls}>{errors3.lastName}</p>}
                     </div>
                   </div>
 
@@ -380,7 +431,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       placeholder="jane@example.com"
                       autoComplete="email"
                     />
-                    {errors2.email && <p className={errCls}>{errors2.email}</p>}
+                    {errors3.email && <p className={errCls}>{errors3.email}</p>}
                   </div>
 
                   <div>
@@ -405,13 +456,13 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         {showPassword ? 'Hide' : 'Show'}
                       </button>
                     </div>
-                    {errors2.password && <p className={errCls}>{errors2.password}</p>}
+                    {errors3.password && <p className={errCls}>{errors3.password}</p>}
                   </div>
                 </div>
               )}
 
-              {/* ── Step 3: Basic profile ────────────────────────────────── */}
-              {wizardStep === 3 && (
+              {/* ── Step 4: Basic profile ────────────────────────────────── */}
+              {wizardStep === 4 && (
                 <div className="space-y-5">
                   <div>
                     <label className={labelCls}>
@@ -429,7 +480,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                           : 'e.g. Green Thumb Organics'
                       }
                     />
-                    {errors3.businessName && <p className={errCls}>{errors3.businessName}</p>}
+                    {errors4.businessName && <p className={errCls}>{errors4.businessName}</p>}
                   </div>
 
                   <div>
@@ -442,7 +493,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       className={inputCls}
                       placeholder="e.g. Victoria, BC"
                     />
-                    {errors3.city && <p className={errCls}>{errors3.city}</p>}
+                    {errors4.city && <p className={errCls}>{errors4.city}</p>}
                   </div>
 
                   <ImageUploader
@@ -501,7 +552,13 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   disabled={(wizardStep === 1 && accountType === null) || isSubmitting}
                   className="bg-brand-blue text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-blue/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Creating…' : wizardStep === 3 ? 'Create Profile' : 'Continue →'}
+                  {isSubmitting
+                    ? 'Creating…'
+                    : wizardStep === 2
+                    ? 'I agree — Continue'
+                    : wizardStep === 4
+                    ? 'Create Profile'
+                    : 'Continue →'}
                 </button>
               </div>
             </div>

@@ -28,7 +28,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignup }) => {
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Beta callout */}
         <div className="border-2 border-brand-gold bg-brand-cream rounded-2xl p-8 text-center mb-14">
-          <p className="text-2xl font-bold text-brand-blue mb-3">🌿 You're early. That means something.</p>
+          <p className="text-2xl font-bold text-brand-blue mb-3">🌿 Thanks for joining us. We're thrilled to have you here.</p>
           <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Everyone who joins during our founding beta gets free access for life — no subscription required,
             no expiry date. As the platform grows and paid tiers activate, your access stays free. Always.

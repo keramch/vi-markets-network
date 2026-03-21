@@ -32,6 +32,9 @@ import SignupPage from './components/SignupPage';
 import BrowsePage from './components/BrowsePage';
 import PricingPage from './components/PricingPage';
 import AboutPage from './components/AboutPage';
+import PrivacyPage from './components/PrivacyPage';
+import TermsOfUsePage from './components/TermsOfUsePage';
+import MemberAgreementPage from './components/MemberAgreementPage';
 
 
 // Local type kept for the membership modal UI (not tied to User data model)
@@ -662,6 +665,12 @@ const renderView = () => {
         return <PricingPage onBack={() => handleNavigate({ type: 'home' })} onSignup={() => handleNavigate({ type: 'signup' })} />;
       case 'about':
         return <AboutPage onSignup={() => handleNavigate({ type: 'signup' })} />;
+      case 'privacy':
+        return <PrivacyPage />;
+      case 'terms':
+        return <TermsOfUsePage />;
+      case 'memberAgreement':
+        return <MemberAgreementPage />;
       default:
         return homePage;
     }
@@ -882,12 +891,12 @@ const renderView = () => {
             </form>
             </div>
             <div className="mt-8 pt-4 border-t border-gray-700 text-center text-sm text-gray-400">
-                <div className="flex justify-center space-x-4 mb-2">
-                    <button onClick={() => handleNavigate({ type: 'termsOfService' })} className="hover:underline">Terms of Service</button>
-                    <span>|</span>
-                    <button onClick={() => handleNavigate({ type: 'privacyPolicy' })} className="hover:underline">Privacy Policy</button>
-                    <span>|</span>
-                    <button onClick={() => handleNavigate({ type: 'pricing' })} className="hover:underline">Membership & Pricing</button>
+                <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 mb-3">
+                    <button onClick={() => handleNavigate({ type: 'about' })} className="hover:text-white transition-colors">About</button>
+                    <a href="mailto:hello@vimarkets.ca" className="hover:text-white transition-colors">Contact</a>
+                    <button onClick={() => handleNavigate({ type: 'privacy' })} className="hover:text-white transition-colors">Privacy Policy</button>
+                    <button onClick={() => handleNavigate({ type: 'terms' })} className="hover:text-white transition-colors">Terms of Use</button>
+                    <button onClick={() => handleNavigate({ type: 'memberAgreement' })} className="hover:text-white transition-colors">Member Agreement</button>
                 </div>
                 &copy; {new Date().getFullYear()} VI Markets Network. All rights reserved.
             </div>

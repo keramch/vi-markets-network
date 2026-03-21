@@ -273,7 +273,10 @@ export type View =
   | { type: 'browseMarkets' }
   | { type: 'browseVendors' }
   | { type: 'pricing' }
-  | { type: 'about' };
+  | { type: 'about' }
+  | { type: 'privacy' }
+  | { type: 'terms' }
+  | { type: 'memberAgreement' };
 
 // ─── Phase 2A: New data model types ─────────────────────────────────────────
 
