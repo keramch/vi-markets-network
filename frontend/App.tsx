@@ -31,6 +31,7 @@ import ForgotPasswordForm from './components/ForgotPasswordForm';
 import SignupPage from './components/SignupPage';
 import BrowsePage from './components/BrowsePage';
 import PricingPage from './components/PricingPage';
+import AboutPage from './components/AboutPage';
 
 
 // Local type kept for the membership modal UI (not tied to User data model)
@@ -659,6 +660,8 @@ const renderView = () => {
         />;
       case 'pricing':
         return <PricingPage onBack={() => handleNavigate({ type: 'home' })} onSignup={() => handleNavigate({ type: 'signup' })} />;
+      case 'about':
+        return <AboutPage onSignup={() => handleNavigate({ type: 'signup' })} />;
       default:
         return homePage;
     }
