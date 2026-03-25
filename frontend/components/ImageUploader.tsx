@@ -17,7 +17,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   label,
   onFilesChanged,
   maxFiles = 1,
-  maxSizeKB = 2048,
+  maxSizeKB = 5120,
   allowedTypes = ['image/jpeg', 'image/png'],
   aspectRatio,
 }) => {
@@ -30,7 +30,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       return `Invalid file type. Please use ${allowedTypes.join(', ')}.`;
     }
     if (file.size > maxSizeKB * 1024) {
-      return `File size exceeds ${maxSizeKB}KB.`;
+      return `File size exceeds ${maxSizeKB / 1024}MB.`;
     }
     return null;
   };
@@ -110,7 +110,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             <p className="pl-1">or drag and drop</p>
           </div>
           <p className="text-xs text-gray-500" id={`${id}-description`}>
-            {allowedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} up to {maxSizeKB}KB.
+            {allowedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} up to {maxSizeKB / 1024}MB.
             {aspectRatio && ` Recommended aspect ratio: ${aspectRatio}.`}
           </p>
         </div>

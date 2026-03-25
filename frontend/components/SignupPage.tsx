@@ -17,7 +17,7 @@ interface SignupPageProps {
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
-const BETA_INVITE_CODE = import.meta.env.VITE_BETA_INVITE_CODE ?? '';
+const BETA_INVITE_CODE = import.meta.env.VITE_INVITE_CODE ?? '';
 const TOTAL_STEPS = 4;
 
 function StepDots({ step }: { step: number }) {
@@ -501,7 +501,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     label="Logo — optional, you can add this later"
                     onFilesChanged={setLogoFiles}
                     maxFiles={1}
-                    maxSizeKB={2048}
+                    maxSizeKB={5120}
                     allowedTypes={['image/jpeg', 'image/png']}
                     aspectRatio="1:1 (Square)"
                   />

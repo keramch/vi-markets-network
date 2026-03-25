@@ -703,7 +703,7 @@ const renderView = () => {
             label="Profile Logo (1 image)"
             onFilesChanged={setLogoFiles}
             maxFiles={1}
-            maxSizeKB={2048}
+            maxSizeKB={5120}
             allowedTypes={['image/jpeg', 'image/png']}
             aspectRatio="1:1 (Square)"
         />
@@ -713,7 +713,7 @@ const renderView = () => {
             label="Gallery Photos (up to 5 images)"
             onFilesChanged={setGalleryFiles}
             maxFiles={5}
-            maxSizeKB={2048}
+            maxSizeKB={5120}
             allowedTypes={['image/jpeg', 'image/png']}
             aspectRatio="16:9 (Widescreen)"
         />
