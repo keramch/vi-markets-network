@@ -143,6 +143,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         });
         onSignupSuccess(user);
         setIsSuccess(true);
+        window.scrollTo(0, 0);
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
       } finally {

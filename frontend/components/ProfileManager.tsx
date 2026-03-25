@@ -316,7 +316,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   }
   
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
         &larr; {isAdmin ? 'Back to Market HQ' : 'Back to home'}
       </button>
