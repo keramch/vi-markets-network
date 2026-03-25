@@ -8,7 +8,7 @@ import type {
   Review,
   VendorTag,
 } from "../types";
-import { MarketCategories, VendorCategories, VendorTags } from "../types";
+import { MarketCategories, VendorCategoriesByType } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
 import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
@@ -52,54 +52,54 @@ const noResultsMessages = [
 ];
 
 // --- Tag groups for More Filters panel ---
-const TAG_GROUPS: { label: string; tags: VendorTag[] }[] = [
+const TAG_GROUPS: { label: string; tags: string[] }[] = [
   {
     label: "Food & Dietary",
     tags: [
-      VendorTags.GLUTEN_FREE,
-      VendorTags.VEGAN,
-      VendorTags.DAIRY_FREE,
-      VendorTags.NUT_FREE,
-      VendorTags.KETO,
-      VendorTags.READY_TO_EAT,
+      "Gluten-Free",
+      "Vegan",
+      "Dairy-Free",
+      "Nut-Free",
+      "Keto",
+      "Ready to Eat",
     ],
   },
   {
     label: "Handmade & Craft",
     tags: [
-      VendorTags.HANDMADE,
-      VendorTags.COMMERCIAL_RESELLER,
-      VendorTags.METAL,
-      VendorTags.NON_METAL_JEWELRY,
-      VendorTags.BEADWORK,
-      VendorTags.WOOD,
-      VendorTags.LEATHER,
-      VendorTags.CERAMIC,
-      VendorTags.GLASS,
-      VendorTags.TEXTILE,
+      "Handmade",
+      "Commercial/Reseller",
+      "Metal",
+      "Non-Metal (Jewelry)",
+      "Beadwork",
+      "Wood",
+      "Leather",
+      "Ceramic",
+      "Glass",
+      "Textile",
     ],
   },
   {
     label: "Values & Ethics",
     tags: [
-      VendorTags.ORGANIC,
-      VendorTags.LOCAL_INGREDIENTS,
-      VendorTags.LOCALLY_DESIGNED,
-      VendorTags.ETHICAL,
-      VendorTags.FAIR_TRADE,
-      VendorTags.SUSTAINABLE,
-      VendorTags.FAMILY_FARM,
-      VendorTags.UPCYCLED_RECYCLED,
-      VendorTags.NON_PROFIT,
+      "Organic",
+      "Local Ingredients",
+      "Locally Designed",
+      "Ethical",
+      "Fair Trade",
+      "Sustainable",
+      "Family Farm",
+      "Upcycled/Recycled",
+      "Non-Profit",
     ],
   },
   {
     label: "Seasonal / Special",
     tags: [
-      VendorTags.CHRISTMAS_HOLIDAY,
-      VendorTags.FANTASY_FAERIE,
-      VendorTags.CRYSTALS_METAPHYSICAL,
-      VendorTags.MINIATURES,
+      "Christmas/Holiday",
+      "Fantasy/Faerie",
+      "Crystals/Metaphysical",
+      "Miniatures",
     ],
   },
 ];
@@ -481,7 +481,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 value={selectedVendorCategory}
                 onChange={(val) => setSelectedVendorCategory(val as VendorCategory | "all")}
                 placeholder="Vendor Product"
-                options={Object.values(VendorCategories) as VendorCategory[]}
+                options={Object.values(VendorCategoriesByType).flat()}
               />
 
               {/* Sort select */}

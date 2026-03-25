@@ -50,76 +50,49 @@ export const MarketCategories = {
 } as const;
 export type MarketCategory = typeof MarketCategories[keyof typeof MarketCategories];
 
-export const VendorCategories = {
-  // Food & Drink
-  PRODUCE: "Produce",
-  BAKERY: "Bakery",
-  DAIRY_CHEESE: "Dairy & Cheese",
-  MEAT_SEAFOOD: "Meat & Seafood",
-  PREPARED_FOODS: "Prepared Foods", // Preserves, condiments, candy, etc.
-  BEVERAGES: "Beverages",
-
-  // Handmade Goods & Wares
-  APPAREL_TEXTILES: "Apparel & Textiles", // Clothing, all fibre arts
-  ART_DECOR: "Art & Decor", // Fine art, photography, home decor
-  BODY_CARE: "Body Care", // Soaps, lotions, healing arts
-  JEWELRY: "Jewelry", // All jewelry types
-  KIDS_TOYS: "Kids & Toys", // Children's items, dolls, toys
-  PAPER_GOODS: "Paper Goods", // Books, cards, stationery
-  PET_SUPPLIES: "Pet Supplies",
-  POTTERY_GLASS: "Pottery & Glass", // Ceramics, pottery, glasswork
-  WOOD_LEATHER_METAL: "Wood, Leather & Metal",
-  SPECIALTY_CRAFTS: "Specialty Crafts", // Candles, etc.
+export const VendorTypes = {
+  FARMER_GROWER: "Farmer / Grower",
+  FOOD_PRODUCER: "Food Producer",
+  READY_TO_EAT: "Ready-to-Eat / Food Stall",
+  ARTIST_MAKER: "Artist / Maker / Crafter",
   VINTAGE_COLLECTIBLE: "Vintage & Collectible",
-
-  // Plants
-  PLANTS_FLOWERS: "Plants & Flowers",
+  WELLNESS_BODY: "Wellness & Body",
+  SERVICES: "Services",
+  PET_PRODUCTS: "Pet Products",
+  BOOKS_MUSIC: "Books & Music",
+  COMMERCIAL_RESELLER: "Commercial / Reseller",
 } as const;
+export type VendorType = typeof VendorTypes[keyof typeof VendorTypes];
 
-export type VendorCategory = typeof VendorCategories[keyof typeof VendorCategories];
+export const VendorCategoriesByType: Record<string, string[]> = {
+  "Farmer / Grower": ["Produce", "Meat & Seafood", "Dairy & Eggs", "Plants & Flowers", "Herbs & Spices"],
+  "Food Producer": ["Bakery", "Preserves & Condiments", "Beverages", "Prepared Foods"],
+  "Ready-to-Eat / Food Stall": ["Street Food", "Ready-to-Eat Meals", "Food Truck", "Juices & Smoothies", "Coffee & Tea", "Brewery / Distillery"],
+  "Artist / Maker / Crafter": ["Paintings & Drawings", "Prints & Posters", "Sculptures", "Photography", "Jewelry", "Pottery & Glass", "Textiles & Fibre Art", "Wood & Leather", "Home Decor", "Apparel", "Candles", "Paper Goods", "Children's Clothing", "Toys & Games", "Educational Products"],
+  "Vintage & Collectible": ["Antique Furniture", "Vintage Clothing", "Collectible Memorabilia", "Books & Media"],
+  "Wellness & Body": ["Soap & Skincare", "Cosmetics", "Essential Oils", "Crystals"],
+  "Services": ["Repair Services", "Face Painting", "Henna Art", "Massage", "Tarot & Metaphysical", "Music"],
+  "Pet Products": ["Pet Food & Treats", "Pet Accessories", "Pet Toys"],
+  "Books & Music": ["Author", "Recording Artist", "New & Used Books", "CDs & Vinyl", "Musical Instruments"],
+  "Commercial / Reseller": ["Independent Distributor", "MLM", "Bulk Reseller", "Lot Buyer"],
+};
 
-export const VendorTags = {
-    // Sourcing & Ethics
-    ORGANIC: "Organic",
-    LOCAL_INGREDIENTS: "Local Ingredients",
-    LOCALLY_DESIGNED: "Locally Designed",
-    ETHICAL: "Ethical",
-    FAIR_TRADE: "Fair Trade",
-    SUSTAINABLE: "Sustainable",
-    FAMILY_FARM: "Family Farm",
-    UPCYCLED_RECYCLED: "Upcycled/Recycled",
+export const VendorTagsByType: Record<string, string[]> = {
+  "Farmer / Grower": ["Organic", "Family Farm", "Sustainable", "Pesticide-Free", "Free Range", "Grass Fed", "Hydroponic"],
+  "Food Producer": ["Organic", "Local Ingredients", "Gluten-Free", "Vegan", "Dairy-Free", "Nut-Free", "Keto", "Fair Trade", "Sustainable", "Imported Ingredients", "Global Flavours"],
+  "Ready-to-Eat / Food Stall": ["Gluten-Free", "Vegan", "Dairy-Free", "Nut-Free", "Keto", "Ready to Eat", "Beer", "Wine", "Cider", "Spirits"],
+  "Artist / Maker / Crafter": ["Handmade", "Local Materials", "Upcycled/Recycled", "Sustainable", "Ethical", "Prints Available", "Original Artwork", "Commissions Available", "Macrame", "Wearable Art", "Functional", "Accessories", "Kitchen", "Screenprinting", "Sublimation", "3D Printing", "Stickers", "Fantasy/Faerie/Magic", "Weaving", "Knit/Crochet", "Sewing"],
+  "Vintage & Collectible": ["Antique", "Upcycled/Recycled"],
+  "Wellness & Body": ["Organic", "Handmade", "Vegan", "Cruelty-Free", "Sustainable"],
+  "Services": [],
+  "Pet Products": ["Handmade", "Organic", "Vegan"],
+  "Books & Music": ["New", "Used", "Reseller (e.g. Usborne Books)", "Local Author", "Local Artist"],
+  "Commercial / Reseller": ["Norwex", "Sweetlegs", "Usborne Books", "doTERRA", "Young Living", "Arbonne", "Mary Kay", "Avon", "Tupperware", "Pampered Chef", "Scentsy", "Amway", "Herbalife", "Isagenix", "Forever Living", "Nu Skin", "Shaklee"],
+};
 
-    // Dietary
-    GLUTEN_FREE: "Gluten-Free",
-    VEGAN: "Vegan",
-    DAIRY_FREE: "Dairy-Free",
-    NUT_FREE: "Nut-Free",
-    KETO: "Keto",
-    READY_TO_EAT: "Ready to Eat",
-
-    // Attributes & Themes
-    HANDMADE: "Handmade",
-    COMMERCIAL_RESELLER: "Commercial/Reseller",
-    CHRISTMAS_HOLIDAY: "Christmas/Holiday",
-    FANTASY_FAERIE: "Fantasy/Faerie",
-    CRYSTALS_METAPHYSICAL: "Crystals/Metaphysical",
-    MINIATURES: "Miniatures",
-
-    // Materials
-    METAL: "Metal",
-    NON_METAL_JEWELRY: "Non-Metal (Jewelry)",
-    BEADWORK: "Beadwork",
-    WOOD: "Wood",
-    LEATHER: "Leather",
-    CERAMIC: "Ceramic",
-    GLASS: "Glass",
-    TEXTILE: "Textile",
-
-    // Organization Type
-    NON_PROFIT: "Non-Profit",
-} as const;
-
-export type VendorTag = typeof VendorTags[keyof typeof VendorTags];
+// Kept for backwards compatibility with Market.allowedVendorCategories
+export type VendorCategory = string;
+export type VendorTag = string;
 
 export const DayOfWeek = {
   SUNDAY: 'Sunday',
@@ -188,8 +161,11 @@ export interface Vendor {
   name: string;
   logoUrl?: string;
   description: string;
-  category: VendorCategory;
-  tags?: VendorTag[];
+  vendorTypes?: VendorType[];
+  categories?: string[];
+  tags?: string[];
+  /** @deprecated use vendorTypes */
+  category?: VendorCategory;
   photos: string[];
   contact: Contact;
   priceRange: 'affordable' | 'moderate' | 'premium';

@@ -1,8 +1,8 @@
 
 
 import React, { useState, useEffect } from 'react';
-import type { Market, Vendor, MarketAmenity, PaymentOption, Review, VendorTag, VendorCategory, Application, User, ScheduleRule } from '../types';
-import { MarketAmenities, PaymentOptions, DayOfWeek, VendorTags, VendorCategories } from '../types';
+import type { Market, Vendor, MarketAmenity, PaymentOption, Review, VendorCategory, Application, User, ScheduleRule } from '../types';
+import { MarketAmenities, PaymentOptions, DayOfWeek, VendorTypes, VendorCategoriesByType, VendorTagsByType } from '../types';
 import ImageUploader from './ImageUploader';
 import { getDistance } from '../utils';
 import { WarningIcon, InboxIcon, RibbonIcon } from './Icons';
@@ -93,17 +93,17 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   };
   
   const handleCheckboxChange = (
-      e: React.ChangeEvent<HTMLInputElement>, 
-      group: 'amenities' | 'paymentOptions' | 'tags' | 'allowedVendorCategories'
+      e: React.ChangeEvent<HTMLInputElement>,
+      group: 'amenities' | 'paymentOptions' | 'tags' | 'allowedVendorCategories' | 'vendorTypes' | 'categories'
   ) => {
     const { value, checked } = e.target;
-    
-    if (group === 'tags' && !isMarket(formData)) {
-        const currentValues = formData.tags || [];
-        const newValues = checked 
-            ? [...currentValues, value] 
+
+    if ((group === 'tags' || group === 'vendorTypes' || group === 'categories') && !isMarket(formData)) {
+        const currentValues = (formData[group] as string[]) || [];
+        const newValues = checked
+            ? [...currentValues, value]
             : currentValues.filter(item => item !== value);
-        setFormData({ ...formData, tags: newValues as VendorTag[] });
+        setFormData({ ...formData, [group]: newValues });
         return;
     }
 
@@ -189,7 +189,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             <h3 className="text-lg font-semibold text-brand-blue mb-2">Allowed Vendor Categories</h3>
             <p className="text-sm text-gray-500 mb-3">Select which vendor categories can apply to your market. If none are selected, all categories are allowed.</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {Object.values(VendorCategories).map(cat => (
+                {[...new Set(Object.values(VendorCategoriesByType).flat())].map(cat => (
                     <label key={cat} className="flex items-center">
                         <input 
                             type="checkbox"
@@ -469,23 +469,68 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                     ) : (
                          <>
                             <div className="border-t pt-6">
-                                <h3 className="text-lg font-semibold text-brand-blue mb-2">Tags</h3>
-                                <p className="text-sm text-gray-500 mb-3">Select all tags that apply to your products. This helps customers find you.</p>
+                                <h3 className="text-lg font-semibold text-brand-blue mb-2">Vendor Type</h3>
+                                <p className="text-sm text-gray-500 mb-3">Select all types that describe your business.</p>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {Object.values(VendorTags).map(tag => (
-                                        <label key={tag} className="flex items-center">
-                                            <input 
+                                    {Object.values(VendorTypes).map(vt => (
+                                        <label key={vt} className="flex items-center">
+                                            <input
                                                 type="checkbox"
-                                                value={tag}
-                                                checked={formData.tags?.includes(tag as VendorTag)}
-                                                onChange={(e) => handleCheckboxChange(e, 'tags')}
+                                                value={vt}
+                                                checked={formData.vendorTypes?.includes(vt) || false}
+                                                onChange={(e) => handleCheckboxChange(e, 'vendorTypes')}
                                                 className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
                                             />
-                                            <span className="ml-2 text-sm text-gray-600">{tag}</span>
+                                            <span className="ml-2 text-sm text-gray-600">{vt}</span>
                                         </label>
                                     ))}
                                 </div>
                             </div>
+                            {formData.vendorTypes && formData.vendorTypes.length > 0 ? (
+                                <>
+                                    <div className="border-t pt-6">
+                                        <h3 className="text-lg font-semibold text-brand-blue mb-2">Categories</h3>
+                                        <p className="text-sm text-gray-500 mb-3">Select the categories that best describe what you sell.</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[...new Set(formData.vendorTypes.flatMap(vt => VendorCategoriesByType[vt] || []))].map(cat => (
+                                                <label key={cat} className="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        value={cat}
+                                                        checked={formData.categories?.includes(cat) || false}
+                                                        onChange={(e) => handleCheckboxChange(e, 'categories')}
+                                                        className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
+                                                    />
+                                                    <span className="ml-2 text-sm text-gray-600">{cat}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {[...new Set(formData.vendorTypes.flatMap(vt => VendorTagsByType[vt] || []))].length > 0 && (
+                                        <div className="border-t pt-6">
+                                            <h3 className="text-lg font-semibold text-brand-blue mb-2">Tags</h3>
+                                            <p className="text-sm text-gray-500 mb-3">Select all tags that apply to your products. This helps customers find you.</p>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[...new Set(formData.vendorTypes.flatMap(vt => VendorTagsByType[vt] || []))].map(tag => (
+                                                    <label key={tag} className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            value={tag}
+                                                            checked={formData.tags?.includes(tag) || false}
+                                                            onChange={(e) => handleCheckboxChange(e, 'tags')}
+                                                            className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
+                                                        />
+                                                        <span className="ml-2 text-sm text-gray-600">{tag}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <p className="mt-3 text-xs text-gray-400">Don't see the right tags? Let us know</p>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-sm text-gray-400 italic pt-2">Select a vendor type above to see relevant categories and tags.</p>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Origin Story</label>
                                 <textarea name="originStory" value={formData.originStory || ''} onChange={handleChange} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { View, User } from '../types';
+import { VendorTypes } from '../types';
 import * as api from '../services/api.live';
 import ImageUploader from './ImageUploader';
 import { CheckIcon } from './Icons';
@@ -94,6 +95,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
+  const [vendorTypes, setVendorTypes] = useState<string[]>([]);
   const [errors4, setErrors4] = useState<Partial<Record<'businessName' | 'city', string>>>({});
 
   // Submission
@@ -140,6 +142,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           businessName: businessName.trim(),
           city: city.trim(),
           description: description.trim() || undefined,
+          vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
         });
         onSignupSuccess(user);
         setIsSuccess(true);
@@ -496,6 +499,30 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     />
                     {errors4.city && <p className={errCls}>{errors4.city}</p>}
                   </div>
+
+                  {accountType === 'vendor' && (
+                    <div>
+                      <label className={labelCls}>Vendor Type</label>
+                      <p className="text-xs text-gray-400 mb-2">Select all that apply — you can update this later.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.values(VendorTypes).map(vt => (
+                          <label key={vt} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              value={vt}
+                              checked={vendorTypes.includes(vt)}
+                              onChange={(e) => {
+                                const { value, checked } = e.target;
+                                setVendorTypes(prev => checked ? [...prev, value] : prev.filter(t => t !== value));
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">{vt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <ImageUploader
                     id="signup-logo"
