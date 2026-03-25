@@ -51,7 +51,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
                 ? <img className="w-40 h-40 rounded-full object-cover mb-4 border-4 border-white shadow-lg" src={vendor.logoUrl || vendor.photos[0]} alt={`${vendor.name} logo`} />
                 : <div className="w-40 h-40 rounded-full mb-4 border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center"><span className="text-brand-blue text-5xl font-serif">{vendor.name[0]}</span></div>
               }
-              <span className="text-sm font-semibold text-brand-light-blue uppercase tracking-wider">{vendor.category}</span>
+              <span className="text-sm font-semibold text-brand-light-blue uppercase tracking-wider">{vendor.vendorTypes && vendor.vendorTypes.length > 0 ? vendor.vendorTypes.join(' · ') : vendor.category}</span>
               <div className="flex items-center gap-2">
                 {isFoundingMember && (
                     <div className="text-brand-gold" title="Founding Member">

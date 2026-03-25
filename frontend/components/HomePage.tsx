@@ -4,11 +4,10 @@ import type {
   Vendor,
   Coordinates,
   MarketCategory,
-  VendorCategory,
+  VendorType,
   Review,
-  VendorTag,
 } from "../types";
-import { MarketCategories, VendorCategoriesByType } from "../types";
+import { MarketCategories, VendorTypes } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
 import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
@@ -51,57 +50,11 @@ const noResultsMessages = [
   "🌊 No matches found — take a deep breath of salty air and try again.",
 ];
 
-// --- Tag groups for More Filters panel ---
-const TAG_GROUPS: { label: string; tags: string[] }[] = [
-  {
-    label: "Food & Dietary",
-    tags: [
-      "Gluten-Free",
-      "Vegan",
-      "Dairy-Free",
-      "Nut-Free",
-      "Keto",
-      "Ready to Eat",
-    ],
-  },
-  {
-    label: "Handmade & Craft",
-    tags: [
-      "Handmade",
-      "Commercial/Reseller",
-      "Metal",
-      "Non-Metal (Jewelry)",
-      "Beadwork",
-      "Wood",
-      "Leather",
-      "Ceramic",
-      "Glass",
-      "Textile",
-    ],
-  },
-  {
-    label: "Values & Ethics",
-    tags: [
-      "Organic",
-      "Local Ingredients",
-      "Locally Designed",
-      "Ethical",
-      "Fair Trade",
-      "Sustainable",
-      "Family Farm",
-      "Upcycled/Recycled",
-      "Non-Profit",
-    ],
-  },
-  {
-    label: "Seasonal / Special",
-    tags: [
-      "Christmas/Holiday",
-      "Fantasy/Faerie",
-      "Crystals/Metaphysical",
-      "Miniatures",
-    ],
-  },
+// --- Flat tag list for More Filters panel ---
+const SHOPPER_TAGS = [
+  "Organic", "Vegan", "Gluten-Free", "Dairy-Free", "Nut-Free",
+  "Keto", "Ready to Eat", "Handmade", "Sustainable", "Fair Trade",
+  "Upcycled/Recycled", "Cruelty-Free", "Local Ingredients", "Family Farm",
 ];
 
 // --- Chevron icon (inline, no extra import needed) ---
@@ -184,9 +137,9 @@ const HomePage: React.FC<HomePageProps> = ({
 
   const [selectedMarketCategory, setSelectedMarketCategory] =
     useState<MarketCategory | "all">("all");
-  const [selectedVendorCategory, setSelectedVendorCategory] =
-    useState<VendorCategory | "all">("all");
-  const [selectedVendorTags, setSelectedVendorTags] = useState<VendorTag[]>([]);
+  const [selectedVendorTypes, setSelectedVendorTypes] =
+    useState<VendorType | "all">("all");
+  const [selectedVendorTags, setSelectedVendorTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"match" | "distance">("match");
 
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
@@ -197,7 +150,7 @@ const HomePage: React.FC<HomePageProps> = ({
   // card width (w-36 = 144px) + gap (gap-3 = 12px)
   const CARD_STEP = 156;
 
-  const handleTagSelection = (tag: VendorTag) => {
+  const handleTagSelection = (tag: string) => {
     setSelectedVendorTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
@@ -323,16 +276,16 @@ const HomePage: React.FC<HomePageProps> = ({
         fuzzySearch(
           searchTerm,
           `${vendor.name} ${vendor.description} ${
-            vendor.category
+            (vendor.vendorTypes || []).join(" ")
           } ${(vendor.tags || []).join(" ")}`
         );
-      const categoryMatch =
-        selectedVendorCategory === "all" ||
-        vendor.category === selectedVendorCategory;
+      const typeMatch =
+        selectedVendorTypes === "all" ||
+        (vendor.vendorTypes || []).includes(selectedVendorTypes);
       const tagMatch =
         selectedVendorTags.length === 0 ||
         selectedVendorTags.every((tag) => vendor.tags?.includes(tag));
-      return searchTextMatch && categoryMatch && tagMatch;
+      return searchTextMatch && typeMatch && tagMatch;
     });
 
     if (searchCenter) {
@@ -385,7 +338,7 @@ const HomePage: React.FC<HomePageProps> = ({
     activeMarkets,
     activeVendors,
     selectedMarketCategory,
-    selectedVendorCategory,
+    selectedVendorTypes,
     selectedVendorTags,
     searchCenter,
   ]);
@@ -399,7 +352,7 @@ const HomePage: React.FC<HomePageProps> = ({
     (locationTerm.trim().length > 0 &&
         locationTerm !== "Current Location") ||
     selectedMarketCategory !== "all" ||
-    selectedVendorCategory !== "all" ||
+    selectedVendorTypes !== "all" ||
     selectedVendorTags.length > 0;
 
   const randomNoResults =
@@ -415,7 +368,7 @@ const HomePage: React.FC<HomePageProps> = ({
   const clearAllFilters = () => {
     setSearchTerm("");
     setSelectedMarketCategory("all");
-    setSelectedVendorCategory("all");
+    setSelectedVendorTypes("all");
     setSelectedVendorTags([]);
   };
 
@@ -478,10 +431,10 @@ const HomePage: React.FC<HomePageProps> = ({
               />
 
               <FilterSelect
-                value={selectedVendorCategory}
-                onChange={(val) => setSelectedVendorCategory(val as VendorCategory | "all")}
-                placeholder="Vendor Product"
-                options={Object.values(VendorCategoriesByType).flat()}
+                value={selectedVendorTypes}
+                onChange={(val) => setSelectedVendorTypes(val as VendorType | "all")}
+                placeholder="Vendor Type"
+                options={Object.values(VendorTypes) as VendorType[]}
               />
 
               {/* Sort select */}
@@ -540,33 +493,24 @@ const HomePage: React.FC<HomePageProps> = ({
       {moreFiltersOpen && (
         <div className="bg-white border-b border-gray-200 shadow-sm">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {TAG_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
-                    {group.label}
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {group.tags.map((tag) => {
-                      const isActive = selectedVendorTags.includes(tag);
-                      return (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => handleTagSelection(tag)}
-                          className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
-                            isActive
-                              ? "bg-brand-blue text-white font-semibold"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-1.5">
+              {SHOPPER_TAGS.map((tag) => {
+                const isActive = selectedVendorTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleTagSelection(tag)}
+                    className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
+                      isActive
+                        ? "bg-brand-blue text-white font-semibold"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
             {activeTagCount > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">

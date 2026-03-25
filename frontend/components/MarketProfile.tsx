@@ -69,7 +69,12 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
   let canApply = true;
   let applicationDisabledReason = '';
   if (market.allowedVendorCategories && market.allowedVendorCategories.length > 0) {
-    if (!currentUserVendor || !market.allowedVendorCategories.includes(currentUserVendor.category)) {
+    const vendorMatchesCategory = currentUserVendor && (
+      currentUserVendor.categories && currentUserVendor.categories.length > 0
+        ? currentUserVendor.categories.some(cat => market.allowedVendorCategories!.includes(cat))
+        : market.allowedVendorCategories.includes(currentUserVendor.category)
+    );
+    if (!vendorMatchesCategory) {
       canApply = false;
       applicationDisabledReason = `This market does not accept applications from the "${currentUserVendor?.category || 'your'}" category.`;
     }
