@@ -46,13 +46,13 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
       </button>
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-3">
-          <div className="md:col-span-1 p-8 bg-brand-cream flex flex-col items-center justify-center text-center">
+          <div className="md:col-span-1 p-6 sm:p-8 bg-brand-cream flex flex-col items-center justify-center text-center">
               {(vendor.logoUrl || vendor.photos?.[0])
                 ? <img className="w-40 h-40 rounded-full object-cover mb-4 border-4 border-white shadow-lg" src={vendor.logoUrl || vendor.photos[0]} alt={`${vendor.name} logo`} />
                 : <div className="w-40 h-40 rounded-full mb-4 border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center"><span className="text-brand-blue text-5xl font-serif">{vendor.name[0]}</span></div>
               }
               <span className="text-sm font-semibold text-brand-light-blue uppercase tracking-wider">{vendor.vendorTypes && vendor.vendorTypes.length > 0 ? vendor.vendorTypes.join(' · ') : vendor.category}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-center">
                 {isFoundingMember && (
                     <div className="text-brand-gold" title="Founding Member">
                         <RibbonIcon className="w-7 h-7" />
@@ -190,7 +190,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
             <div className="space-y-6">
                 {approvedReviews.length > 0 ? approvedReviews.map(review => (
                     <div key={review.id} className="border-b pb-4">
-                        <div className="flex items-center mb-1">
+                        <div className="flex flex-wrap items-center mb-1">
                             <RatingStars rating={review.rating} />
                             <span className="ml-4 font-bold text-brand-text">{review.author}</span>
                         </div>
