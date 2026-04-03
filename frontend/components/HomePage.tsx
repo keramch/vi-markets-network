@@ -218,18 +218,36 @@ const HomePage: React.FC<HomePageProps> = ({
   }, [activeMarkets, activeVendors]);
 
   useEffect(() => {
+    const STORAGE_KEY = "vi_markets_geolocation";
+    const cached = sessionStorage.getItem(STORAGE_KEY);
+
+    if (cached !== null) {
+      if (cached === "denied") {
+        setLocationStatus("Enter a location to find nearby results.");
+      } else {
+        const coords = JSON.parse(cached) as Coordinates;
+        setUserLocation(coords);
+        setSearchCenter(coords);
+        setLocationStatus("Using current location");
+        setLocationTerm("Current Location");
+      }
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(coords));
         setUserLocation(coords);
         setSearchCenter(coords);
         setLocationStatus("Using current location");
         setLocationTerm("Current Location");
       },
       () => {
+        sessionStorage.setItem(STORAGE_KEY, "denied");
         setLocationStatus("Enter a location to find nearby results.");
       }
     );
