@@ -158,6 +158,7 @@ export type MemberStatus = 'active' | 'suspended' | 'archived';
 export interface Vendor {
   id: string;
   ownerId?: string;
+  slug?: string;
   name: string;
   logoUrl?: string;
   description: string;
@@ -195,6 +196,7 @@ export interface Application {
 export interface Market {
   id: string;
   ownerId?: string;
+  slug?: string;
   organizerUid?: string;        // links to organizerAccounts doc
   coManagerUids?: string[];     // other users who can manage this page
   name:string;
