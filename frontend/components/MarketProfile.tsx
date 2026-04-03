@@ -234,7 +234,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
         )}
 
         <div className="p-6 md:p-8 border-t">
-          <h2 className="text-2xl text-brand-blue font-serif mb-6">Get in Touch</h2>
+          <h2 className="text-2xl text-brand-blue font-serif mb-6">Connect with {market.name}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
                 {market.contact?.socials && (

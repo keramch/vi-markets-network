@@ -165,7 +165,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
         </div>
         
         <div className="p-6 md:p-8 border-t">
-          <h2 className="text-2xl text-brand-blue font-serif mb-6">Get in Touch</h2>
+          <h2 className="text-2xl text-brand-blue font-serif mb-6">Connect with {vendor.name}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
     <div>
         {vendor.contact?.socials && (
