@@ -11,13 +11,11 @@ import HomePage from './components/HomePage';
 import MarketProfile from './components/MarketProfile';
 import VendorProfile from './components/VendorProfile';
 import Modal from './components/Modal';
-import AIConcierge from './components/AIConcierge';
 import ImageUploader from './components/ImageUploader';
 import ProfileManager from './components/ProfileManager';
 import Dashboard from './components/Dashboard';
 import StripePaymentForm from './components/StripePaymentForm';
 import CalendarView from './components/CalendarView';
-import { BotIcon } from './components/Icons';
 import NotificationToast from './components/NotificationToast';
 import AdminPanel from './components/AdminPanel';
 import Promotions from './components/Promotions';
@@ -73,8 +71,6 @@ const App: React.FC = () => {
   const [isFeatureVendorModalOpen, setFeatureVendorModalOpen] = useState(false);
   const [vendorToFeature, setVendorToFeature] = useState<Vendor | null>(null);
 
-  const [isAIConciergeOpen, setAIConciergeOpen] = useState(false);
-  
   const [isPromotionModalOpen, setPromotionModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
 
@@ -903,16 +899,6 @@ const renderView = () => {
         </div>
       </footer>
 
-      {/* AI Concierge FAB */}
-      <button
-        onClick={() => setAIConciergeOpen(true)}
-        className="fixed bottom-6 right-6 bg-brand-blue text-white p-4 rounded-full shadow-lg hover:bg-brand-light-blue transition-transform transform hover:scale-110 z-30"
-        aria-label="Open AI Concierge"
-        title="AI Market Concierge"
-      >
-        <BotIcon className="w-8 h-8" />
-      </button>
-
       {/* Modals */}
       <Modal isOpen={isVendorSignUpModalOpen} onClose={() => setVendorSignUpModalOpen(false)} title="Join Our Community" maxWidth="2xl">
         <VendorSignUpForm />
@@ -947,9 +933,6 @@ const renderView = () => {
                 onBack={() => setSelectedPlanForPayment(null)}
             />
         )}
-      </Modal>
-       <Modal isOpen={isAIConciergeOpen} onClose={() => setAIConciergeOpen(false)} title="AI Market Concierge">
-        <AIConcierge markets={markets} vendors={vendors} />
       </Modal>
       {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
       {false && <Modal isOpen={isFeatureMarketModalOpen} onClose={() => setFeatureMarketModalOpen(false)} title={`Feature ${marketToFeature?.name}`}>
