@@ -3,6 +3,33 @@ import { db, auth } from "../firebase";
 
 const router = Router();
 
+// ── Slug helpers ──────────────────────────────────────────────────────────────
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/[\s]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function generateUniqueSlug(
+  name: string,
+  col: 'markets' | 'vendors',
+): Promise<string> {
+  const base = slugify(name);
+  let candidate = base;
+  let suffix = 2;
+  while (true) {
+    const snap = await db.collection(col).where('slug', '==', candidate).limit(1).get();
+    if (snap.empty) return candidate;
+    candidate = `${base}-${suffix}`;
+    suffix++;
+  }
+}
+
 // GET /users → return all users
 router.get("/", async (_req, res) => {
   try {
@@ -92,9 +119,11 @@ router.post("/register", async (req, res) => {
     let ownedVendorId = "";
 
     if (accountType === "market") {
+      const slug = await generateUniqueSlug(businessName, "markets");
       const marketDoc = {
         ownerId: userId,
         name: businessName,
+        slug,
         description: description || "",
         category: "Farmers Market",
         photos: [],
@@ -113,9 +142,11 @@ router.post("/register", async (req, res) => {
       const marketRef = await db.collection("markets").add(marketDoc);
       ownedMarketId = marketRef.id;
     } else {
+      const slug = await generateUniqueSlug(businessName, "vendors");
       const vendorDoc = {
         ownerId: userId,
         name: businessName,
+        slug,
         description: description || "",
         category: "Artisan & Crafts",
         photos: [],
