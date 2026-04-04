@@ -22,8 +22,6 @@ import Promotions from './components/Promotions';
 import NotificationSettingsComponent from './components/NotificationSettings';
 import MyApplications from './components/MyApplications';
 import ApplicationForm from './components/ApplicationForm';
-import PrivacyPolicyPage from './components/PrivacyPolicyPage';
-import TermsOfServicePage from './components/TermsOfServicePage';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import ForgotPasswordForm from './components/ForgotPasswordForm';
 import SignupPage from './components/SignupPage';
@@ -615,10 +613,6 @@ const renderView = () => {
             onSelectMarket={(id) => handleNavigate({type: 'marketProfile', id})}
             onBack={() => handleNavigate({type: 'home'})}
         />;
-      case 'privacyPolicy':
-        return <PrivacyPolicyPage onBack={() => handleNavigate({ type: 'home' })} />;
-      case 'termsOfService':
-        return <TermsOfServicePage onBack={() => handleNavigate({ type: 'home' })} />;
       case 'forgotPassword':
         return null;
       case 'browseMarkets':
