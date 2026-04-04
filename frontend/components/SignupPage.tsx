@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseAuth } from '../services/firebase';
 import type { View, User } from '../types';
 import { VendorTypes, VendorCategoriesByType, VendorTagsByType } from '../types';
 import * as api from '../services/api.live';
@@ -151,6 +153,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           categories: accountType === 'vendor' ? selectedCategories : undefined,
           tags: accountType === 'vendor' ? selectedTags : undefined,
         });
+        await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
         onSignupSuccess(user);
         setIsSuccess(true);
         window.scrollTo(0, 0);
