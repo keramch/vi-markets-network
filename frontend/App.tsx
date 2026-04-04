@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus } from './types';
+import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
@@ -33,6 +34,150 @@ import TermsOfUsePage from './components/TermsOfUsePage';
 import MemberAgreementPage from './components/MemberAgreementPage';
 
 
+// Maps a View discriminant to its URL path (used to adapt Header's onNavigate prop)
+const viewToPath = (view: View): string => {
+  switch (view.type) {
+    case 'home':               return '/';
+    case 'browseMarkets':      return '/markets';
+    case 'browseVendors':      return '/vendors';
+    case 'calendar':           return '/calendar';
+    case 'about':              return '/about';
+    case 'privacy':            return '/privacy';
+    case 'terms':              return '/terms';
+    case 'memberAgreement':    return '/member-agreement';
+    case 'pricing':            return '/pricing';
+    case 'signup':             return '/signup';
+    case 'dashboard':          return '/dashboard';
+    case 'manageProfile':      return '/dashboard/profile';
+    case 'notificationSettings': return '/dashboard/notifications';
+    case 'myApplications':     return '/dashboard/applications';
+    case 'promotions':         return '/dashboard/promotions';
+    case 'adminPanel':         return '/hq';
+    case 'adminEditProfile':   return `/hq/edit/${view.profileType}/${view.profileId}`;
+    case 'marketProfile':      return `/markets/${view.id}`;
+    case 'vendorProfile':      return `/vendors/${view.id}`;
+    default:                   return '/';
+  }
+};
+
+// ── Route wrapper components (defined at module scope to keep stable references) ──
+
+interface MarketProfileRouteProps {
+  markets: Market[];
+  vendors: Vendor[];
+  applications: Application[];
+  users: User[];
+  favoritedMarketIds: string[];
+  currentUser: User | null;
+  onToggleFavorite: (id: string) => void;
+  onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
+  onFeatureMarket: (marketId: string) => void;
+  onContactSubmit: (recipientEmail: string, subject: string) => void;
+  onApply: (marketId: string) => void;
+}
+const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
+  markets, vendors, applications, users, favoritedMarketIds, currentUser,
+  onToggleFavorite, onAddReview, onFeatureMarket, onContactSubmit, onApply,
+}) => {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const market = markets.find(m => m.slug === slug);
+  if (!market || market.status !== 'active') return <Navigate to="/" replace />;
+  const marketOwner = users.find(u => u.id === market.ownerId);
+  return (
+    <MarketProfile
+      market={market}
+      vendors={vendors}
+      applications={applications}
+      owner={marketOwner}
+      onSelectVendor={(id) => {
+        const v = vendors.find(v => v.id === id);
+        if (v?.slug) navigate(`/vendors/${v.slug}`);
+      }}
+      onBack={() => navigate('/')}
+      isFavorited={favoritedMarketIds.includes(market.id)}
+      onToggleFavorite={onToggleFavorite}
+      currentUser={currentUser}
+      onAddReview={(data) => onAddReview('market', market.id, data)}
+      onFeatureMarket={onFeatureMarket}
+      onContactSubmit={onContactSubmit}
+      onApply={onApply}
+    />
+  );
+};
+
+interface VendorProfileRouteProps {
+  vendors: Vendor[];
+  markets: Market[];
+  users: User[];
+  favoritedVendorIds: string[];
+  currentUser: User | null;
+  onToggleFavorite: (id: string) => void;
+  onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
+  onFeatureVendor: (vendorId: string) => void;
+  onContactSubmit: (recipientEmail: string, subject: string) => void;
+}
+const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
+  vendors, markets, users, favoritedVendorIds, currentUser,
+  onToggleFavorite, onAddReview, onFeatureVendor, onContactSubmit,
+}) => {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const vendor = vendors.find(v => v.slug === slug);
+  if (!vendor || vendor.status !== 'active') return <Navigate to="/" replace />;
+  const vendorOwner = users.find(u => u.id === vendor.ownerId);
+  return (
+    <VendorProfile
+      vendor={vendor}
+      markets={markets}
+      owner={vendorOwner}
+      onSelectMarket={(id) => {
+        const m = markets.find(m => m.id === id);
+        if (m?.slug) navigate(`/markets/${m.slug}`);
+      }}
+      onBack={() => navigate('/')}
+      isFavorited={favoritedVendorIds.includes(vendor.id)}
+      onToggleFavorite={onToggleFavorite}
+      currentUser={currentUser}
+      onAddReview={(data) => onAddReview('vendor', vendor.id, data)}
+      onFeatureVendor={onFeatureVendor}
+      onContactSubmit={onContactSubmit}
+    />
+  );
+};
+
+interface AdminEditProfileRouteProps {
+  markets: Market[];
+  vendors: Vendor[];
+  users: User[];
+  currentUser: User | null;
+  onSaveChanges: (data: Market | Vendor) => Promise<void>;
+}
+const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
+  markets, vendors, users, currentUser, onSaveChanges,
+}) => {
+  const { profileType, profileId } = useParams<{ profileType: string; profileId: string }>();
+  const navigate = useNavigate();
+  if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
+  const profileToEdit = profileType === 'market'
+    ? markets.find(m => m.id === profileId)
+    : vendors.find(v => v.id === profileId);
+  if (!profileToEdit) return <Navigate to="/hq" replace />;
+  return (
+    <ProfileManager
+      profileData={profileToEdit}
+      user={users.find(u => u.ownedMarketId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
+      allMarkets={markets}
+      onSaveChanges={onSaveChanges}
+      onBack={() => navigate('/hq')}
+      isAdmin={true}
+      reviewsToModerate={[]}
+      onModerateReview={() => {}}
+      onToggleAutoRenew={() => {}}
+    />
+  );
+};
+
 // Local type kept for the membership modal UI (not tied to User data model)
 type MembershipPlan = string;
 
@@ -54,9 +199,10 @@ const App: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [view, setView] = useState<View>({ type: 'home' });
-  
+  const navigate = useNavigate();
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
 
   const [isVendorSignUpModalOpen, setVendorSignUpModalOpen] = useState(false);
@@ -169,7 +315,7 @@ const App: React.FC = () => {
       setCurrentUser(null);
       setFavoritedMarketIds([]);
       setFavoritedVendorIds([]);
-      handleNavigate({ type: 'home' });
+      navigate('/');
   };
 
   const handleUpgradeMembership = async (plan: MembershipPlan) => {
@@ -303,7 +449,7 @@ const App: React.FC = () => {
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
         }
         showNotification("Your profile has been updated successfully!");
-        handleNavigate({type: 'home'});
+        navigate('/');
     } catch (error) {
         showNotification("Failed to update profile.");
     }
@@ -319,7 +465,7 @@ const App: React.FC = () => {
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
         }
         setAdminActiveTab('memberships');
-        handleNavigate({ type: 'adminPanel' });
+        navigate('/hq');
         showNotification("Profile updated successfully!");
     } catch (error) {
         showNotification("Failed to update profile.");
@@ -466,205 +612,10 @@ const App: React.FC = () => {
       showNotification(`Message sent to ${to}.`);
   };
 
-  const handleNavigate = (newView: View) => {
-    setView(newView);
-    window.scrollTo(0, 0);
-  };
-
-const renderView = () => {
-    if (isLoading) {
-        return <div className="text-center p-20">Loading...</div>;
-    }
-
-    const isProAccess = (user: User | null) =>
-      user?.subscription?.tier === 'pro' ||
-      user?.subscription?.tier === 'superPro' ||
-      user?.subscription?.foundingMember === true;
-
-    const homePage = <HomePage markets={markets} vendors={vendors} onSelectMarket={(id) => handleNavigate({ type: 'marketProfile', id })} onSelectVendor={(id) => handleNavigate({ type: 'vendorProfile', id })} onViewAllMarkets={() => handleNavigate({ type: 'browseMarkets' })} onViewAllVendors={() => handleNavigate({ type: 'browseVendors' })} />;
-
-    switch (view.type) {
-      case 'home':
-        return homePage;
-      case 'marketProfile':
-        const market = markets.find(m => m.id === view.id);
-        if (!market || market.status !== 'active') return homePage;
-        const marketOwner = users.find(u => u.id === market.ownerId);
-        return <MarketProfile 
-          market={market}
-          vendors={vendors}
-          applications={applications}
-          owner={marketOwner}
-          onSelectVendor={(id) => handleNavigate({ type: 'vendorProfile', id })}
-          onBack={() => handleNavigate({ type: 'home' })}
-          isFavorited={favoritedMarketIds.includes(market.id)}
-          onToggleFavorite={handleToggleMarketFavorite}
-          currentUser={currentUser}
-          onAddReview={(data) => handleAddReview('market', market.id, data)}
-          onFeatureMarket={handleOpenFeatureMarketModal}
-          onContactSubmit={handleContactSubmit}
-          onApply={handleOpenApplicationForm}
-        />;
-      case 'vendorProfile':
-        const vendor = vendors.find(v => v.id === view.id);
-        if (!vendor || vendor.status !== 'active') return homePage;
-        const vendorOwner = users.find(u => u.id === vendor.ownerId);
-        return <VendorProfile
-          vendor={vendor}
-          markets={markets}
-          owner={vendorOwner}
-          onSelectMarket={(id) => handleNavigate({ type: 'marketProfile', id })}
-          onBack={() => handleNavigate({ type: 'home' })}
-          isFavorited={favoritedVendorIds.includes(vendor.id)}
-          onToggleFavorite={handleToggleVendorFavorite}
-          currentUser={currentUser}
-          onAddReview={(data) => handleAddReview('vendor', vendor.id, data)}
-          onFeatureVendor={handleOpenFeatureVendorModal}
-          onContactSubmit={handleContactSubmit}
-        />;
-      case 'dashboard':
-        const favMarkets = markets.filter(m => favoritedMarketIds.includes(m.id));
-        const favVendors = vendors.filter(v => favoritedVendorIds.includes(v.id));
-        return <Dashboard 
-                  markets={favMarkets} 
-                  vendors={favVendors} 
-                  onSelectMarket={(id) => handleNavigate({ type: 'marketProfile', id })}
-                  onSelectVendor={(id) => handleNavigate({ type: 'vendorProfile', id })}
-                  onBack={() => handleNavigate({ type: 'home' })} 
-               />;
-      case 'manageProfile':
-        const profileData = ownedMarket || ownedVendor;
-        if (!currentUser || !profileData) return homePage;
-        const reviewsToModerate = (profileData.reviews || []).filter(r => r.status === 'pending');
-        const marketApplications = isMarket(profileData) ? applications.filter(app => app.marketId === profileData.id) : [];
-        return <ProfileManager 
-            profileData={profileData}
-            user={currentUser}
-            allMarkets={markets}
-            applications={marketApplications}
-            vendors={vendors}
-            reviewsToModerate={reviewsToModerate}
-            onModerateReview={(reviewId, newStatus) => handleModerateReview(ownedMarket ? 'market' : 'vendor', profileData.id, reviewId, newStatus)}
-            onUpdateApplicationStatus={handleUpdateApplicationStatus}
-            onSaveChanges={handleUpdateProfile}
-            onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
-            onBack={() => handleNavigate({type: 'home'})}
-            isAdmin={false}
-        />;
-      case 'calendar':
-        return <CalendarView
-            currentUser={currentUser}
-            onSelectMarket={(id) => handleNavigate({ type: 'marketProfile', id })}
-            onBack={() => handleNavigate({ type: 'home' })}
-        />;
-      case 'adminPanel':
-        if (!currentUser?.isAdmin) return homePage;
-        return <AdminPanel
-            markets={markets}
-            vendors={vendors}
-            users={users}
-            onModerateReview={handleModerateReview}
-            onEditProfile={(profileId, profileType) => handleNavigate({ type: 'adminEditProfile', profileId, profileType })}
-            onUpdateMemberStatus={handleUpdateMemberStatus}
-            onHardDeleteMember={handleHardDeleteMember}
-            onToggleFoundingMember={handleToggleFoundingMember}
-            onSendMessage={handleSendAdminMessage}
-            initialTab={adminActiveTab}
-            onTabChange={setAdminActiveTab}
-        />;
-      case 'adminEditProfile':
-        if (!currentUser?.isAdmin) return homePage;
-        const profileToEdit = view.profileType === 'market'
-            ? markets.find(m => m.id === view.profileId)
-            : vendors.find(v => v.id === view.profileId);
-        if (!profileToEdit) return homePage;
-        return <ProfileManager
-            profileData={profileToEdit}
-            user={users.find(u => u.ownedMarketId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
-            allMarkets={markets}
-            onSaveChanges={handleUpdateProfileAsAdmin}
-            onBack={() => handleNavigate({ type: 'adminPanel' })}
-            isAdmin={true}
-            reviewsToModerate={[]}
-            onModerateReview={() => {}}
-            onToggleAutoRenew={() => {}}
-        />;
-      case 'promotions':
-        if (!currentUser || (!ownedMarket && !ownedVendor) || !isProAccess(currentUser)) return homePage;
-        return <Promotions
-            ownedMarket={ownedMarket}
-            ownedVendor={ownedVendor}
-            onPurchasePromotion={handlePurchasePromotion}
-            onBack={() => handleNavigate({type: 'home'})}
-        />;
-      case 'notificationSettings':
-        if (!currentUser?.notificationSettings) return homePage;
-        return <NotificationSettingsComponent 
-            settings={currentUser.notificationSettings}
-            onSave={handleUpdateNotificationSettings}
-            onBack={() => handleNavigate({type: 'home'})}
-        />;
-      case 'myApplications':
-        if (!ownedVendor || !isProAccess(currentUser)) return homePage;
-        const vendorApps = applications.filter(app => app.vendorId === ownedVendor.id);
-        return <MyApplications
-            applications={vendorApps}
-            markets={markets}
-            onSelectMarket={(id) => handleNavigate({type: 'marketProfile', id})}
-            onBack={() => handleNavigate({type: 'home'})}
-        />;
-      case 'forgotPassword':
-        return null;
-      case 'browseMarkets':
-        return <BrowsePage
-          mode="markets"
-          items={markets.filter(m => m.status === 'active')}
-          onSelect={(id) => handleNavigate({ type: 'marketProfile', id })}
-          onBack={() => handleNavigate({ type: 'home' })}
-          onSwitchMode={() => handleNavigate({ type: 'browseVendors' })}
-        />;
-      case 'browseVendors':
-        return <BrowsePage
-          mode="vendors"
-          items={vendors.filter(v => v.status === 'active')}
-          onSelect={(id) => handleNavigate({ type: 'vendorProfile', id })}
-          onBack={() => handleNavigate({ type: 'home' })}
-          onSwitchMode={() => handleNavigate({ type: 'browseMarkets' })}
-        />;
-      case 'signup':
-        return <SignupPage
-          onNavigate={handleNavigate}
-          onLogin={() => setLoginModalOpen(true)}
-          isFoundingMemberOfferActive={true}
-          onSignupSuccess={async (user: User) => {
-            setCurrentUser(user);
-            showNotification(`Welcome to VI Markets, ${user.email}!`);
-            try {
-              const [marketsData, vendorsData] = await Promise.all([
-                api.getMarkets(),
-                api.getVendors(),
-              ]);
-              setMarkets(marketsData);
-              setVendors(vendorsData);
-            } catch {
-              // non-fatal — profile will load on next navigation
-            }
-          }}
-        />;
-      case 'pricing':
-        return <PricingPage onBack={() => handleNavigate({ type: 'home' })} onSignup={() => handleNavigate({ type: 'signup' })} />;
-      case 'about':
-        return <AboutPage onSignup={() => handleNavigate({ type: 'signup' })} />;
-      case 'privacy':
-        return <PrivacyPage />;
-      case 'terms':
-        return <TermsOfUsePage />;
-      case 'memberAgreement':
-        return <MemberAgreementPage />;
-      default:
-        return homePage;
-    }
-  };
+  const isProAccess = (user: User | null) =>
+    user?.subscription?.tier === 'pro' ||
+    user?.subscription?.tier === 'superPro' ||
+    user?.subscription?.foundingMember === true;
 
   const VendorSignUpForm = () => {
     const [logoFiles, setLogoFiles] = useState<File[]>([]);
@@ -812,14 +763,201 @@ const renderView = () => {
   return (
     <div className="flex flex-col min-h-screen bg-brand-cream">
       <Header
-        onNavigate={handleNavigate}
-        onMembership={() => handleNavigate({ type: 'pricing' })}
+        onNavigate={(view) => { navigate(viewToPath(view)); window.scrollTo(0, 0); }}
+        onMembership={() => navigate('/pricing')}
         onLogin={() => setLoginModalOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
       />
       <div className="flex-grow">
-        {renderView()}
+        {isLoading ? (
+          <div className="text-center p-20">Loading...</div>
+        ) : (
+          <Routes>
+            <Route path="/" element={
+              <HomePage
+                markets={markets}
+                vendors={vendors}
+                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
+                onViewAllMarkets={() => navigate('/markets')}
+                onViewAllVendors={() => navigate('/vendors')}
+              />
+            } />
+            <Route path="/markets" element={
+              <BrowsePage
+                mode="markets"
+                items={markets.filter(m => m.status === 'active')}
+                onSelect={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onBack={() => navigate('/')}
+                onSwitchMode={() => navigate('/vendors')}
+              />
+            } />
+            <Route path="/vendors" element={
+              <BrowsePage
+                mode="vendors"
+                items={vendors.filter(v => v.status === 'active')}
+                onSelect={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
+                onBack={() => navigate('/')}
+                onSwitchMode={() => navigate('/markets')}
+              />
+            } />
+            <Route path="/markets/:slug" element={
+              <MarketProfileRoute
+                markets={markets}
+                vendors={vendors}
+                applications={applications}
+                users={users}
+                favoritedMarketIds={favoritedMarketIds}
+                currentUser={currentUser}
+                onToggleFavorite={handleToggleMarketFavorite}
+                onAddReview={handleAddReview}
+                onFeatureMarket={handleOpenFeatureMarketModal}
+                onContactSubmit={handleContactSubmit}
+                onApply={handleOpenApplicationForm}
+              />
+            } />
+            <Route path="/vendors/:slug" element={
+              <VendorProfileRoute
+                vendors={vendors}
+                markets={markets}
+                users={users}
+                favoritedVendorIds={favoritedVendorIds}
+                currentUser={currentUser}
+                onToggleFavorite={handleToggleVendorFavorite}
+                onAddReview={handleAddReview}
+                onFeatureVendor={handleOpenFeatureVendorModal}
+                onContactSubmit={handleContactSubmit}
+              />
+            } />
+            <Route path="/calendar" element={
+              <CalendarView
+                currentUser={currentUser}
+                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onBack={() => navigate('/')}
+              />
+            } />
+            <Route path="/about" element={<AboutPage onSignup={() => navigate('/signup')} />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsOfUsePage />} />
+            <Route path="/member-agreement" element={<MemberAgreementPage />} />
+            <Route path="/pricing" element={
+              <PricingPage onBack={() => navigate('/')} onSignup={() => navigate('/signup')} />
+            } />
+            <Route path="/signup" element={
+              <SignupPage
+                onNavigate={(view) => navigate(viewToPath(view))}
+                onLogin={() => setLoginModalOpen(true)}
+                isFoundingMemberOfferActive={true}
+                onSignupSuccess={async (user: User) => {
+                  setCurrentUser(user);
+                  showNotification(`Welcome to VI Markets, ${user.email}!`);
+                  try {
+                    const [marketsData, vendorsData] = await Promise.all([
+                      api.getMarkets(),
+                      api.getVendors(),
+                    ]);
+                    setMarkets(marketsData);
+                    setVendors(vendorsData);
+                  } catch {
+                    // non-fatal — profile will load on next navigation
+                  }
+                }}
+              />
+            } />
+            <Route path="/dashboard" element={
+              <Dashboard
+                markets={markets.filter(m => favoritedMarketIds.includes(m.id))}
+                vendors={vendors.filter(v => favoritedVendorIds.includes(v.id))}
+                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
+                onBack={() => navigate('/')}
+              />
+            } />
+            <Route path="/dashboard/profile" element={(() => {
+              const profileData = ownedMarket || ownedVendor;
+              if (!currentUser || !profileData) return <Navigate to="/" replace />;
+              const reviewsToModerate = (profileData.reviews || []).filter(r => r.status === 'pending');
+              const marketApplications = isMarket(profileData) ? applications.filter(app => app.marketId === profileData.id) : [];
+              return (
+                <ProfileManager
+                  profileData={profileData}
+                  user={currentUser}
+                  allMarkets={markets}
+                  applications={marketApplications}
+                  vendors={vendors}
+                  reviewsToModerate={reviewsToModerate}
+                  onModerateReview={(reviewId, newStatus) => handleModerateReview(ownedMarket ? 'market' : 'vendor', profileData.id, reviewId, newStatus)}
+                  onUpdateApplicationStatus={handleUpdateApplicationStatus}
+                  onSaveChanges={handleUpdateProfile}
+                  onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
+                  onBack={() => navigate('/')}
+                  isAdmin={false}
+                />
+              );
+            })()} />
+            <Route path="/dashboard/notifications" element={
+              !currentUser?.notificationSettings ? <Navigate to="/" replace /> : (
+                <NotificationSettingsComponent
+                  settings={currentUser.notificationSettings}
+                  onSave={handleUpdateNotificationSettings}
+                  onBack={() => navigate('/')}
+                />
+              )
+            } />
+            <Route path="/dashboard/applications" element={(() => {
+              if (!ownedVendor || !isProAccess(currentUser)) return <Navigate to="/" replace />;
+              const vendorApps = applications.filter(app => app.vendorId === ownedVendor.id);
+              return (
+                <MyApplications
+                  applications={vendorApps}
+                  markets={markets}
+                  onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                  onBack={() => navigate('/')}
+                />
+              );
+            })()} />
+            <Route path="/dashboard/promotions" element={
+              !currentUser || (!ownedMarket && !ownedVendor) || !isProAccess(currentUser) ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Promotions
+                  ownedMarket={ownedMarket}
+                  ownedVendor={ownedVendor}
+                  onPurchasePromotion={handlePurchasePromotion}
+                  onBack={() => navigate('/')}
+                />
+              )
+            } />
+            <Route path="/hq" element={
+              !currentUser?.isAdmin ? <Navigate to="/" replace /> : (
+                <AdminPanel
+                  markets={markets}
+                  vendors={vendors}
+                  users={users}
+                  onModerateReview={handleModerateReview}
+                  onEditProfile={(profileId, profileType) => navigate(`/hq/edit/${profileType}/${profileId}`)}
+                  onUpdateMemberStatus={handleUpdateMemberStatus}
+                  onHardDeleteMember={handleHardDeleteMember}
+                  onToggleFoundingMember={handleToggleFoundingMember}
+                  onSendMessage={handleSendAdminMessage}
+                  initialTab={adminActiveTab}
+                  onTabChange={setAdminActiveTab}
+                />
+              )
+            } />
+            <Route path="/hq/edit/:profileType/:profileId" element={
+              <AdminEditProfileRoute
+                markets={markets}
+                vendors={vendors}
+                users={users}
+                currentUser={currentUser}
+                onSaveChanges={handleUpdateProfileAsAdmin}
+              />
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        )}
       </div>
       <footer className="bg-brand-blue text-white">
         <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
