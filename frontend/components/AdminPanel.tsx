@@ -142,280 +142,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const ddItem = 'flex w-full items-center gap-2 px-3 py-2 text-sm text-left rounded-md hover:bg-gray-50 transition-colors';
   const ddDanger = 'flex w-full items-center gap-2 px-3 py-2 text-sm text-left rounded-md text-red-600 hover:bg-red-50 transition-colors';
 
-  // ── Sub-panels ────────────────────────────────────────────────────────────
-
-  const ReviewPanel = () => (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <div className="mb-6 border-b border-gray-300">
-        <nav className="-mb-px flex space-x-8">
-          {(['pending', 'approved'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveReviewTab(tab)}
-              className={`${
-                activeReviewTab === tab
-                  ? 'border-brand-blue text-brand-blue'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize`}
-            >
-              {tab === 'pending' ? 'Pending Reviews' : 'Approved Reviews'}
-            </button>
-          ))}
-        </nav>
-      </div>
-      {filteredReviews.length > 0 ? (
-        <div className="space-y-6">
-          {filteredReviews.map(({ entityType, entity, review }) => (
-            <div key={review.id} className="p-4 border rounded-md">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-bold">
-                    {review.author} reviewed <span className="text-brand-blue">{entity.name}</span>
-                  </p>
-                  <p className="text-sm text-gray-500">Rating: {review.rating}/5 | Date: {review.date}</p>
-                  <p className="mt-2 text-gray-700">{review.comment}</p>
-                </div>
-                <div className="flex space-x-2 flex-shrink-0 ml-4">
-                  {review.status === 'pending' && (
-                    <button
-                      onClick={() => onModerateReview(entityType, entity.id, review.id, 'approved')}
-                      className="bg-green-100 text-green-800 hover:bg-green-200 p-2 rounded-full"
-                      title="Approve"
-                    >
-                      <CheckIcon className="w-5 h-5" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onModerateReview(entityType, entity.id, review.id, 'declined')}
-                    className="bg-red-100 text-red-800 hover:bg-red-200 p-2 rounded-full"
-                    title={review.status === 'pending' ? 'Decline' : 'Remove'}
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <AlertCircleIcon className="w-12 h-12 mx-auto text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No {activeReviewTab} reviews</h3>
-          <p className="mt-1 text-sm text-gray-500">There are currently no reviews with this status.</p>
-        </div>
-      )}
-    </div>
-  );
-
-  const MembershipPanel = () => (
-    <div className="bg-white rounded-lg shadow-md">
-
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-white rounded-t-lg border-b border-gray-200 px-6 pt-6 pb-3">
-
-        {/* Stats chips */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-brand-cream p-4 rounded-lg text-center">
-            <h3 className="text-sm font-medium text-brand-light-blue">Total Members</h3>
-            <p className="text-3xl font-bold text-brand-blue">{filteredMembers.length}</p>
-          </div>
-          <div className="bg-brand-cream p-4 rounded-lg text-center">
-            <h3 className="text-sm font-medium text-brand-light-blue">Total Annual Revenue</h3>
-            <p className="text-3xl font-bold text-brand-blue">${totalRevenue.toLocaleString()}</p>
-          </div>
-        </div>
-
-        {/* Search bar */}
-        <div className="relative mb-3">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            value={memberSearch}
-            onChange={e => setMemberSearch(e.target.value)}
-            placeholder="Search by name, contact, or email…"
-            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
-          />
-          {memberSearch && (
-            <button
-              onClick={() => setMemberSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <XIcon className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Icon legend */}
-        <div className="flex items-center gap-4 mb-3 text-xs text-gray-400">
-          <span className="flex items-center gap-1.5"><MapPinIcon className="w-3.5 h-3.5 text-brand-teal" /> Market</span>
-          <span className="flex items-center gap-1.5"><TagIcon className="w-3.5 h-3.5 text-brand-violet" /> Vendor</span>
-          <span className="flex items-center gap-1.5"><RibbonIcon className="w-3.5 h-3.5 text-brand-gold" /> Founding Member</span>
-        </div>
-
-        {/* Column headers */}
-        <div className="grid grid-cols-[1fr_80px_90px_60px] gap-4 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-          <span>Member</span>
-          <span>Plan</span>
-          <span>Status</span>
-          <span className="text-right">Actions</span>
-        </div>
-      </div>
-
-      {/* Rows */}
-      <div className="divide-y divide-gray-100 px-6">
-        {pagedMembers.map(member => {
-          const user = users.find(u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id);
-          const isOpen = openDropdownId === member.data.id;
-          const TypeIcon = member.type === 'market' ? MapPinIcon : TagIcon;
-          const typeColor = member.type === 'market' ? 'text-brand-teal' : 'text-brand-violet';
-          const contactName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.displayName || null;
-
-          return (
-            <div key={member.data.id} className="grid grid-cols-[1fr_80px_90px_60px] gap-4 items-center py-2 px-2">
-
-              {/* Member cell */}
-              <div className="flex items-center gap-1.5 min-w-0">
-                <TypeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${typeColor}`} />
-                <span className="text-sm font-medium text-gray-900 truncate">{member.data.name}</span>
-                {user?.subscription?.foundingMember && (
-                  <RibbonIcon className="w-3.5 h-3.5 flex-shrink-0 text-brand-gold" />
-                )}
-                <span className="text-sm text-gray-400 truncate">
-                  {contactName ? `· ${contactName} · ` : '· '}
-                  {user?.email ?? '—'}
-                </span>
-              </div>
-
-              {/* Plan */}
-              <span className="text-sm text-gray-500 whitespace-nowrap">{user?.subscription?.tier ?? '—'}</span>
-
-              {/* Status */}
-              <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap ${getStatusChipClass(member.data.status)}`}>
-                {member.data.status}
-              </span>
-
-              {/* Actions */}
-              <div className="relative inline-block text-right" data-dropdown>
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdownId(isOpen ? null : member.data.id)}
-                  className="px-3 py-1.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors leading-none tracking-widest"
-                  title="More actions"
-                >
-                  •••
-                </button>
-
-                {isOpen && (
-                  <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 divide-y divide-gray-100">
-                    {/* Edit Profile */}
-                    <div className="py-1 px-1">
-                      <button
-                        className={ddItem}
-                        onClick={() => { onEditProfile(member.data.id, member.type); setOpenDropdownId(null); }}
-                      >
-                        ✏️ Edit Profile
-                      </button>
-
-                      <button
-                        className={ddItem}
-                        onClick={() => {
-                          const email = user?.email ?? member.data.contact?.email ?? '';
-                          setMessageTarget({ email, name: member.data.name });
-                          setOpenDropdownId(null);
-                        }}
-                      >
-                        ✉️ Message Member
-                      </button>
-
-                      <button
-                        className={ddItem}
-                        onClick={() => {
-                          if (!user) return;
-                          onToggleFoundingMember(user.id, !!user.subscription?.foundingMember);
-                          setOpenDropdownId(null);
-                        }}
-                      >
-                        ⭐ {user?.subscription?.foundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
-                      </button>
-                    </div>
-
-                    {/* Status actions */}
-                    <div className="py-1 px-1">
-                      {member.data.status === 'active' && (
-                        <button
-                          className={ddItem}
-                          onClick={() => {
-                            if (window.confirm(`Suspend ${member.data.name}? They will lose access until reactivated.`)) {
-                              onUpdateMemberStatus(member.data.id, member.type, 'suspended');
-                              setOpenDropdownId(null);
-                            }
-                          }}
-                        >
-                          ⏸️ Suspend Account
-                        </button>
-                      )}
-                      {member.data.status === 'suspended' && (
-                        <button
-                          className={ddItem}
-                          onClick={() => { onUpdateMemberStatus(member.data.id, member.type, 'active'); setOpenDropdownId(null); }}
-                        >
-                          ▶️ Reactivate Account
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Destructive */}
-                    <div className="py-1 px-1">
-                      <button
-                        className={ddDanger}
-                        onClick={() => {
-                          if (window.confirm(`Permanently delete ${member.data.name}? This will remove their profile, user account, and Firebase Auth login. This cannot be undone.`)) {
-                            onHardDeleteMember(member.data.id, member.type);
-                            setOpenDropdownId(null);
-                          }
-                        }}
-                      >
-                        🗑️ Delete Account
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 text-sm text-gray-500">
-          <span>
-            Showing {((memberPage - 1) * PAGE_SIZE) + 1}–{Math.min(memberPage * PAGE_SIZE, filteredMembers.length)} of {filteredMembers.length} members
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMemberPage(p => p - 1)}
-              disabled={memberPage === 1}
-              className="px-3 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              ← Prev
-            </button>
-            <span className="text-gray-600">{memberPage} / {totalPages}</span>
-            <button
-              onClick={() => setMemberPage(p => p + 1)}
-              disabled={memberPage === totalPages}
-              className="px-3 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next →
-            </button>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -447,8 +173,276 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         </nav>
       </div>
 
-      {activeMainTab === 'reviews' && <ReviewPanel />}
-      {activeMainTab === 'memberships' && <MembershipPanel />}
+      {activeMainTab === 'reviews' && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="mb-6 border-b border-gray-300">
+            <nav className="-mb-px flex space-x-8">
+              {(['pending', 'approved'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveReviewTab(tab)}
+                  className={`${
+                    activeReviewTab === tab
+                      ? 'border-brand-blue text-brand-blue'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize`}
+                >
+                  {tab === 'pending' ? 'Pending Reviews' : 'Approved Reviews'}
+                </button>
+              ))}
+            </nav>
+          </div>
+          {filteredReviews.length > 0 ? (
+            <div className="space-y-6">
+              {filteredReviews.map(({ entityType, entity, review }) => (
+                <div key={review.id} className="p-4 border rounded-md">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold">
+                        {review.author} reviewed <span className="text-brand-blue">{entity.name}</span>
+                      </p>
+                      <p className="text-sm text-gray-500">Rating: {review.rating}/5 | Date: {review.date}</p>
+                      <p className="mt-2 text-gray-700">{review.comment}</p>
+                    </div>
+                    <div className="flex space-x-2 flex-shrink-0 ml-4">
+                      {review.status === 'pending' && (
+                        <button
+                          onClick={() => onModerateReview(entityType, entity.id, review.id, 'approved')}
+                          className="bg-green-100 text-green-800 hover:bg-green-200 p-2 rounded-full"
+                          title="Approve"
+                        >
+                          <CheckIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onModerateReview(entityType, entity.id, review.id, 'declined')}
+                        className="bg-red-100 text-red-800 hover:bg-red-200 p-2 rounded-full"
+                        title={review.status === 'pending' ? 'Decline' : 'Remove'}
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <AlertCircleIcon className="w-12 h-12 mx-auto text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No {activeReviewTab} reviews</h3>
+              <p className="mt-1 text-sm text-gray-500">There are currently no reviews with this status.</p>
+            </div>
+          )}
+        </div>
+      )}
+      {activeMainTab === 'memberships' && (
+        <div className="bg-white rounded-lg shadow-md">
+
+          {/* Sticky header */}
+          <div className="sticky top-0 z-10 bg-white rounded-t-lg border-b border-gray-200 px-6 pt-6 pb-3">
+
+            {/* Stats chips */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-brand-cream p-4 rounded-lg text-center">
+                <h3 className="text-sm font-medium text-brand-light-blue">Total Members</h3>
+                <p className="text-3xl font-bold text-brand-blue">{filteredMembers.length}</p>
+              </div>
+              <div className="bg-brand-cream p-4 rounded-lg text-center">
+                <h3 className="text-sm font-medium text-brand-light-blue">Total Annual Revenue</h3>
+                <p className="text-3xl font-bold text-brand-blue">${totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Search bar */}
+            <div className="relative mb-3">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={memberSearch}
+                onChange={e => setMemberSearch(e.target.value)}
+                placeholder="Search by name, contact, or email…"
+                className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+              />
+              {memberSearch && (
+                <button
+                  onClick={() => setMemberSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Icon legend */}
+            <div className="flex items-center gap-4 mb-3 text-xs text-gray-400">
+              <span className="flex items-center gap-1.5"><MapPinIcon className="w-3.5 h-3.5 text-brand-teal" /> Market</span>
+              <span className="flex items-center gap-1.5"><TagIcon className="w-3.5 h-3.5 text-brand-violet" /> Vendor</span>
+              <span className="flex items-center gap-1.5"><RibbonIcon className="w-3.5 h-3.5 text-brand-gold" /> Founding Member</span>
+            </div>
+
+            {/* Column headers */}
+            <div className="grid grid-cols-[1fr_80px_90px_60px] gap-4 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <span>Member</span>
+              <span>Plan</span>
+              <span>Status</span>
+              <span className="text-right">Actions</span>
+            </div>
+          </div>
+
+          {/* Rows */}
+          <div className="divide-y divide-gray-100 px-6">
+            {pagedMembers.map(member => {
+              const user = users.find(u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id);
+              const isOpen = openDropdownId === member.data.id;
+              const TypeIcon = member.type === 'market' ? MapPinIcon : TagIcon;
+              const typeColor = member.type === 'market' ? 'text-brand-teal' : 'text-brand-violet';
+              const contactName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.displayName || null;
+
+              return (
+                <div key={member.data.id} className="grid grid-cols-[1fr_80px_90px_60px] gap-4 items-center py-2 px-2">
+
+                  {/* Member cell */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <TypeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${typeColor}`} />
+                    <span className="text-sm font-medium text-gray-900 truncate">{member.data.name}</span>
+                    {user?.subscription?.foundingMember && (
+                      <RibbonIcon className="w-3.5 h-3.5 flex-shrink-0 text-brand-gold" />
+                    )}
+                    <span className="text-sm text-gray-400 truncate">
+                      {contactName ? `· ${contactName} · ` : '· '}
+                      {user?.email ?? '—'}
+                    </span>
+                  </div>
+
+                  {/* Plan */}
+                  <span className="text-sm text-gray-500 whitespace-nowrap">{user?.subscription?.tier ?? '—'}</span>
+
+                  {/* Status */}
+                  <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap ${getStatusChipClass(member.data.status)}`}>
+                    {member.data.status}
+                  </span>
+
+                  {/* Actions */}
+                  <div className="relative inline-block text-right" data-dropdown>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDropdownId(isOpen ? null : member.data.id)}
+                      className="px-3 py-1.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors leading-none tracking-widest"
+                      title="More actions"
+                    >
+                      •••
+                    </button>
+
+                    {isOpen && (
+                      <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 divide-y divide-gray-100">
+                        {/* Edit Profile */}
+                        <div className="py-1 px-1">
+                          <button
+                            className={ddItem}
+                            onClick={() => { onEditProfile(member.data.id, member.type); setOpenDropdownId(null); }}
+                          >
+                            ✏️ Edit Profile
+                          </button>
+
+                          <button
+                            className={ddItem}
+                            onClick={() => {
+                              const email = user?.email ?? member.data.contact?.email ?? '';
+                              setMessageTarget({ email, name: member.data.name });
+                              setOpenDropdownId(null);
+                            }}
+                          >
+                            ✉️ Message Member
+                          </button>
+
+                          <button
+                            className={ddItem}
+                            onClick={() => {
+                              if (!user) return;
+                              onToggleFoundingMember(user.id, !!user.subscription?.foundingMember);
+                              setOpenDropdownId(null);
+                            }}
+                          >
+                            ⭐ {user?.subscription?.foundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
+                          </button>
+                        </div>
+
+                        {/* Status actions */}
+                        <div className="py-1 px-1">
+                          {member.data.status === 'active' && (
+                            <button
+                              className={ddItem}
+                              onClick={() => {
+                                if (window.confirm(`Suspend ${member.data.name}? They will lose access until reactivated.`)) {
+                                  onUpdateMemberStatus(member.data.id, member.type, 'suspended');
+                                  setOpenDropdownId(null);
+                                }
+                              }}
+                            >
+                              ⏸️ Suspend Account
+                            </button>
+                          )}
+                          {member.data.status === 'suspended' && (
+                            <button
+                              className={ddItem}
+                              onClick={() => { onUpdateMemberStatus(member.data.id, member.type, 'active'); setOpenDropdownId(null); }}
+                            >
+                              ▶️ Reactivate Account
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Destructive */}
+                        <div className="py-1 px-1">
+                          <button
+                            className={ddDanger}
+                            onClick={() => {
+                              if (window.confirm(`Permanently delete ${member.data.name}? This will remove their profile, user account, and Firebase Auth login. This cannot be undone.`)) {
+                                onHardDeleteMember(member.data.id, member.type);
+                                setOpenDropdownId(null);
+                              }
+                            }}
+                          >
+                            🗑️ Delete Account
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 text-sm text-gray-500">
+              <span>
+                Showing {((memberPage - 1) * PAGE_SIZE) + 1}–{Math.min(memberPage * PAGE_SIZE, filteredMembers.length)} of {filteredMembers.length} members
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setMemberPage(p => p - 1)}
+                  disabled={memberPage === 1}
+                  className="px-3 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  ← Prev
+                </button>
+                <span className="text-gray-600">{memberPage} / {totalPages}</span>
+                <button
+                  onClick={() => setMemberPage(p => p + 1)}
+                  disabled={memberPage === totalPages}
+                  className="px-3 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
 
       {/* Message modal */}
       {messageTarget && (
