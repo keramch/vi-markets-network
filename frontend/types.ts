@@ -22,14 +22,23 @@ export interface UserSubscription {
 export interface User {
   id: string;
   email: string;
+  emailLower?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  businessName?: string;
+  accountType?: string;
+  city?: string;
   postalCode: string;
+  description?: string;
+  createdAt?: number;
+  isAdmin?: boolean;
+  autoRenew?: boolean;
   subscription: UserSubscription;
   userType?: UserType;
   ownedMarketId?: string;
   ownedVendorId?: string;
-  isAdmin?: boolean;
   notificationSettings?: NotificationSettings;
-  autoRenew?: boolean;
 }
 
 export interface Review {

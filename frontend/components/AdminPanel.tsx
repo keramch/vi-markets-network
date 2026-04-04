@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Market, Vendor, Review, User, MemberStatus } from '../types';
-import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon } from './Icons';
+import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon, MapPinIcon, TagIcon, SearchIcon, XIcon } from './Icons';
 
 interface AdminPanelProps {
   markets: Market[];
@@ -38,6 +38,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   };
   const [activeReviewTab, setActiveReviewTab] = useState<'pending' | 'approved'>('pending');
 
+  // Member search / pagination
+  const [memberSearch, setMemberSearch] = useState('');
+  const [memberPage, setMemberPage] = useState(1);
+  const PAGE_SIZE = 50;
+
   // Dropdown
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
@@ -47,6 +52,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [msgBody, setMsgBody] = useState('');
   const [msgSending, setMsgSending] = useState(false);
   const [msgError, setMsgError] = useState('');
+
+  useEffect(() => { setMemberPage(1); }, [memberSearch]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -94,10 +101,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     .filter(item => item.review.status === activeReviewTab)
     .sort((a, b) => new Date(b.review.date).getTime() - new Date(a.review.date).getTime());
 
-  const members: ({ type: 'market'; data: Market } | { type: 'vendor'; data: Vendor })[] = [
+  const allMembers: ({ type: 'market'; data: Market } | { type: 'vendor'; data: Vendor })[] = [
     ...markets.map(m => ({ type: 'market' as const, data: m })),
     ...vendors.map(v => ({ type: 'vendor' as const, data: v })),
   ].sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
+
+  const filteredMembers = memberSearch.trim() === ''
+    ? allMembers
+    : allMembers.filter(member => {
+        const user = users.find(u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id);
+        const q = memberSearch.toLowerCase();
+        return (
+          member.data.name.toLowerCase().includes(q) ||
+          (user?.email ?? '').toLowerCase().includes(q) ||
+          (`${user?.firstName ?? ''} ${user?.lastName ?? ''}`).toLowerCase().includes(q)
+        );
+      });
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const pagedMembers = filteredMembers.slice((memberPage - 1) * PAGE_SIZE, memberPage * PAGE_SIZE);
 
   const tierPrices: { [key: string]: number } = {
     'standard': 60,
@@ -186,150 +208,211 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   );
 
   const MembershipPanel = () => (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-brand-cream p-4 rounded-lg text-center">
-          <h3 className="text-sm font-medium text-brand-light-blue">Total Members</h3>
-          <p className="text-3xl font-bold text-brand-blue">{members.length}</p>
+    <div className="bg-white rounded-lg shadow-md">
+
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-white rounded-t-lg border-b border-gray-200 px-6 pt-6 pb-3">
+
+        {/* Stats chips */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-brand-cream p-4 rounded-lg text-center">
+            <h3 className="text-sm font-medium text-brand-light-blue">Total Members</h3>
+            <p className="text-3xl font-bold text-brand-blue">{filteredMembers.length}</p>
+          </div>
+          <div className="bg-brand-cream p-4 rounded-lg text-center">
+            <h3 className="text-sm font-medium text-brand-light-blue">Total Annual Revenue</h3>
+            <p className="text-3xl font-bold text-brand-blue">${totalRevenue.toLocaleString()}</p>
+          </div>
         </div>
-        <div className="bg-brand-cream p-4 rounded-lg text-center">
-          <h3 className="text-sm font-medium text-brand-light-blue">Total Annual Revenue</h3>
-          <p className="text-3xl font-bold text-brand-blue">${totalRevenue.toLocaleString()}</p>
+
+        {/* Search bar */}
+        <div className="relative mb-3">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={memberSearch}
+            onChange={e => setMemberSearch(e.target.value)}
+            placeholder="Search by name, contact, or email…"
+            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+          />
+          {memberSearch && (
+            <button
+              onClick={() => setMemberSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Icon legend */}
+        <div className="flex items-center gap-4 mb-3 text-xs text-gray-400">
+          <span className="flex items-center gap-1.5"><MapPinIcon className="w-3.5 h-3.5 text-brand-teal" /> Market</span>
+          <span className="flex items-center gap-1.5"><TagIcon className="w-3.5 h-3.5 text-brand-violet" /> Vendor</span>
+          <span className="flex items-center gap-1.5"><RibbonIcon className="w-3.5 h-3.5 text-brand-gold" /> Founding Member</span>
+        </div>
+
+        {/* Column headers */}
+        <div className="grid grid-cols-[1fr_80px_90px_60px] gap-4 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <span>Member</span>
+          <span>Plan</span>
+          <span>Status</span>
+          <span className="text-right">Actions</span>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {members.map(member => {
-              const user = users.find(
-                u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id
-              );
-              const isOpen = openDropdownId === member.data.id;
 
-              return (
-                <tr key={member.data.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-gray-900">{member.data.name}</span>
-                      {user?.subscription?.foundingMember && (
-                        <span title="Founding Member">
-                          <RibbonIcon className="w-4 h-4 text-brand-gold" />
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-500">{user?.email ?? '—'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user?.subscription?.tier ?? '—'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusChipClass(member.data.status)}`}>
-                      {member.data.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {/* Three-dots dropdown */}
-                    <div className="relative inline-block" data-dropdown>
+      {/* Rows */}
+      <div className="divide-y divide-gray-100 px-6">
+        {pagedMembers.map(member => {
+          const user = users.find(u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id);
+          const isOpen = openDropdownId === member.data.id;
+          const TypeIcon = member.type === 'market' ? MapPinIcon : TagIcon;
+          const typeColor = member.type === 'market' ? 'text-brand-teal' : 'text-brand-violet';
+          const contactName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.displayName || null;
+
+          return (
+            <div key={member.data.id} className="grid grid-cols-[1fr_80px_90px_60px] gap-4 items-center py-2 px-2">
+
+              {/* Member cell */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                <TypeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${typeColor}`} />
+                <span className="text-sm font-medium text-gray-900 truncate">{member.data.name}</span>
+                {user?.subscription?.foundingMember && (
+                  <RibbonIcon className="w-3.5 h-3.5 flex-shrink-0 text-brand-gold" />
+                )}
+                <span className="text-sm text-gray-400 truncate">
+                  {contactName ? `· ${contactName} · ` : '· '}
+                  {user?.email ?? '—'}
+                </span>
+              </div>
+
+              {/* Plan */}
+              <span className="text-sm text-gray-500 whitespace-nowrap">{user?.subscription?.tier ?? '—'}</span>
+
+              {/* Status */}
+              <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap ${getStatusChipClass(member.data.status)}`}>
+                {member.data.status}
+              </span>
+
+              {/* Actions */}
+              <div className="relative inline-block text-right" data-dropdown>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdownId(isOpen ? null : member.data.id)}
+                  className="px-3 py-1.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors leading-none tracking-widest"
+                  title="More actions"
+                >
+                  •••
+                </button>
+
+                {isOpen && (
+                  <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 divide-y divide-gray-100">
+                    {/* Edit Profile */}
+                    <div className="py-1 px-1">
                       <button
-                        type="button"
-                        onClick={() => setOpenDropdownId(isOpen ? null : member.data.id)}
-                        className="px-3 py-1.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors leading-none tracking-widest"
-                        title="More actions"
+                        className={ddItem}
+                        onClick={() => { onEditProfile(member.data.id, member.type); setOpenDropdownId(null); }}
                       >
-                        •••
+                        ✏️ Edit Profile
                       </button>
 
-                      {isOpen && (
-                        <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 divide-y divide-gray-100">
-                          {/* Edit Profile */}
-                          <div className="py-1 px-1">
-                            <button
-                              className={ddItem}
-                              onClick={() => { onEditProfile(member.data.id, member.type); setOpenDropdownId(null); }}
-                            >
-                              ✏️ Edit Profile
-                            </button>
+                      <button
+                        className={ddItem}
+                        onClick={() => {
+                          const email = user?.email ?? member.data.contact?.email ?? '';
+                          setMessageTarget({ email, name: member.data.name });
+                          setOpenDropdownId(null);
+                        }}
+                      >
+                        ✉️ Message Member
+                      </button>
 
-                            <button
-                              className={ddItem}
-                              onClick={() => {
-                                const email = user?.email ?? member.data.contact?.email ?? '';
-                                setMessageTarget({ email, name: member.data.name });
-                                setOpenDropdownId(null);
-                              }}
-                            >
-                              ✉️ Message Member
-                            </button>
+                      <button
+                        className={ddItem}
+                        onClick={() => {
+                          if (!user) return;
+                          onToggleFoundingMember(user.id, !!user.subscription?.foundingMember);
+                          setOpenDropdownId(null);
+                        }}
+                      >
+                        ⭐ {user?.subscription?.foundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
+                      </button>
+                    </div>
 
-                            <button
-                              className={ddItem}
-                              onClick={() => {
-                                if (!user) return;
-                                onToggleFoundingMember(user.id, !!user.subscription?.foundingMember);
-                                setOpenDropdownId(null);
-                              }}
-                            >
-                              ⭐ {user?.subscription?.foundingMember ? 'Remove Founding Member' : 'Make Founding Member'}
-                            </button>
-                          </div>
-
-                          {/* Status actions */}
-                          <div className="py-1 px-1">
-                            {member.data.status === 'active' && (
-                              <button
-                                className={ddItem}
-                                onClick={() => {
-                                  if (window.confirm(`Suspend ${member.data.name}? They will lose access until reactivated.`)) {
-                                    onUpdateMemberStatus(member.data.id, member.type, 'suspended');
-                                    setOpenDropdownId(null);
-                                  }
-                                }}
-                              >
-                                ⏸️ Suspend Account
-                              </button>
-                            )}
-                            {member.data.status === 'suspended' && (
-                              <button
-                                className={ddItem}
-                                onClick={() => { onUpdateMemberStatus(member.data.id, member.type, 'active'); setOpenDropdownId(null); }}
-                              >
-                                ▶️ Reactivate Account
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Destructive */}
-                          <div className="py-1 px-1">
-                            <button
-                              className={ddDanger}
-                              onClick={() => {
-                                if (window.confirm(`Permanently delete ${member.data.name}? This will remove their profile, user account, and Firebase Auth login. This cannot be undone.`)) {
-                                  onHardDeleteMember(member.data.id, member.type);
-                                  setOpenDropdownId(null);
-                                }
-                              }}
-                            >
-                              🗑️ Delete Account
-                            </button>
-                          </div>
-                        </div>
+                    {/* Status actions */}
+                    <div className="py-1 px-1">
+                      {member.data.status === 'active' && (
+                        <button
+                          className={ddItem}
+                          onClick={() => {
+                            if (window.confirm(`Suspend ${member.data.name}? They will lose access until reactivated.`)) {
+                              onUpdateMemberStatus(member.data.id, member.type, 'suspended');
+                              setOpenDropdownId(null);
+                            }
+                          }}
+                        >
+                          ⏸️ Suspend Account
+                        </button>
+                      )}
+                      {member.data.status === 'suspended' && (
+                        <button
+                          className={ddItem}
+                          onClick={() => { onUpdateMemberStatus(member.data.id, member.type, 'active'); setOpenDropdownId(null); }}
+                        >
+                          ▶️ Reactivate Account
+                        </button>
                       )}
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+                    {/* Destructive */}
+                    <div className="py-1 px-1">
+                      <button
+                        className={ddDanger}
+                        onClick={() => {
+                          if (window.confirm(`Permanently delete ${member.data.name}? This will remove their profile, user account, and Firebase Auth login. This cannot be undone.`)) {
+                            onHardDeleteMember(member.data.id, member.type);
+                            setOpenDropdownId(null);
+                          }
+                        }}
+                      >
+                        🗑️ Delete Account
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          );
+        })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 text-sm text-gray-500">
+          <span>
+            Showing {((memberPage - 1) * PAGE_SIZE) + 1}–{Math.min(memberPage * PAGE_SIZE, filteredMembers.length)} of {filteredMembers.length} members
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMemberPage(p => p - 1)}
+              disabled={memberPage === 1}
+              className="px-3 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ← Prev
+            </button>
+            <span className="text-gray-600">{memberPage} / {totalPages}</span>
+            <button
+              onClick={() => setMemberPage(p => p + 1)}
+              disabled={memberPage === totalPages}
+              className="px-3 py-1 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 
