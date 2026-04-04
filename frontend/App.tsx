@@ -197,7 +197,7 @@ const App: React.FC = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -235,32 +235,41 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
-    if (!consent) {
-        setShowCookieBanner(true);
-    }
+    if (!consent) setShowCookieBanner(true);
 
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [marketsData, vendorsData, applicationsData, usersData] = await Promise.all([
-                api.getMarkets(),
-                api.getVendors(),
-                api.getApplications(),
-                api.getUsers()
-            ]);
-            setMarkets(marketsData);
-            setVendors(vendorsData);
-            setApplications(applicationsData);
-            setUsers(usersData);
-        } catch (error) {
-            console.error("Failed to fetch initial data:", error);
-            showNotification("Error: Could not load data.");
-        } finally {
-            setIsLoading(false);
-        }
+    // Wave 1: public data — homepage needs this
+    const fetchPublicData = async () => {
+      try {
+        const [marketsData, vendorsData] = await Promise.all([
+          api.getMarkets(),
+          api.getVendors(),
+        ]);
+        setMarkets(marketsData);
+        setVendors(vendorsData);
+      } catch (error) {
+        console.error("Failed to fetch markets/vendors:", error);
+        showNotification("Error: Could not load listings.");
+      } finally {
+        setIsDataLoading(false);
+      }
     };
 
-    fetchData();
+    // Wave 2: admin/app data — fetch in background, no loading gate
+    const fetchAdminData = async () => {
+      try {
+        const [applicationsData, usersData] = await Promise.all([
+          api.getApplications(),
+          api.getUsers(),
+        ]);
+        setApplications(applicationsData);
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Failed to fetch admin data:", error);
+      }
+    };
+
+    fetchPublicData();
+    fetchAdminData();
   }, []);
 
   const handleCookieConsent = () => {
@@ -770,7 +779,7 @@ const App: React.FC = () => {
         currentUser={currentUser}
       />
       <div className="flex-grow">
-        {isLoading ? (
+        {isDataLoading ? (
           <div className="text-center p-20">Loading...</div>
         ) : (
           <Routes>
