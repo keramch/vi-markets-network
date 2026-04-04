@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { View, User } from '../types';
 import { VendorTypes, VendorCategoriesByType, VendorTagsByType } from '../types';
 import * as api from '../services/api.live';
+import { uploadImage } from '../services/storageUpload';
 import ImageUploader from './ImageUploader';
 import { CheckIcon } from './Icons';
 
@@ -153,6 +154,28 @@ const SignupPage: React.FC<SignupPageProps> = ({
         onSignupSuccess(user);
         setIsSuccess(true);
         window.scrollTo(0, 0);
+
+        // Upload logo in the background — does not block the success screen
+        if (logoFiles[0]) {
+          const profileType = accountType === 'vendor' ? 'vendors' : 'markets';
+          const profileId = accountType === 'vendor' ? user.ownedVendorId : user.ownedMarketId;
+          if (profileId) {
+            (async () => {
+              try {
+                const ext = logoFiles[0].name.split('.').pop() ?? 'jpg';
+                const path = `${profileType}/${profileId}/logo_${Date.now()}.${ext}`;
+                const logoUrl = await uploadImage(logoFiles[0], path);
+                if (accountType === 'vendor') {
+                  await api.updateVendor(profileId, { logoUrl });
+                } else {
+                  await api.updateMarket(profileId, { logoUrl });
+                }
+              } catch (err) {
+                console.error('Logo upload failed after signup:', err);
+              }
+            })();
+          }
+        }
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
       } finally {
