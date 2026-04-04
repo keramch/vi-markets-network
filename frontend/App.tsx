@@ -1020,11 +1020,11 @@ const App: React.FC = () => {
             </div>
             <div className="mt-8 pt-4 border-t border-gray-700 text-center text-sm text-gray-400">
                 <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 mb-3">
-                    <button onClick={() => handleNavigate({ type: 'about' })} className="hover:text-white transition-colors">About</button>
+                    <button onClick={() => navigate('/about')} className="hover:text-white transition-colors">About</button>
                     <a href="mailto:hello@vimarkets.ca" className="hover:text-white transition-colors">Contact</a>
-                    <button onClick={() => handleNavigate({ type: 'privacy' })} className="hover:text-white transition-colors">Privacy Policy</button>
-                    <button onClick={() => handleNavigate({ type: 'terms' })} className="hover:text-white transition-colors">Terms of Use</button>
-                    <button onClick={() => handleNavigate({ type: 'memberAgreement' })} className="hover:text-white transition-colors">Member Agreement</button>
+                    <button onClick={() => navigate('/privacy')} className="hover:text-white transition-colors">Privacy Policy</button>
+                    <button onClick={() => navigate('/terms')} className="hover:text-white transition-colors">Terms of Use</button>
+                    <button onClick={() => navigate('/member-agreement')} className="hover:text-white transition-colors">Member Agreement</button>
                 </div>
                 &copy; {new Date().getFullYear()} VI Markets Network. All rights reserved.
             </div>
@@ -1036,15 +1036,15 @@ const App: React.FC = () => {
         <VendorSignUpForm />
       </Modal>
       <Modal isOpen={isLoginModalOpen} onClose={() => setLoginModalOpen(false)} title="Login or Sign Up">
-        <LoginForm onLogin={handleLogin} onForgotPassword={() => { setLoginModalOpen(false); handleNavigate({type: 'forgotPassword'}); }}/>
+        <LoginForm onLogin={handleLogin} onForgotPassword={() => { setLoginModalOpen(false); setForgotPasswordOpen(true); }}/>
       </Modal>
-      <Modal 
-          isOpen={view.type === 'forgotPassword'}
-          onClose={() => handleNavigate({type: 'home'})}
+      <Modal
+          isOpen={isForgotPasswordOpen}
+          onClose={() => setForgotPasswordOpen(false)}
           title="Forgot Password"
           maxWidth="sm"
         >
-        <ForgotPasswordForm onSendRecoveryEmail={(email) => { showNotification(`Recovery email sent to ${email}.`); handleNavigate({type: 'home'}); }} />
+        <ForgotPasswordForm onSendRecoveryEmail={(email) => { showNotification(`Recovery email sent to ${email}.`); setForgotPasswordOpen(false); }} />
       </Modal>
        <Modal 
         isOpen={isMembershipModalOpen} 
