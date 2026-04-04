@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { View, User } from '../types';
-import { VendorTypes } from '../types';
+import { VendorTypes, VendorCategoriesByType, VendorTagsByType } from '../types';
 import * as api from '../services/api.live';
 import ImageUploader from './ImageUploader';
 import { CheckIcon } from './Icons';
@@ -69,6 +70,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   onLogin,
   onSignupSuccess,
 }) => {
+  const navigate = useNavigate();
   // Invite code gate
   const [inviteCode, setInviteCode] = useState('');
   const [inviteCodeError, setInviteCodeError] = useState('');
@@ -96,6 +98,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
   const [vendorTypes, setVendorTypes] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errors4, setErrors4] = useState<Partial<Record<'businessName' | 'city', string>>>({});
 
   // Submission
@@ -143,6 +147,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
           city: city.trim(),
           description: description.trim() || undefined,
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
+          categories: accountType === 'vendor' ? selectedCategories : undefined,
+          tags: accountType === 'vendor' ? selectedTags : undefined,
         });
         onSignupSuccess(user);
         setIsSuccess(true);
@@ -513,11 +519,67 @@ const SignupPage: React.FC<SignupPageProps> = ({
                               checked={vendorTypes.includes(vt)}
                               onChange={(e) => {
                                 const { value, checked } = e.target;
-                                setVendorTypes(prev => checked ? [...prev, value] : prev.filter(t => t !== value));
+                                const newTypes = checked ? [...vendorTypes, value] : vendorTypes.filter(t => t !== value);
+                                setVendorTypes(newTypes);
+                                if (!checked) {
+                                  const validCats = new Set(newTypes.flatMap(t => VendorCategoriesByType[t] || []));
+                                  const validTags = new Set(newTypes.flatMap(t => VendorTagsByType[t] || []));
+                                  setSelectedCategories(prev => prev.filter(c => validCats.has(c)));
+                                  setSelectedTags(prev => prev.filter(tg => validTags.has(tg)));
+                                }
                               }}
                               className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
                             />
                             <span className="ml-2 text-sm text-gray-600">{vt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {accountType === 'vendor' && vendorTypes.length > 0 && (
+                    <div>
+                      <label className={labelCls}>Categories</label>
+                      <p className="text-xs text-gray-400 mb-2">Select all that apply</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[...new Set(vendorTypes.flatMap(vt => VendorCategoriesByType[vt] || []))].map(cat => (
+                          <label key={cat} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              value={cat}
+                              checked={selectedCategories.includes(cat)}
+                              onChange={(e) => {
+                                const { value, checked } = e.target;
+                                setSelectedCategories(prev => checked ? [...prev, value] : prev.filter(c => c !== value));
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">{cat}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {accountType === 'vendor' && vendorTypes.length > 0 &&
+                    [...new Set(vendorTypes.flatMap(vt => VendorTagsByType[vt] || []))].length > 0 && (
+                    <div>
+                      <label className={labelCls}>Tags</label>
+                      <p className="text-xs text-gray-400 mb-2">Select any that describe your products or practice</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[...new Set(vendorTypes.flatMap(vt => VendorTagsByType[vt] || []))].map(tag => (
+                          <label key={tag} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              value={tag}
+                              checked={selectedTags.includes(tag)}
+                              onChange={(e) => {
+                                const { value, checked } = e.target;
+                                setSelectedTags(prev => checked ? [...prev, value] : prev.filter(tg => tg !== value));
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">{tag}</span>
                           </label>
                         ))}
                       </div>
@@ -605,7 +667,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
               </p>
               <button
                 type="button"
-                onClick={() => onNavigate({ type: 'manageProfile' })}
+                onClick={() => navigate('/dashboard/profile')}
                 className="bg-brand-blue text-white font-semibold px-10 py-3 rounded-full hover:bg-brand-blue/90 transition-colors text-lg"
               >
                 Go to Your Hub →

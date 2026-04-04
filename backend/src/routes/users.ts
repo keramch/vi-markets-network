@@ -47,7 +47,7 @@ router.get("/", async (_req, res) => {
 
 // POST /users/register → create a new user account from the signup wizard
 router.post("/register", async (req, res) => {
-  const { email, password, firstName, lastName, accountType, businessName, city, description, plan } = req.body as {
+  const { email, password, firstName, lastName, accountType, businessName, city, description, plan, vendorTypes, categories, tags } = req.body as {
     email: string;
     password: string;
     firstName: string;
@@ -57,6 +57,9 @@ router.post("/register", async (req, res) => {
     city: string;
     description?: string;
     plan?: string;
+    vendorTypes?: string[];
+    categories?: string[];
+    tags?: string[];
   };
 
   if (!email || !password || !firstName || !lastName || !accountType || !businessName || !city) {
@@ -151,6 +154,9 @@ router.post("/register", async (req, res) => {
         category: "Artisan & Crafts",
         photos: [],
         contact: { email },
+        vendorTypes: vendorTypes || [],
+        categories: categories || [],
+        tags: tags || [],
         priceRange: "moderate",
         attendingMarketIds: [],
         reviews: [],

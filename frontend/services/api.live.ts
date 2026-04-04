@@ -142,6 +142,8 @@ export const register = (data: {
   description?: string;
   plan?: string;
   vendorTypes?: string[];
+  categories?: string[];
+  tags?: string[];
 }): Promise<User> => {
   return request<User>("/users/register", {
     method: "POST",
