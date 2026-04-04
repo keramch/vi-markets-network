@@ -525,9 +525,16 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
+                      onBlur={(e) => {
+                        const titled = e.target.value
+                          .trim()
+                          .replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                        setCity(titled);
+                      }}
                       onKeyDown={handleStepEnter}
                       className={inputCls}
                       placeholder="e.g. Victoria, BC"
+                      autoComplete="address-level2"
                     />
                     {errors4.city && <p className={errCls}>{errors4.city}</p>}
                   </div>
