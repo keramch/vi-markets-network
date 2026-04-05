@@ -108,6 +108,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   // ── Validation ────────────────────────────────────────────────────────────
@@ -160,25 +161,26 @@ const SignupPage: React.FC<SignupPageProps> = ({
         setIsSuccess(true);
         window.scrollTo(0, 0);
 
-        // Upload logo in the background — does not block the success screen
+        // Upload logo — blocks the "Go to Your Hub" button until complete
         if (logoFiles[0]) {
           const profileType = accountType === 'vendor' ? 'vendors' : 'markets';
           const profileId = accountType === 'vendor' ? user.ownedVendorId : user.ownedMarketId;
           if (profileId) {
-            (async () => {
-              try {
-                const ext = logoFiles[0].name.split('.').pop() ?? 'jpg';
-                const path = `${profileType}/${profileId}/logo_${Date.now()}.${ext}`;
-                const logoUrl = await uploadImage(logoFiles[0], path);
-                if (accountType === 'vendor') {
-                  await api.updateVendor(profileId, { logoUrl });
-                } else {
-                  await api.updateMarket(profileId, { logoUrl });
-                }
-              } catch (err) {
-                console.error('Logo upload failed after signup:', err);
+            setIsUploadingLogo(true);
+            try {
+              const ext = logoFiles[0].name.split('.').pop() ?? 'jpg';
+              const path = `${profileType}/${profileId}/logo_${Date.now()}.${ext}`;
+              const logoUrl = await uploadImage(logoFiles[0], path);
+              if (accountType === 'vendor') {
+                await api.updateVendor(profileId, { logoUrl });
+              } else {
+                await api.updateMarket(profileId, { logoUrl });
               }
-            })();
+            } catch (err) {
+              console.error('Logo upload failed after signup:', err);
+            } finally {
+              setIsUploadingLogo(false);
+            }
           }
         }
       } catch (err) {
@@ -727,9 +729,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/profile')}
-                className="bg-brand-blue text-white font-semibold px-10 py-3 rounded-full hover:bg-brand-blue/90 transition-colors text-lg"
+                disabled={isUploadingLogo}
+                className="bg-brand-blue text-white font-semibold px-10 py-3 rounded-full hover:bg-brand-blue/90 transition-colors text-lg disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Go to Your Hub →
+                {isUploadingLogo ? 'Finishing up…' : 'Go to Your Hub →'}
               </button>
               <p className="mt-4 text-xs text-gray-400">
                 Didn't receive it? Check your spam folder or contact support.
