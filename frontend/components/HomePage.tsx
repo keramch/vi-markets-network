@@ -280,11 +280,11 @@ const HomePage: React.FC<HomePageProps> = ({
         searchTerm === "" ||
         fuzzySearch(
           searchTerm,
-          `${market.name} ${market.description} ${market.category}`
+          `${market.name} ${market.description} ${(market.marketTypes || []).join(' ')}`
         );
       const categoryMatch =
         selectedMarketCategory === "all" ||
-        market.category === selectedMarketCategory;
+        (market.marketTypes || []).includes(selectedMarketCategory);
       return searchTextMatch && categoryMatch;
     });
 

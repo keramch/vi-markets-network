@@ -92,7 +92,7 @@ const MarketCard: React.FC<MarketCardProps> = ({ market, onSelect, featured = fa
 
         <div className="mt-auto pt-2">
           <span className="inline-block bg-brand-teal-light text-brand-blue text-xs font-semibold px-2 py-0.5 rounded-full">
-            {market.category}
+            {(market.marketTypes || []).join(' · ')}
           </span>
         </div>
       </div>

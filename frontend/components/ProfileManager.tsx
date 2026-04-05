@@ -438,11 +438,17 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     {Object.values(MarketCategories).map(cat => (
                                         <label key={cat} className="flex items-center">
                                             <input
-                                                type="radio"
-                                                name="marketCategory"
+                                                type="checkbox"
                                                 value={cat}
-                                                checked={formData.category === cat}
-                                                onChange={() => setFormData({ ...formData, category: cat as MarketCategory })}
+                                                checked={(formData as Market).marketTypes?.includes(cat) || false}
+                                                onChange={() => {
+                                                    const market = formData as Market;
+                                                    const current = market.marketTypes || [];
+                                                    const updated = current.includes(cat)
+                                                        ? current.filter(t => t !== cat)
+                                                        : [...current, cat];
+                                                    setFormData({ ...formData, marketTypes: updated });
+                                                }}
                                                 className="h-4 w-4 border-gray-300 text-brand-blue focus:ring-brand-gold"
                                             />
                                             <span className="ml-2 text-sm text-gray-600">{cat}</span>

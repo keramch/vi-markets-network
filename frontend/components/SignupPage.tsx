@@ -100,7 +100,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
-  const [marketCategory, setMarketCategory] = useState<string>('');
+  const [marketTypes, setMarketTypes] = useState<string[]>([]);
   const [vendorTypes, setVendorTypes] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -153,7 +153,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
           categories: accountType === 'vendor' ? selectedCategories : undefined,
           tags: accountType === 'vendor' ? selectedTags : undefined,
-          marketCategory: accountType === 'market' && marketCategory ? marketCategory : undefined,
+          marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,
         });
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
         onSignupSuccess(user);
@@ -549,11 +549,13 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         {Object.values(MarketCategories).map(cat => (
                           <label key={cat} className="flex items-center">
                             <input
-                              type="radio"
-                              name="marketCategory"
+                              type="checkbox"
                               value={cat}
-                              checked={marketCategory === cat}
-                              onChange={(e) => setMarketCategory(e.target.value)}
+                              checked={marketTypes.includes(cat)}
+                              onChange={(e) => {
+                                const { value, checked } = e.target;
+                                setMarketTypes(prev => checked ? [...prev, value] : prev.filter(t => t !== value));
+                              }}
                               className="h-4 w-4 border-gray-300 text-brand-blue focus:ring-brand-gold"
                             />
                             <span className="ml-2 text-sm text-gray-600">{cat}</span>

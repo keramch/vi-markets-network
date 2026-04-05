@@ -49,7 +49,7 @@ router.get("/", async (_req, res) => {
 router.post("/register", async (req, res) => {
   const { email, password, firstName, lastName, accountType,
           businessName, city, description, plan, vendorTypes,
-          categories, tags, marketCategory } = req.body as {
+          categories, tags, marketCategories } = req.body as {
     email: string;
     password: string;
     firstName: string;
@@ -62,7 +62,7 @@ router.post("/register", async (req, res) => {
     vendorTypes?: string[];
     categories?: string[];
     tags?: string[];
-    marketCategory?: string;
+    marketCategories?: string[];
   };
 
   if (!email || !password || !firstName || !lastName || !accountType || !businessName || !city) {
@@ -131,7 +131,7 @@ router.post("/register", async (req, res) => {
         name: businessName,
         slug,
         description: description || "",
-        category: marketCategory || "Farmers Market",
+        marketTypes: marketCategories || [],
         photos: [],
         contact: { email },
         location: {

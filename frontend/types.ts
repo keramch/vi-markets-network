@@ -216,7 +216,7 @@ export interface Market {
   logoUrl?: string;
   headerPhotoUrl?: string;
   description: string;
-  category: MarketCategory;
+  marketTypes: MarketCategory[];
   photos: string[];
   contact: Contact;
   location: {

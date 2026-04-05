@@ -159,7 +159,7 @@ export const markets: Market[] = [
     name: 'City Center Farmers Market',
     logoUrl: 'https://picsum.photos/seed/logo-m1/200',
     description: 'The largest and oldest farmers market in the city, located in the heart of downtown. A vibrant gathering place for the community to connect with local farmers and artisans.',
-    category: MarketCategories.FARMERS_MARKET,
+    marketTypes: [MarketCategories.FARMERS_MARKET],
     photos: ['https://picsum.photos/seed/m1/800/400', 'https://picsum.photos/seed/m1a/800/400'],
     contact: { 
         email: 'manager@citycentermarket.com', 
@@ -200,7 +200,7 @@ export const markets: Market[] = [
     id: 'market-2',
     name: 'Willow Creek Community Market',
     description: 'A cozy and friendly market in the beautiful Willow Creek park. Perfect for a family outing. Features live music and a kids\' corner.',
-    category: MarketCategories.FARMERS_MARKET,
+    marketTypes: [MarketCategories.FARMERS_MARKET],
     photos: ['https://picsum.photos/seed/m2/800/400'],
     contact: { email: 'willowcreek@market.org' },
     location: {
@@ -229,7 +229,7 @@ export const markets: Market[] = [
     name: 'Oakwood Artisan Fair',
     logoUrl: 'https://picsum.photos/seed/logo-m3/200',
     description: 'A curated market focusing on high-quality, handmade crafts, art, and gourmet foods. Discover unique gifts and treats from talented local makers.',
-    category: MarketCategories.ARTISAN_CRAFT_MARKET,
+    marketTypes: [MarketCategories.ARTISAN_CRAFT_MARKET],
     photos: ['https://picsum.photos/seed/m3/800/400', 'https://picsum.photos/seed/m3a/800/400'],
     contact: { 
       email: 'manager@oakwoodfair.com', 

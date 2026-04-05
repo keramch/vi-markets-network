@@ -144,7 +144,7 @@ export const register = (data: {
   vendorTypes?: string[];
   categories?: string[];
   tags?: string[];
-  marketCategory?: string;
+  marketCategories?: string[];
 }): Promise<User> => {
   return request<User>("/users/register", {
     method: "POST",
