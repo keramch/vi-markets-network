@@ -16,6 +16,7 @@ import { getDistance } from "../utils";
 interface HomePageProps {
   markets: Market[];
   vendors: Vendor[];
+  isLoading: boolean;
   onSelectMarket: (id: string) => void;
   onSelectVendor: (id: string) => void;
   onViewAllMarkets: () => void;
@@ -113,9 +114,20 @@ function FilterSelect<T extends string>({
   );
 }
 
+const SkeletonCard = () => (
+  <div className="rounded-xl bg-white shadow-sm animate-pulse">
+    <div className="h-36 bg-gray-200 rounded-t-xl" />
+    <div className="p-3 space-y-2">
+      <div className="h-3 bg-gray-200 rounded w-3/4" />
+      <div className="h-3 bg-gray-200 rounded w-1/2" />
+    </div>
+  </div>
+);
+
 const HomePage: React.FC<HomePageProps> = ({
   markets,
   vendors,
+  isLoading,
   onSelectMarket,
   onSelectVendor,
   onViewAllMarkets,
@@ -614,6 +626,13 @@ const HomePage: React.FC<HomePageProps> = ({
                 What's New
               </h2>
               {/* Carousel */}
+              {isLoading ? (
+                <div className="flex gap-3 overflow-hidden">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex-shrink-0 w-36"><SkeletonCard /></div>
+                  ))}
+                </div>
+              ) : (
               <div className="relative">
                 {/* Left arrow */}
                 <button
@@ -683,12 +702,18 @@ const HomePage: React.FC<HomePageProps> = ({
                   ›
                 </button>
               </div>
+              )}
             </section>
 
             <section className="mb-12">
               <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
                 Featured Markets & Vendors
               </h2>
+              {isLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                  {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              ) : (
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
                 {featuredItems.map((item) =>
                   item.type === "market" ? (
@@ -706,6 +731,7 @@ const HomePage: React.FC<HomePageProps> = ({
                   )
                 )}
               </div>
+              )}
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => onViewAllMarkets()}

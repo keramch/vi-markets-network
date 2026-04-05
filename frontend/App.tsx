@@ -779,14 +779,12 @@ const App: React.FC = () => {
         currentUser={currentUser}
       />
       <div className="flex-grow">
-        {isDataLoading ? (
-          <div className="text-center p-20">Loading...</div>
-        ) : (
           <Routes>
             <Route path="/" element={
               <HomePage
                 markets={markets}
                 vendors={vendors}
+                isLoading={isDataLoading}
                 onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                 onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
                 onViewAllMarkets={() => navigate('/markets')}
@@ -970,7 +968,6 @@ const App: React.FC = () => {
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        )}
       </div>
       <footer className="bg-brand-blue text-white">
         <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
