@@ -861,16 +861,20 @@ const App: React.FC = () => {
                 onSignupSuccess={async (user: User) => {
                   setCurrentUser(user);
                   showNotification(`Welcome to VI Markets, ${user.email}!`);
-                  try {
-                    const [marketsData, vendorsData] = await Promise.all([
-                      api.getMarkets(),
-                      api.getVendors(),
-                    ]);
-                    setMarkets(marketsData);
-                    setVendors(vendorsData);
-                  } catch {
-                    // non-fatal — profile will load on next navigation
-                  }
+                  // Delay refetch to allow logo upload to complete before
+                  // refreshing market/vendor data from Firestore
+                  setTimeout(async () => {
+                    try {
+                      const [marketsData, vendorsData] = await Promise.all([
+                        api.getMarkets(),
+                        api.getVendors(),
+                      ]);
+                      setMarkets(marketsData);
+                      setVendors(vendorsData);
+                    } catch {
+                      // non-fatal
+                    }
+                  }, 4000);
                 }}
               />
             } />
