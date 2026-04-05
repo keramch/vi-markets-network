@@ -1,8 +1,8 @@
 
 
 import React, { useState, useEffect } from 'react';
-import type { Market, Vendor, MarketAmenity, PaymentOption, Review, VendorCategory, Application, User, ScheduleRule } from '../types';
-import { MarketAmenities, PaymentOptions, DayOfWeek, VendorTypes, VendorCategoriesByType, VendorTagsByType } from '../types';
+import type { Market, Vendor, MarketAmenity, PaymentOption, Review, VendorCategory, MarketCategory, Application, User, ScheduleRule } from '../types';
+import { MarketAmenities, PaymentOptions, DayOfWeek, VendorTypes, VendorCategoriesByType, VendorTagsByType, MarketCategories } from '../types';
 import ImageUploader from './ImageUploader';
 import { getDistance } from '../utils';
 import { WarningIcon, InboxIcon, RibbonIcon } from './Icons';
@@ -430,6 +430,25 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold text-brand-blue mb-2">Market Type</h3>
+                                <p className="text-sm text-gray-500 mb-3">Select the type that best describes your market.</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {Object.values(MarketCategories).map(cat => (
+                                        <label key={cat} className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="marketCategory"
+                                                value={cat}
+                                                checked={formData.category === cat}
+                                                onChange={() => setFormData({ ...formData, category: cat as MarketCategory })}
+                                                className="h-4 w-4 border-gray-300 text-brand-blue focus:ring-brand-gold"
+                                            />
+                                            <span className="ml-2 text-sm text-gray-600">{cat}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Amenities</h3>

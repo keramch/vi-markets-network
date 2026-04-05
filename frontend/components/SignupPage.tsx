@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
 import type { View, User } from '../types';
-import { VendorTypes, VendorCategoriesByType, VendorTagsByType } from '../types';
+import { VendorTypes, VendorCategoriesByType, VendorTagsByType, MarketCategories } from '../types';
 import * as api from '../services/api.live';
 import { uploadImage } from '../services/storageUpload';
 import ImageUploader from './ImageUploader';
@@ -100,6 +100,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
+  const [marketCategory, setMarketCategory] = useState<string>('');
   const [vendorTypes, setVendorTypes] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -152,6 +153,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
           categories: accountType === 'vendor' ? selectedCategories : undefined,
           tags: accountType === 'vendor' ? selectedTags : undefined,
+          marketCategory: accountType === 'market' && marketCategory ? marketCategory : undefined,
         });
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
         onSignupSuccess(user);
@@ -538,6 +540,28 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     />
                     {errors4.city && <p className={errCls}>{errors4.city}</p>}
                   </div>
+
+                  {accountType === 'market' && (
+                    <div>
+                      <label className={labelCls}>Market Type</label>
+                      <p className="text-xs text-gray-400 mb-2">Select the type that best describes your market.</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {Object.values(MarketCategories).map(cat => (
+                          <label key={cat} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="marketCategory"
+                              value={cat}
+                              checked={marketCategory === cat}
+                              onChange={(e) => setMarketCategory(e.target.value)}
+                              className="h-4 w-4 border-gray-300 text-brand-blue focus:ring-brand-gold"
+                            />
+                            <span className="ml-2 text-sm text-gray-600">{cat}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {accountType === 'vendor' && (
                     <div>
