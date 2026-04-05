@@ -11,14 +11,10 @@ interface MarketEventFormProps {
 }
 
 const TAG_LABELS: Record<string, string> = {
-  farmersMarket:  'Farmers Market',
-  artisanMarket:  'Artisan Market',
-  nightMarket:    'Night Market',
-  popUp:          'Pop-Up',
-  seasonalMarket: 'Seasonal Market',
-  holidayMarket:  'Holiday Market',
+  seasonalMarket: 'Seasonal',
   onFarm:         'On-Farm',
-  indoorMarket:   'Indoor Market',
+  indoorMarket:   'Indoor',
+  juried:         'Juried',
 };
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

@@ -51,11 +51,15 @@ export interface Review {
 }
 
 export const MarketCategories = {
-  FARMERS_MARKET: "Farmers Market",
-  ARTISAN_FAIR: "Artisan Fair",
-  FLEA_MARKET: "Flea Market",
-  SPECIALTY_FOOD: "Specialty Food Market",
-  NIGHT_MARKET: "Night Market",
+  FARMERS_MARKET:           "Farmers Market",
+  ARTISAN_CRAFT_MARKET:     "Artisan & Craft Market",
+  FARM_GATE_MARKET:         "Farm Gate Market",
+  FLEA_MARKET:              "Flea Market / Swap Meet",
+  FOOD_TRUCK_COURT:         "Food Truck Court",
+  NIGHT_MARKET:             "Night Market",
+  POP_UP_MARKET:            "Pop-Up Market",
+  VINTAGE_COLLECTIBLE:      "Vintage & Collectible Market",
+  CHRISTMAS_HOLIDAY_MARKET: "Christmas / Holiday Market",
 } as const;
 export type MarketCategory = typeof MarketCategories[keyof typeof MarketCategories];
 
@@ -285,14 +289,10 @@ export interface OrganizerAccount {
 }
 
 export const MarketTags = {
-  FARMERS_MARKET:   'farmersMarket',
-  ARTISAN_MARKET:   'artisanMarket',
-  NIGHT_MARKET:     'nightMarket',
-  POP_UP:           'popUp',
-  SEASONAL_MARKET:  'seasonalMarket',
-  HOLIDAY_MARKET:   'holidayMarket',
-  ON_FARM:          'onFarm',
-  INDOOR_MARKET:    'indoorMarket',
+  SEASONAL_MARKET: 'seasonalMarket',
+  ON_FARM:         'onFarm',
+  INDOOR_MARKET:   'indoorMarket',
+  JURIED:          'juried',
 } as const;
 export type MarketTag = typeof MarketTags[keyof typeof MarketTags];
 

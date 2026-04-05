@@ -229,7 +229,7 @@ export const markets: Market[] = [
     name: 'Oakwood Artisan Fair',
     logoUrl: 'https://picsum.photos/seed/logo-m3/200',
     description: 'A curated market focusing on high-quality, handmade crafts, art, and gourmet foods. Discover unique gifts and treats from talented local makers.',
-    category: MarketCategories.ARTISAN_FAIR,
+    category: MarketCategories.ARTISAN_CRAFT_MARKET,
     photos: ['https://picsum.photos/seed/m3/800/400', 'https://picsum.photos/seed/m3a/800/400'],
     contact: { 
       email: 'manager@oakwoodfair.com', 

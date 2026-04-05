@@ -32,25 +32,17 @@ interface CalendarViewProps {
 // ─── Tag display config ────────────────────────────────────────────────────────
 
 const TAG_LABELS: Record<string, string> = {
-  farmersMarket:  'Farmers Market',
-  artisanMarket:  'Artisan Market',
-  nightMarket:    'Night Market',
-  popUp:          'Pop-Up',
   seasonalMarket: 'Seasonal',
-  holidayMarket:  'Holiday',
   onFarm:         'On-Farm',
   indoorMarket:   'Indoor',
+  juried:         'Juried',
 };
 
 const TAG_COLORS: Record<string, string> = {
-  farmersMarket:  'bg-green-100 text-green-800',
-  artisanMarket:  'bg-purple-100 text-purple-800',
-  nightMarket:    'bg-indigo-100 text-indigo-800',
-  popUp:          'bg-orange-100 text-orange-800',
-  seasonalMarket: 'bg-yellow-100 text-yellow-800',
-  holidayMarket:  'bg-red-100 text-red-800',
+  seasonalMarket: 'bg-green-100 text-green-800',
   onFarm:         'bg-lime-100 text-lime-800',
-  indoorMarket:   'bg-sky-100 text-sky-800',
+  indoorMarket:   'bg-blue-100 text-blue-800',
+  juried:         'bg-purple-100 text-purple-800',
 };
 
 // Chip colours cycled per event
