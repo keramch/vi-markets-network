@@ -174,7 +174,7 @@ endor" | "market";
     // Update the user document with the new profile ID
     await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
 
-    // ── Brevo contact sync ────────────────────────────────────────────────────
+   // ── Brevo contact sync ────────────────────────────────────────────────────
     try {
       const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
       if (!isNaN(brevoListId)) {
@@ -215,13 +215,13 @@ endor" | "market";
           console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
         }
       } else {
-        console.warn("BREVO_LIST_ID not set — skipping Brevo sync");
+        console.warn("BREVO_LIST_ID not set -- skipping Brevo sync");
       }
     } catch (brevoErr) {
       console.error("Brevo sync failed (non-fatal):", brevoErr);
     }
     // ── End Brevo sync ────────────────────────────────────────────────────────
-
+    
     return res.status(201).json({
       id: userId,
       ...newUser,
