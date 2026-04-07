@@ -455,6 +455,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Market Tags</h3>
                                 <p className="text-sm text-gray-500 mb-4">Select all tags that describe your market's format, amenities, and policies.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {[
                                   { label: "Schedule & Format", tags: ["Weekly", "Bi-Weekly", "Monthly", "Annual", "Seasonal", "Indoor", "Outdoor", "Street Closure", "On-Farm"] },
                                   { label: "Vendor Policy", tags: ["Juried", "Non-Juried", "Youth Vendors Welcome", "Commercial Vendors Welcome", "Invitation Only"] },
@@ -463,7 +464,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                   { label: "Experience", tags: ["Live Music", "Entertainment", "Licensed (Alcohol)", "Food Available", "ATM On-Site"] },
                                   { label: "Payment Accepted", tags: ["Cash", "Debit/Credit", "E-Transfer"] },
                                 ].map(({ label, tags }) => (
-                                  <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                                  <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                     <p className="text-xs font-semibold text-brand-blue uppercase tracking-wider mb-2">{label}</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
                                       {tags.map(tag => (
@@ -488,6 +489,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     </div>
                                   </div>
                                 ))}
+                                </div>
                             </div>
                         </>
                     ) : (
@@ -517,6 +519,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Tags</h3>
                                 <p className="text-sm text-gray-500 mb-4">Select all tags that describe your products, practices, and payment methods.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {[
                                   { label: "Fresh & Farm", tags: ["Fresh Vegetables", "Fresh Fruits", "Organic Produce", "Herbs & Spices", "Spices & Seasonings", "Plants & Flowers", "Gardening Supplies", "Fresh Meat", "Seafood", "Poultry", "Milk & Cheese", "Eggs", "Yogurt & Butter"] },
                                   { label: "Food & Drink", tags: ["Bread & Pastries", "Cakes & Cookies", "Jam & Preserves", "Hot Sauce & Condiments", "Jerky & Dried Meats", "Meal Kits", "Pickles & Fermented", "Ready-to-Eat Meals", "Street Food", "Food Truck", "Coffee & Tea", "Juices & Smoothies", "Craft Beverages", "Beer", "Wine", "Cider", "Spirits"] },
@@ -532,7 +535,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                   { label: "Dietary & Allergen", tags: ["Gluten-Free", "Dairy-Free", "Nut-Free", "Keto", "Vegan"] },
                                   { label: "Payment", tags: ["Cash", "Debit/Credit", "E-Transfer"] },
                                 ].map(({ label, tags }) => (
-                                  <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                                  <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                     <p className="text-xs font-semibold text-brand-blue uppercase tracking-wider mb-2">{label}</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
                                       {tags.map(tag => (
@@ -550,6 +553,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     </div>
                                   </div>
                                 ))}
+                                </div>
                                 <p className="mt-2 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
                             </div>
                             <div>
