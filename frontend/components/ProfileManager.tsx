@@ -463,9 +463,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                   { label: "Experience", tags: ["Live Music", "Entertainment", "Licensed (Alcohol)", "Food Available", "ATM On-Site"] },
                                   { label: "Payment Accepted", tags: ["Cash", "Debit/Credit", "E-Transfer"] },
                                 ].map(({ label, tags }) => (
-                                  <div key={label} className="mb-4">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-1.5">
+                                  <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                                    <p className="text-xs font-semibold text-brand-blue uppercase tracking-wider mb-2">{label}</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
                                       {tags.map(tag => (
                                         <label key={tag} className="flex items-center gap-1.5">
                                           <input
@@ -532,9 +532,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                   { label: "Dietary & Allergen", tags: ["Gluten-Free", "Dairy-Free", "Nut-Free", "Keto", "Vegan"] },
                                   { label: "Payment", tags: ["Cash", "Debit/Credit", "E-Transfer"] },
                                 ].map(({ label, tags }) => (
-                                  <div key={label} className="mb-4">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-1.5">
+                                  <div key={label} className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                                    <p className="text-xs font-semibold text-brand-blue uppercase tracking-wider mb-2">{label}</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
                                       {tags.map(tag => (
                                         <label key={tag} className="flex items-center gap-1.5">
                                           <input
