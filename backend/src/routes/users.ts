@@ -47,7 +47,26 @@ router.get("/", async (_req, res) => {
 
 // POST /users/register → create a new user account from the signup wizard
 router.post("/register", async (req, res) => {
-endor" | "market";
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    accountType,
+    businessName,
+    city,
+    description,
+    plan,
+    vendorTypes,
+    categories,
+    tags,
+    marketCategories,
+  } = req.body as {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    accountType: "vendor" | "market";
     businessName: string;
     city: string;
     description?: string;
@@ -57,14 +76,7 @@ endor" | "market";
     tags?: string[];
     marketCategories?: string[];
   };
-  const { email, password, firstName, lastName, accountType,
-          businessName, city, description, plan, vendorTypes,
-          categories, tags, marketCategories } = req.body as {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    accountType: "v
+
   if (!email || !password || !firstName || !lastName || !accountType || !businessName || !city) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -174,7 +186,7 @@ endor" | "market";
     // Update the user document with the new profile ID
     await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
 
-   // ── Brevo contact sync ────────────────────────────────────────────────────
+    // ── Brevo contact sync ────────────────────────────────────────────────────
     try {
       const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
       if (!isNaN(brevoListId)) {
@@ -221,7 +233,7 @@ endor" | "market";
       console.error("Brevo sync failed (non-fatal):", brevoErr);
     }
     // ── End Brevo sync ────────────────────────────────────────────────────────
-    
+
     return res.status(201).json({
       id: userId,
       ...newUser,
