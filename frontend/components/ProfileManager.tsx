@@ -454,28 +454,40 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             </div>
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Market Tags</h3>
-                                <p className="text-sm text-gray-500 mb-3">Select all tags that describe your market's format, amenities, and policies.</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {(MarketTags as readonly string[]).map(tag => (
-                                        <label key={tag} className="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                value={tag}
-                                                checked={(formData as Market).tags?.includes(tag) || false}
-                                                onChange={(e) => {
-                                                    const market = formData as Market;
-                                                    const current = market.tags || [];
-                                                    const updated = e.target.checked
-                                                        ? [...current, e.target.value]
-                                                        : current.filter((t: string) => t !== e.target.value) as string[];
-                                                    setFormData({ ...formData, tags: updated });
-                                                }}
-                                                className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
-                                            />
-                                            <span className="ml-2 text-sm text-gray-600">{tag}</span>
+                                <p className="text-sm text-gray-500 mb-4">Select all tags that describe your market's format, amenities, and policies.</p>
+                                {[
+                                  { label: "Schedule & Format", tags: ["Weekly", "Bi-Weekly", "Monthly", "Annual", "Seasonal", "Indoor", "Outdoor", "Street Closure", "On-Farm"] },
+                                  { label: "Vendor Policy", tags: ["Juried", "Non-Juried", "Youth Vendors Welcome", "Commercial Vendors Welcome", "Invitation Only"] },
+                                  { label: "Admission", tags: ["Free Admission", "Paid Admission", "Pay-What-You-Can"] },
+                                  { label: "Amenities", tags: ["Free Parking", "Paid Parking", "Street Parking", "Wheelchair Accessible", "Public Washrooms", "Picnic Area", "Seating Available", "Kids Play Area", "Dog Friendly"] },
+                                  { label: "Experience", tags: ["Live Music", "Entertainment", "Licensed (Alcohol)", "Food Available", "ATM On-Site"] },
+                                  { label: "Payment Accepted", tags: ["Cash", "Debit/Credit", "E-Transfer"] },
+                                ].map(({ label, tags }) => (
+                                  <div key={label} className="mb-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                      {tags.map(tag => (
+                                        <label key={tag} className="flex items-center gap-1.5">
+                                          <input
+                                            type="checkbox"
+                                            value={tag}
+                                            checked={(formData as Market).tags?.includes(tag) || false}
+                                            onChange={(e) => {
+                                              const market = formData as Market;
+                                              const current = market.tags || [];
+                                              const updated = e.target.checked
+                                                ? [...current, e.target.value]
+                                                : current.filter((t: string) => t !== e.target.value);
+                                              setFormData({ ...formData, tags: updated });
+                                            }}
+                                            className="h-3.5 w-3.5 rounded border-gray-300 text-brand-blue focus:ring-brand-gold flex-shrink-0"
+                                          />
+                                          <span className="text-sm text-gray-600 leading-tight">{tag}</span>
                                         </label>
-                                    ))}
-                                </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
                             </div>
                         </>
                     ) : (
@@ -504,22 +516,41 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             </div>
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Tags</h3>
-                                <p className="text-sm text-gray-500 mb-3">Select all tags that describe your products, practices, and payment methods.</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {(VendorTags as readonly string[]).map(tag => (
-                                        <label key={tag} className="flex items-center">
-                                            <input
-                                                type="checkbox"
-                                                value={tag}
-                                                checked={formData.tags?.includes(tag) || false}
-                                                onChange={(e) => handleCheckboxChange(e, 'tags')}
-                                                className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
-                                            />
-                                            <span className="ml-2 text-sm text-gray-600">{tag}</span>
+                                <p className="text-sm text-gray-500 mb-4">Select all tags that describe your products, practices, and payment methods.</p>
+                                {[
+                                  { label: "Fresh & Farm", tags: ["Fresh Vegetables", "Fresh Fruits", "Organic Produce", "Herbs & Spices", "Spices & Seasonings", "Plants & Flowers", "Gardening Supplies", "Fresh Meat", "Seafood", "Poultry", "Milk & Cheese", "Eggs", "Yogurt & Butter"] },
+                                  { label: "Food & Drink", tags: ["Bread & Pastries", "Cakes & Cookies", "Jam & Preserves", "Hot Sauce & Condiments", "Jerky & Dried Meats", "Meal Kits", "Pickles & Fermented", "Ready-to-Eat Meals", "Street Food", "Food Truck", "Coffee & Tea", "Juices & Smoothies", "Craft Beverages", "Beer", "Wine", "Cider", "Spirits"] },
+                                  { label: "Art & Craft", tags: ["Paintings & Drawings", "Prints & Posters", "Sculptures", "Photography", "Glass Art", "Jewelry - Metal", "Jewelry - Non-metal", "Pottery", "Woodworking", "Textiles", "Fibre Art", "Quilting", "Leather Goods", "Candles", "Macrame", "Knit & Crochet", "Sewing", "Stickers & Paper Goods", "Resin", "3D Printing", "Sublimation"] },
+                                  { label: "Clothing & Accessories", tags: ["Apparel", "Hats & Scarves", "Handbags & Purses", "Children's Clothing"] },
+                                  { label: "Home & Wellness", tags: ["Home Decor", "Skincare Products", "Handmade Soaps", "Essential Oils", "Cosmetics", "Crystals"] },
+                                  { label: "Kids & Pets", tags: ["Toys & Games", "Educational Products", "Pet Food & Treats", "Pet Accessories", "Pet Toys"] },
+                                  { label: "Vintage & Collectibles", tags: ["Antique Furniture", "Vintage Clothing", "Vintage Items", "Collectible Memorabilia"] },
+                                  { label: "Books & Music", tags: ["New Books", "Used Books", "Rare & Antiquarian Books", "Author", "CDs & Vinyl Records", "Musical Instruments", "Recording Artist"] },
+                                  { label: "Services & Experiences", tags: ["Face Painting", "Henna Art", "Massage", "Tarot Reading", "Repair Services", "Music Performance"] },
+                                  { label: "Commercial / Reseller", tags: ["Norwex", "Sweetlegs", "Usborne Books", "doTERRA", "Young Living", "Arbonne", "Mary Kay", "Avon", "Tupperware", "Pampered Chef", "Scentsy", "Amway", "Herbalife", "Isagenix", "Forever Living", "Nu Skin", "Shaklee"] },
+                                  { label: "How you make it", tags: ["Original Artwork", "Commissions Available", "Handmade", "Upcycled", "Sustainable", "Organic", "Fair Trade", "Local Ingredients", "Pesticide-Free", "Hydroponic", "Free Range", "Grass Fed", "Cruelty-Free"] },
+                                  { label: "Dietary & Allergen", tags: ["Gluten-Free", "Dairy-Free", "Nut-Free", "Keto", "Vegan"] },
+                                  { label: "Payment", tags: ["Cash", "Debit/Credit", "E-Transfer"] },
+                                ].map(({ label, tags }) => (
+                                  <div key={label} className="mb-4">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                      {tags.map(tag => (
+                                        <label key={tag} className="flex items-center gap-1.5">
+                                          <input
+                                            type="checkbox"
+                                            value={tag}
+                                            checked={formData.tags?.includes(tag) || false}
+                                            onChange={(e) => handleCheckboxChange(e, 'tags')}
+                                            className="h-3.5 w-3.5 rounded border-gray-300 text-brand-blue focus:ring-brand-gold flex-shrink-0"
+                                          />
+                                          <span className="text-sm text-gray-600 leading-tight">{tag}</span>
                                         </label>
-                                    ))}
-                                </div>
-                                <p className="mt-3 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                                <p className="mt-2 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Origin Story</label>
