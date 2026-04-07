@@ -465,7 +465,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 ].map(({ label, tags }) => (
                                   <div key={label} className="mb-4">
                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-1.5">
                                       {tags.map(tag => (
                                         <label key={tag} className="flex items-center gap-1.5">
                                           <input
@@ -534,7 +534,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 ].map(({ label, tags }) => (
                                   <div key={label} className="mb-4">
                                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-1.5">
                                       {tags.map(tag => (
                                         <label key={tag} className="flex items-center gap-1.5">
                                           <input
