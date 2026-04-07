@@ -44,68 +44,130 @@ export interface User {
 export interface Review {
   id: string;
   author: string;
-  rating: number; // 1-5
+  rating: number;
   comment: string;
   date: string;
   status: 'pending' | 'approved' | 'declined';
 }
 
+// ── Market taxonomy ───────────────────────────────────────────────────────────
+
 export const MarketCategories = {
-  FARMERS_MARKET:           "Farmers Market",
-  ARTISAN_CRAFT_MARKET:     "Artisan & Craft Market",
-  FARM_GATE_MARKET:         "Farm Gate Market",
-  FLEA_MARKET:              "Flea Market / Swap Meet",
-  FOOD_TRUCK_COURT:         "Food Truck Court",
-  NIGHT_MARKET:             "Night Market",
-  POP_UP_MARKET:            "Pop-Up Market",
-  VINTAGE_COLLECTIBLE:      "Vintage & Collectible Market",
-  CHRISTMAS_HOLIDAY_MARKET: "Christmas / Holiday Market",
+  FARMERS_MARKET:            "Farmers Market",
+  ARTISAN_CRAFT_MARKET:      "Artisan & Craft Market",
+  FARM_GATE_STAND:           "Farm Gate Stand",
+  FLEA_MARKET:               "Flea Market / Swap Meet",
+  FOOD_TRUCK_COURT:          "Food Truck Court",
+  NIGHT_MARKET:              "Night Market",
+  POP_UP_MARKET:             "Pop-Up Market",
+  VINTAGE_COLLECTIBLE:       "Vintage & Collectible Market",
+  HOLIDAY_SEASONAL_MARKET:   "Holiday & Seasonal Market",
+  STREET_MARKET:             "Street Market",
+  SPECIALTY_MARKET:          "Specialty Market",
+  YOUTH_MARKET:              "Youth Market",
 } as const;
 export type MarketCategory = typeof MarketCategories[keyof typeof MarketCategories];
 
-export const VendorTypes = {
-  FARMER_GROWER: "Farmer / Grower",
-  FOOD_PRODUCER: "Food Producer",
-  READY_TO_EAT: "Ready-to-Eat / Food Stall",
-  ARTIST_MAKER: "Artist / Maker / Crafter",
-  VINTAGE_COLLECTIBLE: "Vintage & Collectible",
-  WELLNESS_BODY: "Wellness & Body",
-  SERVICES: "Services",
-  PET_PRODUCTS: "Pet Products",
-  BOOKS_MUSIC: "Books & Music",
-  COMMERCIAL_RESELLER: "Commercial / Reseller",
-} as const;
-export type VendorType = typeof VendorTypes[keyof typeof VendorTypes];
+export const MarketTags = [
+  // Schedule & Format
+  "Weekly", "Bi-Weekly", "Monthly", "Annual", "Seasonal",
+  "Indoor", "Outdoor", "Street Closure", "On-Farm",
+  // Vendor Policy
+  "Juried", "Non-Juried", "Youth Vendors Welcome",
+  "Commercial Vendors Welcome", "Invitation Only",
+  // Admission
+  "Free Admission", "Paid Admission", "Pay-What-You-Can",
+  // Amenities
+  "Free Parking", "Paid Parking", "Street Parking",
+  "Wheelchair Accessible", "Public Washrooms", "Picnic Area",
+  "Seating Available", "Kids Play Area", "Dog Friendly",
+  // Experience
+  "Live Music", "Entertainment", "Licensed (Alcohol)",
+  "Food Available", "ATM On-Site",
+  // Payment accepted
+  "Cash", "Debit/Credit", "E-Transfer",
+] as const;
+export type MarketTag = typeof MarketTags[number];
 
-export const VendorCategoriesByType: Record<string, string[]> = {
-  "Farmer / Grower": ["Produce", "Meat & Seafood", "Dairy & Eggs", "Plants & Flowers", "Herbs & Spices"],
-  "Food Producer": ["Bakery", "Preserves & Condiments", "Beverages", "Prepared Foods"],
-  "Ready-to-Eat / Food Stall": ["Street Food", "Ready-to-Eat Meals", "Food Truck", "Juices & Smoothies", "Coffee & Tea", "Brewery / Distillery"],
-  "Artist / Maker / Crafter": ["Paintings & Drawings", "Prints & Posters", "Sculptures", "Photography", "Jewelry", "Pottery & Glass", "Textiles & Fibre Art", "Wood & Leather", "Home Decor", "Apparel", "Candles", "Paper Goods", "Children's Clothing", "Toys & Games", "Educational Products"],
-  "Vintage & Collectible": ["Antique Furniture", "Vintage Clothing", "Collectible Memorabilia", "Books & Media"],
-  "Wellness & Body": ["Soap & Skincare", "Cosmetics", "Essential Oils", "Crystals"],
-  "Services": ["Repair Services", "Face Painting", "Henna Art", "Massage", "Tarot & Metaphysical", "Music"],
-  "Pet Products": ["Pet Food & Treats", "Pet Accessories", "Pet Toys"],
-  "Books & Music": ["Author", "Recording Artist", "New & Used Books", "CDs & Vinyl", "Musical Instruments"],
-  "Commercial / Reseller": ["Independent Distributor", "MLM", "Bulk Reseller", "Lot Buyer"],
-};
+// ── Vendor taxonomy ───────────────────────────────────────────────────────────
 
-export const VendorTagsByType: Record<string, string[]> = {
-  "Farmer / Grower": ["Organic", "Family Farm", "Sustainable", "Pesticide-Free", "Free Range", "Grass Fed", "Hydroponic"],
-  "Food Producer": ["Organic", "Local Ingredients", "Gluten-Free", "Vegan", "Dairy-Free", "Nut-Free", "Keto", "Fair Trade", "Sustainable", "Imported Ingredients", "Global Flavours"],
-  "Ready-to-Eat / Food Stall": ["Gluten-Free", "Vegan", "Dairy-Free", "Nut-Free", "Keto", "Ready to Eat", "Beer", "Wine", "Cider", "Spirits"],
-  "Artist / Maker / Crafter": ["Handmade", "Local Materials", "Upcycled/Recycled", "Sustainable", "Ethical", "Prints Available", "Original Artwork", "Commissions Available", "Macrame", "Wearable Art", "Functional", "Accessories", "Kitchen", "Screenprinting", "Sublimation", "3D Printing", "Stickers", "Fantasy/Faerie/Magic", "Weaving", "Knit/Crochet", "Sewing"],
-  "Vintage & Collectible": ["Antique", "Upcycled/Recycled"],
-  "Wellness & Body": ["Organic", "Handmade", "Vegan", "Cruelty-Free", "Sustainable"],
-  "Services": [],
-  "Pet Products": ["Handmade", "Organic", "Vegan"],
-  "Books & Music": ["New", "Used", "Reseller (e.g. Usborne Books)", "Local Author", "Local Artist"],
-  "Commercial / Reseller": ["Norwex", "Sweetlegs", "Usborne Books", "doTERRA", "Young Living", "Arbonne", "Mary Kay", "Avon", "Tupperware", "Pampered Chef", "Scentsy", "Amway", "Herbalife", "Isagenix", "Forever Living", "Nu Skin", "Shaklee"],
-};
+export const VendorTypes = [
+  "Agriculture & Produce",
+  "Meat & Seafood",
+  "Dairy & Eggs",
+  "Baked Goods",
+  "Prepared Foods & Preserves",
+  "Beverages",
+  "Fine Art & Artisan",
+  "Craft & Homemade",
+  "Clothing & Accessories",
+  "Wellness & Beauty",
+  "Home & Garden",
+  "Children's Products",
+  "Pet Products",
+  "Vintage & Collectibles",
+  "Books & Music",
+  "Experiences & Services",
+  "Commercial / Reseller",
+] as const;
+export type VendorType = typeof VendorTypes[number];
 
-// Kept for backwards compatibility with Market.allowedVendorCategories
+export const VendorTags = [
+  // What you sell — Food & Farm
+  "Fresh Vegetables", "Fresh Fruits", "Organic Produce", "Herbs & Spices",
+  "Spices & Seasonings", "Plants & Flowers", "Gardening Supplies",
+  "Fresh Meat", "Seafood", "Poultry", "Milk & Cheese", "Eggs",
+  "Yogurt & Butter", "Bread & Pastries", "Cakes & Cookies",
+  "Jam & Preserves", "Hot Sauce & Condiments", "Jerky & Dried Meats",
+  "Meal Kits", "Pickles & Fermented", "Ready-to-Eat Meals",
+  "Street Food", "Food Truck", "Coffee & Tea", "Juices & Smoothies",
+  "Craft Beverages", "Beer", "Wine", "Cider", "Spirits",
+  // What you sell — Art, Craft & Handmade
+  "Paintings & Drawings", "Prints & Posters", "Sculptures", "Photography",
+  "Glass Art", "Jewelry - Metal", "Jewelry - Non-metal", "Pottery",
+  "Woodworking", "Textiles", "Fibre Art", "Quilting", "Leather Goods",
+  "Candles", "Macrame", "Knit & Crochet", "Sewing", "Stickers & Paper Goods",
+  "Resin", "3D Printing", "Sublimation",
+  // What you sell — Clothing & Accessories
+  "Apparel", "Hats & Scarves", "Handbags & Purses",
+  // What you sell — Home & Wellness
+  "Home Decor", "Skincare Products", "Handmade Soaps", "Essential Oils",
+  "Cosmetics", "Crystals",
+  // What you sell — Children's & Pets
+  "Children's Clothing", "Toys & Games", "Educational Products",
+  "Pet Food & Treats", "Pet Accessories", "Pet Toys",
+  // What you sell — Vintage & Collectibles
+  "Antique Furniture", "Vintage Clothing", "Vintage Items",
+  "Collectible Memorabilia",
+  // What you sell — Books & Music
+  "New Books", "Used Books", "Rare & Antiquarian Books", "Author",
+  "CDs & Vinyl Records", "Musical Instruments", "Recording Artist",
+  // What you sell — Services & Experiences
+  "Face Painting", "Henna Art", "Massage", "Tarot Reading",
+  "Repair Services", "Music Performance",
+  // What you sell — Commercial / Reseller
+  "Norwex", "Sweetlegs", "Usborne Books", "doTERRA", "Young Living",
+  "Arbonne", "Mary Kay", "Avon", "Tupperware", "Pampered Chef",
+  "Scentsy", "Amway", "Herbalife", "Isagenix", "Forever Living",
+  "Nu Skin", "Shaklee",
+  // How you make it / grow it
+  "Original Artwork", "Commissions Available", "Handmade", "Upcycled",
+  "Sustainable", "Organic", "Fair Trade", "Local Ingredients",
+  "Pesticide-Free", "Hydroponic", "Free Range", "Grass Fed", "Cruelty-Free",
+  // Dietary & allergen
+  "Gluten-Free", "Dairy-Free", "Nut-Free", "Keto", "Vegan",
+  // Payment
+  "Cash", "Debit/Credit", "E-Transfer",
+] as const;
+export type VendorTag = typeof VendorTags[number];
+
+// Kept for backwards compatibility — remove after Firestore data migration
+/** @deprecated use vendorTypes */
 export type VendorCategory = string;
-export type VendorTag = string;
+/** @deprecated use tags */
+export type VendorTag_Legacy = string;
+
+// ── Schedule ──────────────────────────────────────────────────────────────────
 
 export const DayOfWeek = {
   SUNDAY: 'Sunday',
@@ -120,9 +182,11 @@ export type DayOfWeek = typeof DayOfWeek[keyof typeof DayOfWeek];
 
 export interface ScheduleRule {
   dayOfWeek: DayOfWeek;
-  startTime: string; // "HH:MM" 24-hour format
-  endTime: string; // "HH:MM" 24-hour format
+  startTime: string;
+  endTime: string;
 }
+
+// ── Market amenities & payment (legacy — now handled via MarketTags) ──────────
 
 export const MarketAmenities = {
   PUBLIC_RESTROOMS: "Public Restrooms",
@@ -145,6 +209,8 @@ export const PaymentOptions = {
 } as const;
 export type PaymentOption = typeof PaymentOptions[keyof typeof PaymentOptions];
 
+// ── Profiles ──────────────────────────────────────────────────────────────────
+
 interface Contact {
   email: string;
   phone?: string;
@@ -162,8 +228,8 @@ export interface Promotion {
   type: 'coupon' | 'event';
   title: string;
   description: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
+  startDate: string;
+  endDate: string;
 }
 
 export type MemberStatus = 'active' | 'suspended' | 'archived';
@@ -176,10 +242,11 @@ export interface Vendor {
   logoUrl?: string;
   description: string;
   vendorTypes?: VendorType[];
-  categories?: string[];
   tags?: string[];
   /** @deprecated use vendorTypes */
-  category?: VendorCategory;
+  category?: string;
+  /** @deprecated use tags */
+  categories?: string[];
   photos: string[];
   contact: Contact;
   priceRange: 'affordable' | 'moderate' | 'premium';
@@ -191,32 +258,32 @@ export interface Vendor {
   certifications?: string[];
   originStory?: string;
   city?: string;
-  joinDate: string; // YYYY-MM-DD
+  joinDate: string;
   promotions?: Promotion[];
   status: MemberStatus;
 }
 
 export interface Application {
-    id: string;
-    vendorId: string;
-    marketId: string;
-    date: string;
-    status: 'pending' | 'approved' | 'rejected';
-    customResponses: { question: string; answer: string }[];
+  id: string;
+  vendorId: string;
+  marketId: string;
+  date: string;
+  status: 'pending' | 'approved' | 'rejected';
+  customResponses: { question: string; answer: string }[];
 }
-
 
 export interface Market {
   id: string;
   ownerId?: string;
   slug?: string;
-  organizerUid?: string;        // links to organizerAccounts doc
-  coManagerUids?: string[];     // other users who can manage this page
-  name:string;
+  organizerUid?: string;
+  coManagerUids?: string[];
+  name: string;
   logoUrl?: string;
   headerPhotoUrl?: string;
   description: string;
   marketTypes: MarketCategory[];
+  tags?: string[];
   photos: string[];
   contact: Contact;
   location: {
@@ -236,14 +303,16 @@ export interface Market {
   paymentOptions?: PaymentOption[];
   seasonalInfo?: string;
   accessibility?: string;
-  joinDate: string; // YYYY-MM-DD
+  joinDate: string;
   promotions?: Promotion[];
   applicationFormQuestions?: string[];
-  allowedVendorCategories?: VendorCategory[];
-  externalEventUrl?: string;    // optional Facebook event or external link
+  allowedVendorCategories?: string[];
+  externalEventUrl?: string;
   status: MemberStatus;
-  updatedAt?: string;           // ISO date
+  updatedAt?: string;
 }
+
+// ── Views ─────────────────────────────────────────────────────────────────────
 
 export type View =
   | { type: 'home' }
@@ -269,7 +338,7 @@ export type View =
   | { type: 'terms' }
   | { type: 'memberAgreement' };
 
-// ─── Phase 2A: New data model types ─────────────────────────────────────────
+// ── Phase 2 types ─────────────────────────────────────────────────────────────
 
 export interface OrganizerAccount {
   id: string;
@@ -281,26 +350,18 @@ export interface OrganizerAccount {
     billingCycle: 'monthly' | 'annual';
     foundingMember: boolean;
     activeListingCount: number;
-    maxActiveListings: number;  // 1 | 3 | 10 | -1 (unlimited)
+    maxActiveListings: number;
   };
   marketPageIds: string[];
-  createdAt: string;  // ISO date
-  updatedAt: string;  // ISO date
+  createdAt: string;
+  updatedAt: string;
 }
 
-export const MarketTags = {
-  SEASONAL_MARKET: 'seasonalMarket',
-  ON_FARM:         'onFarm',
-  INDOOR_MARKET:   'indoorMarket',
-  JURIED:          'juried',
-} as const;
-export type MarketTag = typeof MarketTags[keyof typeof MarketTags];
-
 export interface EventException {
-  date: string;                   // ISO date string for the overridden occurrence
+  date: string;
   type: 'cancelled' | 'modified';
-  modifiedStartTime?: string;     // "HH:MM"
-  modifiedEndTime?: string;       // "HH:MM"
+  modifiedStartTime?: string;
+  modifiedEndTime?: string;
   note?: string;
 }
 
@@ -320,27 +381,27 @@ export interface MarketEvent {
     lng?: number;
   };
   schedule: {
-    date?: string;                // ISO date — for oneTime events
-    startDate?: string;           // ISO date — first occurrence (recurring)
-    endDate?: string;             // ISO date — last occurrence / end of season
-    recurrenceDays?: number[];    // 0=Sun, 1=Mon … 6=Sat
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+    recurrenceDays?: number[];
     recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly';
-    startTime: string;            // "HH:MM"
-    endTime: string;              // "HH:MM"
+    startTime: string;
+    endTime: string;
   };
   exceptions: EventException[];
   status: 'draft' | 'published' | 'cancelled' | 'archived';
   photos: string[];
   externalEventUrl?: string;
-  createdAt: string;              // ISO date
-  updatedAt: string;              // ISO date
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CustomField {
   id: string;
   label: string;
   type: 'text' | 'textarea' | 'select' | 'checkbox';
-  options?: string[];             // for select type
+  options?: string[];
   required: boolean;
 }
 
@@ -354,14 +415,14 @@ export interface MarketApplication {
   title: string;
   description: string;
   seekingCategories: string[];
-  deadline: string;               // ISO date
-  capacity?: number;              // hidden from public (open markets only)
-  capacityAlertThreshold?: number;// e.g. 0.8 for 80%
+  deadline: string;
+  capacity?: number;
+  capacityAlertThreshold?: number;
   registeredCount: number;
   customFields: CustomField[];
   notifiedVendorCount?: number;
-  createdAt: string;              // ISO date
-  updatedAt: string;              // ISO date
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface VendorApplication {
@@ -372,7 +433,7 @@ export interface VendorApplication {
   vendorUid: string;
   status: 'pending' | 'accepted' | 'rejected' | 'waitlisted' | 'confirmed' | 'cancelled';
   waitlistPosition?: number;
-  holdExpiresAt?: string;         // ISO date — set when invited from waitlist
+  holdExpiresAt?: string;
   prefillSnapshot: {
     businessName: string;
     categories: string[];
@@ -385,14 +446,14 @@ export interface VendorApplication {
     value: string | boolean;
   }[];
   applicationNote?: string;
-  submittedAt: string;            // ISO date
-  updatedAt: string;              // ISO date
+  submittedAt: string;
+  updatedAt: string;
 }
 
 export interface Follow {
   id: string;
   followerUid: string;
-  targetId: string;               // market page ID or vendor profile ID
+  targetId: string;
   targetType: 'market' | 'vendor';
-  createdAt: string;              // ISO date
+  createdAt: string;
 }

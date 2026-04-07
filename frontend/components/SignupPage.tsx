@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
 import type { View, User } from '../types';
-import { VendorTypes, VendorCategoriesByType, VendorTagsByType, MarketCategories } from '../types';
+import { VendorTypes, MarketCategories } from '../types';
 import * as api from '../services/api.live';
 import { uploadImage } from '../services/storageUpload';
 import ImageUploader from './ImageUploader';
@@ -102,8 +102,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
   const [marketTypes, setMarketTypes] = useState<string[]>([]);
   const [vendorTypes, setVendorTypes] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errors4, setErrors4] = useState<Partial<Record<'businessName' | 'city', string>>>({});
 
   // Submission
@@ -152,8 +150,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
           city: city.trim(),
           description: description.trim() || undefined,
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
-          categories: accountType === 'vendor' ? selectedCategories : undefined,
-          tags: accountType === 'vendor' ? selectedTags : undefined,
           marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,
         });
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
@@ -524,7 +520,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   </div>
 
                   <div>
-                    <label className={labelCls}>City / Location</label>
+                    <label className={labelCls}>City</label>
                     <input
                       type="text"
                       value={city}
@@ -537,7 +533,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       }}
                       onKeyDown={handleStepEnter}
                       className={inputCls}
-                      placeholder="e.g. Victoria, BC"
+                      placeholder="e.g. Victoria"
                       autoComplete="address-level2"
                     />
                     {errors4.city && <p className={errCls}>{errors4.city}</p>}
@@ -547,6 +543,9 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     <div>
                       <label className={labelCls}>Market Type</label>
                       <p className="text-xs text-gray-400 mb-2">Select the type that best describes your market.</p>
+                      {marketTypes.length >= 3 && (
+                        <p className="text-xs text-amber-600 mb-2">Maximum 3 types selected.</p>
+                      )}
                       <div className="grid grid-cols-1 gap-2">
                         {Object.values(MarketCategories).map(cat => (
                           <label key={cat} className="flex items-center">
@@ -554,6 +553,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                               type="checkbox"
                               value={cat}
                               checked={marketTypes.includes(cat)}
+                              disabled={!marketTypes.includes(cat as string) && marketTypes.length >= 3}
                               onChange={(e) => {
                                 const { value, checked } = e.target;
                                 setMarketTypes(prev => checked ? [...prev, value] : prev.filter(t => t !== value));
@@ -571,23 +571,20 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     <div>
                       <label className={labelCls}>Vendor Type</label>
                       <p className="text-xs text-gray-400 mb-2">Select all that apply — you can update this later.</p>
+                      {vendorTypes.length >= 3 && (
+                        <p className="text-xs text-amber-600 mb-2">Maximum 3 types selected.</p>
+                      )}
                       <div className="grid grid-cols-2 gap-2">
-                        {Object.values(VendorTypes).map(vt => (
+                        {(VendorTypes as readonly string[]).map(vt => (
                           <label key={vt} className="flex items-center">
                             <input
                               type="checkbox"
                               value={vt}
                               checked={vendorTypes.includes(vt)}
+                              disabled={!vendorTypes.includes(vt) && vendorTypes.length >= 3}
                               onChange={(e) => {
                                 const { value, checked } = e.target;
-                                const newTypes = checked ? [...vendorTypes, value] : vendorTypes.filter(t => t !== value);
-                                setVendorTypes(newTypes);
-                                if (!checked) {
-                                  const validCats = new Set(newTypes.flatMap(t => VendorCategoriesByType[t] || []));
-                                  const validTags = new Set(newTypes.flatMap(t => VendorTagsByType[t] || []));
-                                  setSelectedCategories(prev => prev.filter(c => validCats.has(c)));
-                                  setSelectedTags(prev => prev.filter(tg => validTags.has(tg)));
-                                }
+                                setVendorTypes(checked ? [...vendorTypes, value] : vendorTypes.filter(t => t !== value));
                               }}
                               className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
                             />
@@ -597,55 +594,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       </div>
                     </div>
                   )}
-
-                  {accountType === 'vendor' && vendorTypes.length > 0 && (
-                    <div>
-                      <label className={labelCls}>Categories</label>
-                      <p className="text-xs text-gray-400 mb-2">Select all that apply</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[...new Set(vendorTypes.flatMap(vt => VendorCategoriesByType[vt] || []))].map(cat => (
-                          <label key={cat} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              value={cat}
-                              checked={selectedCategories.includes(cat)}
-                              onChange={(e) => {
-                                const { value, checked } = e.target;
-                                setSelectedCategories(prev => checked ? [...prev, value] : prev.filter(c => c !== value));
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
-                            />
-                            <span className="ml-2 text-sm text-gray-600">{cat}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                  {accountType === 'vendor' && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      You'll be able to add detailed tags to your profile after you're registered.
+                    </p>
                   )}
 
-                  {accountType === 'vendor' && vendorTypes.length > 0 &&
-                    [...new Set(vendorTypes.flatMap(vt => VendorTagsByType[vt] || []))].length > 0 && (
-                    <div>
-                      <label className={labelCls}>Tags</label>
-                      <p className="text-xs text-gray-400 mb-2">Select any that describe your products or practice</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[...new Set(vendorTypes.flatMap(vt => VendorTagsByType[vt] || []))].map(tag => (
-                          <label key={tag} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              value={tag}
-                              checked={selectedTags.includes(tag)}
-                              onChange={(e) => {
-                                const { value, checked } = e.target;
-                                setSelectedTags(prev => checked ? [...prev, value] : prev.filter(tg => tg !== value));
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
-                            />
-                            <span className="ml-2 text-sm text-gray-600">{tag}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   <ImageUploader
                     id="signup-logo"
