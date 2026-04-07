@@ -47,14 +47,7 @@ router.get("/", async (_req, res) => {
 
 // POST /users/register → create a new user account from the signup wizard
 router.post("/register", async (req, res) => {
-  const { email, password, firstName, lastName, accountType,
-          businessName, city, description, plan, vendorTypes,
-          categories, tags, marketCategories } = req.body as {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    accountType: "vendor" | "market";
+endor" | "market";
     businessName: string;
     city: string;
     description?: string;
@@ -64,7 +57,14 @@ router.post("/register", async (req, res) => {
     tags?: string[];
     marketCategories?: string[];
   };
-
+  const { email, password, firstName, lastName, accountType,
+          businessName, city, description, plan, vendorTypes,
+          categories, tags, marketCategories } = req.body as {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    accountType: "v
   if (!email || !password || !firstName || !lastName || !accountType || !businessName || !city) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -173,6 +173,54 @@ router.post("/register", async (req, res) => {
 
     // Update the user document with the new profile ID
     await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
+
+    // ── Brevo contact sync ────────────────────────────────────────────────────
+    try {
+      const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
+      if (!isNaN(brevoListId)) {
+        const brevoAttributes: Record<string, string | boolean> = {
+          FIRSTNAME: firstName,
+          LASTNAME: lastName,
+          BUSINESSNAME: businessName,
+          CITY: city,
+          MEMBERTYPE: accountType === "vendor" ? "Vendor" : "Market",
+          IS_MEMBER: true,
+          SUBSCRIPTION_TIER: plan ?? "free",
+          FOUNDING_MEMBER: false,
+        };
+
+        if (accountType === "vendor" && vendorTypes && vendorTypes.length > 0) {
+          brevoAttributes.VENDOR_TYPES = vendorTypes.join("|");
+        }
+        if (accountType === "market" && marketCategories && marketCategories.length > 0) {
+          brevoAttributes.MARKET_TYPES = marketCategories.join("|");
+        }
+
+        const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": process.env.BREVO_API_KEY ?? "",
+          },
+          body: JSON.stringify({
+            email,
+            attributes: brevoAttributes,
+            listIds: [brevoListId],
+            updateEnabled: true,
+          }),
+        });
+
+        if (!brevoResponse.ok) {
+          const errorBody = await brevoResponse.text();
+          console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
+        }
+      } else {
+        console.warn("BREVO_LIST_ID not set — skipping Brevo sync");
+      }
+    } catch (brevoErr) {
+      console.error("Brevo sync failed (non-fatal):", brevoErr);
+    }
+    // ── End Brevo sync ────────────────────────────────────────────────────────
 
     return res.status(201).json({
       id: userId,
