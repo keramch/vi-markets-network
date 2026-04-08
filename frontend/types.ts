@@ -336,7 +336,8 @@ export type View =
   | { type: 'about' }
   | { type: 'privacy' }
   | { type: 'terms' }
-  | { type: 'memberAgreement' };
+  | { type: 'memberAgreement' }
+  | { type: 'organizerHub' };
 
 // ── Phase 2 types ─────────────────────────────────────────────────────────────
 

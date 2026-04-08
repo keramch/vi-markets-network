@@ -26,6 +26,7 @@ import ApplicationForm from './components/ApplicationForm';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import ForgotPasswordForm from './components/ForgotPasswordForm';
 import SignupPage from './components/SignupPage';
+import OrganizerHub from './components/OrganizerHub';
 import BrowsePage from './components/BrowsePage';
 import PricingPage from './components/PricingPage';
 import AboutPage from './components/AboutPage';
@@ -48,6 +49,7 @@ const viewToPath = (view: View): string => {
     case 'pricing':            return '/pricing';
     case 'signup':             return '/signup';
     case 'dashboard':          return '/dashboard';
+    case 'organizerHub':       return '/dashboard/my-market';
     case 'manageProfile':      return '/dashboard/profile';
     case 'notificationSettings': return '/dashboard/notifications';
     case 'myApplications':     return '/dashboard/applications';
@@ -884,6 +886,21 @@ const App: React.FC = () => {
                 onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
                 onBack={() => navigate('/')}
               />
+            } />
+            <Route path="/dashboard/my-market" element={
+              currentUser && currentUser.ownedMarketId
+                ? (() => {
+                    const ownedMarket = markets.find(m => m.id === currentUser.ownedMarketId);
+                    return ownedMarket ? (
+                      <OrganizerHub
+                        currentUser={currentUser}
+                        market={ownedMarket}
+                        onNavigateToProfile={() => navigate('/dashboard/profile')}
+                        onBack={() => navigate('/')}
+                      />
+                    ) : <Navigate to="/" replace />;
+                  })()
+                : <Navigate to="/" replace />
             } />
             <Route path="/dashboard/profile" element={(() => {
               const profileData = ownedMarket || ownedVendor;

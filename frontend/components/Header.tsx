@@ -14,7 +14,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLogout, currentUser }) => {
-  const isOwner = currentUser?.ownedMarketId || currentUser?.ownedVendorId;
   const isVendorOwner = !!currentUser?.ownedVendorId;
   const isProMember = currentUser?.subscription?.tier === 'pro' || currentUser?.subscription?.tier === 'superPro' || currentUser?.subscription?.foundingMember === true;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -61,24 +60,32 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                         My Applications
                     </button>
                   )}
-                  { isOwner && (
-                     <>
+                  {currentUser.ownedMarketId && (
+                    <button
+                      onClick={() => onNavigate({ type: 'organizerHub' })}
+                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      My Market
+                    </button>
+                  )}
+                  {currentUser.ownedVendorId && (
+                    <>
+                      <button
+                        onClick={() => onNavigate({ type: 'manageProfile' })}
+                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        Manage Profile
+                      </button>
+                      {isProMember && (
                         <button
-                          onClick={() => onNavigate({ type: 'manageProfile' })}
-                          className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                          onClick={() => onNavigate({ type: 'promotions' })}
+                          className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
                         >
-                          Manage Profile
-                        </button>
-                        {isProMember && (
-                          <button
-                            onClick={() => onNavigate({ type: 'promotions'})}
-                            className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
-                          >
                           <MegaphoneIcon className="w-4 h-4 mr-2" />
-                            Promotions
-                          </button>
-                        )}
-                     </>
+                          Promotions
+                        </button>
+                      )}
+                    </>
                   )}
                   {currentUser.isAdmin && (
                      <button onClick={() => onNavigate({ type: 'adminPanel' })} className="text-brand-gold hover:bg-brand-gold/10 px-3 py-2 rounded-md text-sm font-medium">Market HQ</button>
@@ -169,7 +176,15 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     My Applications
                   </button>
                 )}
-                {isOwner && (
+                {currentUser.ownedMarketId && (
+                  <button
+                    onClick={() => { onNavigate({ type: 'organizerHub' }); setMenuOpen(false); }}
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+                  >
+                    My Market
+                  </button>
+                )}
+                {currentUser.ownedVendorId && (
                   <>
                     <button
                       onClick={() => { onNavigate({ type: 'manageProfile' }); setMenuOpen(false); }}
