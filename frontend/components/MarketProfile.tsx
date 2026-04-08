@@ -130,7 +130,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
               <h2 className="text-2xl font-serif text-brand-blue mb-4">About the Market</h2>
-              <p className="text-brand-text leading-relaxed">{market.description}</p>
+              <p className="text-brand-text leading-relaxed whitespace-pre-line">{market.description}</p>
               
               <div className="mt-8 border-t pt-6">
                 <h3 className="text-xl font-serif text-brand-blue mb-4">Good to Know</h3>

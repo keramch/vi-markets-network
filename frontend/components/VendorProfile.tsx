@@ -76,7 +76,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
               </div>
           </div>
           <div className="md:col-span-2 p-6 md:p-8">
-            <p className="text-brand-text leading-relaxed mb-6">{vendor.description}</p>
+            <p className="text-brand-text leading-relaxed mb-6 whitespace-pre-line">{vendor.description}</p>
 
             {vendor.tags && vendor.tags.length > 0 && (
               <div className="mb-6 flex flex-wrap gap-2">
@@ -97,7 +97,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
                 {vendor.originStory && (
                     <div>
                         <h3 className="text-lg text-brand-blue font-serif mb-2">Our Story</h3>
-                        <p className="text-brand-text text-sm">{vendor.originStory}</p>
+                        <p className="text-brand-text text-sm whitespace-pre-line">{vendor.originStory}</p>
                     </div>
                 )}
                 {vendor.productHighlights && vendor.productHighlights.length > 0 && (
@@ -113,7 +113,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
                         <LeafIcon className="w-6 h-6 mr-3 text-green-600 flex-shrink-0 mt-1" />
                         <div>
                             <h4 className="font-semibold text-brand-blue">Sustainability</h4>
-                            <p className="text-brand-text text-sm">{vendor.sustainabilityPractices}</p>
+                            <p className="text-brand-text text-sm whitespace-pre-line">{vendor.sustainabilityPractices}</p>
                         </div>
                     </div>
                 )}

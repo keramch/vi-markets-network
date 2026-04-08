@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { MarketEvent, MarketTag, User } from '../types';
-import { MarketTags } from '../types';
+import { MarketTags, MarketCategories } from '../types';
 import * as api from '../services/api.live';
 
 interface MarketEventFormProps {
@@ -50,6 +50,9 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const [selectedTags, setSelectedTags] = useState<string[]>(
     existingEvent?.marketTags ?? []
   );
+  const [marketType, setMarketType] = useState<string[]>(
+    (existingEvent as any)?.marketType ?? []
+  );
   const [externalUrl, setExternalUrl] = useState(existingEvent?.externalEventUrl ?? '');
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
@@ -98,7 +101,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           }),
     };
 
-    const payload: Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt'> = {
+    const payload = {
       marketPageId:  currentUser.ownedMarketId!,
       organizerUid:  currentUser.id,
       name:          name.trim(),
@@ -115,7 +118,8 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       status,
       photos:     existingEvent?.photos ?? [],
       ...(externalUrl.trim() ? { externalEventUrl: externalUrl.trim() } : {}),
-    };
+      ...(marketType.length > 0 ? { marketType } : {}),
+    } as Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt'>;
 
     try {
       const saved = existingEvent
@@ -162,6 +166,36 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           onChange={e => setName(e.target.value)}
           placeholder="e.g. Saturday Farmers Market"
         />
+      </div>
+
+      {/* Market Type */}
+      <div>
+        <label className={labelCls}>Market Type <span className="text-gray-400 font-normal">(select up to 3)</span></label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {Object.values(MarketCategories).map(cat => {
+            const checked = marketType.includes(cat);
+            const disabled = !checked && marketType.length >= 3;
+            return (
+              <label key={cat} className={`flex items-center gap-2 bg-gray-50 border rounded-lg px-3 py-2 transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 border-gray-200'} ${checked ? 'border-brand-blue bg-brand-blue/5' : 'border-gray-200'}`}>
+                <input
+                  type="checkbox"
+                  value={cat}
+                  checked={checked}
+                  disabled={disabled}
+                  onChange={() => {
+                    if (checked) {
+                      setMarketType(prev => prev.filter(t => t !== cat));
+                    } else if (marketType.length < 3) {
+                      setMarketType(prev => [...prev, cat]);
+                    }
+                  }}
+                  className="h-3.5 w-3.5 text-brand-blue border-gray-300 focus:ring-brand-gold"
+                />
+                <span className="text-sm text-gray-600 leading-tight">{cat}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {/* Location */}

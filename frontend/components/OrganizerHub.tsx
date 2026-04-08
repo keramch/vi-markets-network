@@ -99,11 +99,15 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const handleSaved = (saved: MarketEvent) => {
     closeEdit();
-    setEvents(prev =>
-      prev
-        .map(e => (e.id === saved.id ? saved : e))
-        .sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
-    );
+    setEvents(prev => {
+      const exists = prev.some(e => e.id === saved.id);
+      const updated = exists
+        ? prev.map(e => (e.id === saved.id ? saved : e))
+        : [...prev, saved];
+      return updated
+        .filter(e => e.status !== 'archived')
+        .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+    });
   };
 
   // ── delete handlers ──────────────────────────────────────────────────────────
@@ -419,7 +423,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <MarketEventForm
           currentUser={currentUser}
           existingEvent={selectedEvent ?? undefined}
-          onSaved={isScopeDisabled ? () => {} : handleSaved}
+          onSaved={isScopeDisabled ? closeEdit : handleSaved}
           onCancel={closeEdit}
         />
       </Modal>
