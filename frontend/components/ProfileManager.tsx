@@ -333,8 +333,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 <p>You are editing this profile as an administrator. Changes will be saved directly.</p>
             </div>
         )}
-        <h2 className="text-3xl font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Profile' : 'Vendor Hub'}</h2>
-        <p className="text-gray-600 mb-6">Manage your public profile, promotions, and applications.</p>
+        <h2 className="text-3xl font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Profile' : 'Vendor Profile'}</h2>
+        <p className="text-gray-600 mb-6">Edit your public profile and settings.</p>
 
         <div className="border-b mb-6">
             <div className="flex space-x-2 flex-wrap">
@@ -430,7 +430,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Market Type</h3>
                                 <p className="text-sm text-gray-500 mb-3">Select the type that best describes your market.</p>
-                                <div className="grid grid-cols-1 gap-2">
+                                <div className="grid grid-cols-2 gap-1.5">
                                     {Object.values(MarketCategories).map(cat => (
                                         <label key={cat} className="flex items-center">
                                             <input
@@ -502,7 +502,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 )}
                                 <div className="grid grid-cols-2 gap-2">
                                     {(VendorTypes as readonly string[]).map(vt => (
-                                        <label key={vt} className="flex items-center">
+                                        <label key={vt} className="flex items-start">
                                             <input
                                                 type="checkbox"
                                                 value={vt}
@@ -539,7 +539,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     <p className="text-xs font-semibold text-brand-blue uppercase tracking-wider mb-2">{label}</p>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
                                       {tags.map(tag => (
-                                        <label key={tag} className="flex items-center gap-1.5">
+                                        <label key={tag} className="flex items-start gap-1.5">
                                           <input
                                             type="checkbox"
                                             value={tag}

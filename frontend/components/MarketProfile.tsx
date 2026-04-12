@@ -83,9 +83,6 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-       <button onClick={onBack} className="mb-6 text-brand-light-blue hover:text-brand-blue font-semibold">
-        &larr; Back to all markets
-      </button>
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
         <div className="relative">
           {/* Hero banner */}
@@ -259,8 +256,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
                 {approvedReviews.length > 0 ? approvedReviews.map(review => (
                     <div key={review.id} className="border-b pb-4">
                         <div className="flex items-center mb-1">
-                            <RatingStars rating={review.rating} />
-                            <span className="ml-4 font-bold text-brand-text">{review.author}</span>
+                            <span className="font-bold text-brand-text">{review.author}</span>
                         </div>
                         <p className="text-gray-600">{review.comment}</p>
                         <p className="text-xs text-gray-400 mt-1">{review.date}</p>
