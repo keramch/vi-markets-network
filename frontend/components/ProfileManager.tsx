@@ -313,9 +313,11 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
-      <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
-        &larr; {isAdmin ? 'Back to Market HQ' : 'Back to home'}
-      </button>
+      {isMarket(formData) && !isAdmin && (
+        <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
+          &larr; Back to My Market
+        </button>
+      )}
 
       {/* Sticky save bar */}
       <div className="sticky top-20 z-10 bg-white/95 backdrop-blur-sm border-y shadow-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 flex items-center justify-between">

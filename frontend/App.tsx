@@ -919,7 +919,7 @@ const App: React.FC = () => {
                   onUpdateApplicationStatus={handleUpdateApplicationStatus}
                   onSaveChanges={handleUpdateProfile}
                   onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
-                  onBack={() => navigate('/')}
+                  onBack={() => navigate(isMarket(profileData) ? '/dashboard/my-market' : '/')}
                   isAdmin={false}
                 />
               );

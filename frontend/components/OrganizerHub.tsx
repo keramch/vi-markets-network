@@ -167,14 +167,6 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
 
-      {/* Back link */}
-      <button
-        onClick={onBack}
-        className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold text-sm"
-      >
-        &larr; Back to home
-      </button>
-
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
