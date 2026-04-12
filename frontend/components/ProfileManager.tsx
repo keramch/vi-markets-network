@@ -312,7 +312,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   }
   
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-8 overflow-x-hidden">
       {isMarket(formData) && !isAdmin && (
         <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
           &larr; Back to My Market
@@ -328,7 +328,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow-xl">
+      <div className="bg-white px-8 pb-8 pt-14 rounded-lg shadow-xl">
         {isAdmin && (
             <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
                 <p className="font-bold">Admin Mode</p>
