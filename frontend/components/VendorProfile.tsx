@@ -2,8 +2,8 @@
 
 import React from 'react';
 import type { Vendor, Market, User } from '../types';
-import { TagIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, LeafIcon, AwardIcon, RibbonIcon } from './Icons';
-import { UserPlus, UserCheck } from 'lucide-react';
+import { TagIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, TikTokIcon, LeafIcon, AwardIcon, RibbonIcon } from './Icons';
+import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import ShareButton from './ShareButton';
@@ -173,6 +173,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
                     {vendor.contact?.socials.facebook && <a href={`https://facebook.com/${vendor.contact?.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><FacebookIcon className="w-6 h-6" /></a>}
                     {vendor.contact?.socials.pinterest && <a href={`https://pinterest.com/${vendor.contact?.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><PinterestIcon className="w-6 h-6" /></a>}
                     {vendor.contact?.socials.etsy && <a href={`https://etsy.com/shop/${vendor.contact?.socials.etsy}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><EtsyIcon className="w-6 h-6" /></a>}
+                    {vendor.contact?.socials.tiktok && <a href={`https://tiktok.com/@${vendor.contact?.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><TikTokIcon className="w-6 h-6" /></a>}
+                    {vendor.contact?.socials.website && <a href={vendor.contact?.socials.website.startsWith('http') ? vendor.contact?.socials.website : `https://${vendor.contact?.socials.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><Globe className="w-6 h-6" /></a>}
                 </div>
             </div>
         )}

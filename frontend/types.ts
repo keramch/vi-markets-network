@@ -220,6 +220,8 @@ interface Contact {
     facebook?: string;
     pinterest?: string;
     etsy?: string;
+    tiktok?: string;
+    website?: string;
   };
 }
 

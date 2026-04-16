@@ -2,8 +2,8 @@
 
 import React from 'react';
 import type { Market, Vendor, User, Review, Application } from '../types';
-import { MapPinIcon, CalendarIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, AccessibilityIcon, CreditCardIcon, CheckCircleIcon, RibbonIcon } from './Icons';
-import { UserPlus, UserCheck } from 'lucide-react';
+import { MapPinIcon, CalendarIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, TikTokIcon, AccessibilityIcon, CreditCardIcon, CheckCircleIcon, RibbonIcon } from './Icons';
+import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import VendorCard from './VendorCard';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
@@ -241,6 +241,8 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
                             {market.contact?.socials.instagram && <a href={`https://instagram.com/${market.contact?.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><InstagramIcon className="w-6 h-6" /></a>}
                             {market.contact?.socials.facebook && <a href={`https://facebook.com/${market.contact?.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><FacebookIcon className="w-6 h-6" /></a>}
                             {market.contact?.socials.pinterest && <a href={`https://pinterest.com/${market.contact?.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><PinterestIcon className="w-6 h-6" /></a>}
+                            {market.contact?.socials.tiktok && <a href={`https://tiktok.com/@${market.contact?.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><TikTokIcon className="w-6 h-6" /></a>}
+                            {market.contact?.socials.website && <a href={market.contact?.socials.website.startsWith('http') ? market.contact?.socials.website : `https://${market.contact?.socials.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><Globe className="w-6 h-6" /></a>}
                         </div>
                     </div>
                 )}

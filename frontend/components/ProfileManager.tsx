@@ -91,6 +91,20 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       const { name, value } = e.target;
       setFormData(prev => ({...prev, contact: {...prev.contact, [name]: value}}));
   };
+
+  const handleSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      contact: {
+        ...prev.contact,
+        socials: {
+          ...prev.contact?.socials,
+          [name]: value
+        }
+      }
+    }));
+  };
   
   const handleCheckboxChange = (
       e: React.ChangeEvent<HTMLInputElement>,
@@ -374,6 +388,17 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <input type="email" name="email" placeholder="Email" value={formData.contact?.email ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                             <input type="tel" name="phone" placeholder="Phone" value={formData.contact?.phone ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                             <input type="text" name="website" placeholder="Website (e.g. yoursite.com)" value={formData.contact?.website ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                        </div>
+                        <div className="mt-6">
+                            <h4 className="text-sm font-semibold text-brand-blue mb-3">Social & Web Links</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" name="instagram" placeholder="Instagram username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input type="text" name="facebook" placeholder="Facebook page name or URL" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input type="text" name="etsy" placeholder="Etsy shop name" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input type="text" name="tiktok" placeholder="TikTok username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input type="text" name="pinterest" placeholder="Pinterest username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input type="text" name="website" placeholder="yoursite.com" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
                         </div>
                     </div>
 
