@@ -8,6 +8,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 
 import Header from './components/Header';
+import { CheckCircleIcon } from './components/Icons';
 import HomePage from './components/HomePage';
 import MarketProfile from './components/MarketProfile';
 import VendorProfile from './components/VendorProfile';
@@ -229,11 +230,21 @@ const App: React.FC = () => {
   const [marketToApplyTo, setMarketToApplyTo] = useState<Market | null>(null);
 
   const [showCookieBanner, setShowCookieBanner] = useState(false);
+  const [showVerifiedToast, setShowVerifiedToast] = useState(false);
   const [adminActiveTab, setAdminActiveTab] = useState<'reviews' | 'memberships'>('reviews');
 
   const [footerFirstName, setFooterFirstName] = useState('');
   const [footerEmail, setFooterEmail] = useState('');
   const [footerCity, setFooterCity] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('verified') === 'true') {
+      setShowVerifiedToast(true);
+      window.history.replaceState({}, '', '/');
+      setTimeout(() => setShowVerifiedToast(false), 5000);
+    }
+  }, []);
 
   useEffect(() => {
     const consent = localStorage.getItem('cookie_consent');
@@ -773,6 +784,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-brand-cream">
+      {showVerifiedToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-green-200 shadow-lg rounded-full px-6 py-3 flex items-center gap-3 text-sm font-medium text-green-800">
+          <CheckCircleIcon className="w-5 h-5 text-green-500" />
+          Your email has been verified — welcome to VI Markets!
+        </div>
+      )}
       <Header
         onNavigate={(view) => { navigate(viewToPath(view)); window.scrollTo(0, 0); }}
         onMembership={() => navigate('/pricing')}

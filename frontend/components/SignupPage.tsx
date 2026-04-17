@@ -138,7 +138,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const handleResendVerification = async () => {
     const firebaseUser = firebaseAuth.currentUser;
     if (firebaseUser) {
-      await sendEmailVerification(firebaseUser);
+      await sendEmailVerification(firebaseUser, {
+        url: 'https://vimarkets.ca/?verified=true',
+        handleCodeInApp: false,
+      });
       setResendSent(true);
     }
   };
@@ -165,7 +168,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
         // Send verification email
         const firebaseUser = firebaseAuth.currentUser;
         if (firebaseUser) {
-          await sendEmailVerification(firebaseUser);
+          await sendEmailVerification(firebaseUser, {
+            url: 'https://vimarkets.ca/?verified=true',
+            handleCodeInApp: false,
+          });
         }
         onSignupSuccess(user);
         setIsSuccess(true);
