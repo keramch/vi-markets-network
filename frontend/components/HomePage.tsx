@@ -233,19 +233,26 @@ const HomePage: React.FC<HomePageProps> = ({
     const STORAGE_KEY = "vi_markets_geolocation";
     const cached = sessionStorage.getItem(STORAGE_KEY);
 
-    if (cached !== null) {
-      if (cached === "denied") {
-        setLocationStatus("Enter a location to find nearby results.");
-      } else {
-        const coords = JSON.parse(cached) as Coordinates;
-        setUserLocation(coords);
-        setSearchCenter(coords);
-        setLocationStatus("Using current location");
-        setLocationTerm("Current Location");
-      }
+    if (cached === null) {
+      setLocationStatus("Use my location");
       return;
     }
 
+    if (cached === "denied") {
+      setLocationStatus("Enter a location to find nearby results.");
+      return;
+    }
+
+    const coords = JSON.parse(cached) as Coordinates;
+    setUserLocation(coords);
+    setSearchCenter(coords);
+    setLocationStatus("Using current location");
+    setLocationTerm("Current Location");
+  }, []);
+
+  const handleRequestLocation = () => {
+    const STORAGE_KEY = "vi_markets_geolocation";
+    setLocationStatus("Finding your location...");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = {
@@ -263,7 +270,7 @@ const HomePage: React.FC<HomePageProps> = ({
         setLocationStatus("Enter a location to find nearby results.");
       }
     );
-  }, []);
+  };
 
   const handleLocationTermChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -446,7 +453,18 @@ const HomePage: React.FC<HomePageProps> = ({
               </div>
             </div>
             <div className="flex items-center justify-center mt-3 text-sm text-brand-teal-light">
-              <span>{locationStatus}</span>
+              {locationStatus === "Use my location" ? (
+                <button
+                  type="button"
+                  onClick={handleRequestLocation}
+                  className="flex items-center gap-1.5 text-brand-teal-light hover:text-white underline underline-offset-2 transition-colors"
+                >
+                  <MapPinIcon className="w-4 h-4" />
+                  Use my location
+                </button>
+              ) : (
+                <span>{locationStatus}</span>
+              )}
             </div>
           </div>
 
