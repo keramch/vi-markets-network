@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseAuth } from '../services/firebase';
+import { firebaseAuth, sendEmailVerification } from '../services/firebase';
 import type { View, User } from '../types';
 import { VendorTypes, MarketCategories } from '../types';
 import * as api from '../services/api.live';
@@ -107,6 +107,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   // ── Validation ────────────────────────────────────────────────────────────
@@ -134,6 +135,14 @@ const SignupPage: React.FC<SignupPageProps> = ({
     return true;
   };
 
+  const handleResendVerification = async () => {
+    const firebaseUser = firebaseAuth.currentUser;
+    if (firebaseUser) {
+      await sendEmailVerification(firebaseUser);
+      setResendSent(true);
+    }
+  };
+
   const goNext = async () => {
     if (!validate()) return;
     if (wizardStep === 4) {
@@ -153,6 +162,11 @@ const SignupPage: React.FC<SignupPageProps> = ({
           marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,
         });
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+        // Send verification email
+        const firebaseUser = firebaseAuth.currentUser;
+        if (firebaseUser) {
+          await sendEmailVerification(firebaseUser);
+        }
         onSignupSuccess(user);
         setIsSuccess(true);
         window.scrollTo(0, 0);
@@ -675,11 +689,16 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 Welcome to VI Markets!
               </h2>
               <p className="text-gray-600 text-lg mb-2">You're all set, {firstName}.</p>
-              <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-                An email is on its way to{' '}
-                <strong className="text-gray-700">{email}</strong> with your account details and
-                next steps.
-              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-sm text-amber-800 text-left max-w-sm mx-auto">
+                <p className="font-semibold mb-1">Please verify your email</p>
+                <p>We've sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.</p>
+              </div>
+              <div className="mb-8">
+                {!resendSent
+                  ? <button type="button" onClick={handleResendVerification} className="text-xs text-amber-700 underline hover:no-underline">Resend verification email</button>
+                  : <p className="text-xs text-amber-700">Verification email resent.</p>
+                }
+              </div>
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/profile')}
@@ -688,9 +707,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
               >
                 {isUploadingLogo ? 'Finishing up…' : 'Go to Your Hub →'}
               </button>
-              <p className="mt-4 text-xs text-gray-400">
-                Didn't receive it? Check your spam folder or contact support.
-              </p>
             </div>
           )}
         </div>

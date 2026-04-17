@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, sendEmailVerification } from "firebase/auth";
+export { sendEmailVerification };
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
 

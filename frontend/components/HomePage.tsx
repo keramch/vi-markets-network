@@ -250,6 +250,14 @@ const HomePage: React.FC<HomePageProps> = ({
     setLocationTerm("Current Location");
   }, []);
 
+  const handleResetLocation = () => {
+    sessionStorage.removeItem("vi_markets_geolocation");
+    setUserLocation(null);
+    setSearchCenter(null);
+    setLocationStatus("Use my location");
+    setLocationTerm("");
+  };
+
   const handleRequestLocation = () => {
     const STORAGE_KEY = "vi_markets_geolocation";
     setLocationStatus("Finding your location...");
@@ -462,6 +470,17 @@ const HomePage: React.FC<HomePageProps> = ({
                   <MapPinIcon className="w-4 h-4" />
                   Use my location
                 </button>
+              ) : locationStatus === "Using current location" ? (
+                <>
+                  <span>Using current location</span>
+                  <button
+                    type="button"
+                    onClick={handleResetLocation}
+                    className="ml-2 text-xs underline hover:no-underline opacity-70 hover:opacity-100"
+                  >
+                    change
+                  </button>
+                </>
               ) : (
                 <span>{locationStatus}</span>
               )}
