@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { Vendor, Market, User } from '../types';
-import { TagIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, TikTokIcon, LeafIcon, AwardIcon, RibbonIcon } from './Icons';
+import { TagIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, TikTokIcon, AwardIcon, RibbonIcon } from './Icons';
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
@@ -103,15 +103,6 @@ const VendorProfile: React.FC<VendorProfileProps> = ({ vendor, markets, owner, o
                         <ul className="list-disc list-inside text-brand-text space-y-1 text-sm">
                             {vendor.productHighlights.map(highlight => <li key={highlight}>{highlight}</li>)}
                         </ul>
-                    </div>
-                )}
-                {vendor.sustainabilityPractices && (
-                    <div className="flex items-start">
-                        <LeafIcon className="w-6 h-6 mr-3 text-green-600 flex-shrink-0 mt-1" />
-                        <div>
-                            <h4 className="font-semibold text-brand-blue">Sustainability</h4>
-                            <p className="text-brand-text text-sm whitespace-pre-line">{vendor.sustainabilityPractices}</p>
-                        </div>
                     </div>
                 )}
                 {vendor.certifications && vendor.certifications.length > 0 && (
