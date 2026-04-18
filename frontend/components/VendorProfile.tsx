@@ -46,10 +46,10 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
 
         {/* ── Section 1: Hero ─────────────────────────────────────────────── */}
-        <div className="flex flex-col md:flex-row">
+        <div className="grid grid-cols-1 md:grid-cols-3">
 
           {/* Left panel */}
-          <div className="md:w-52 flex-shrink-0 bg-brand-cream p-6 flex flex-col items-center justify-center text-center gap-2">
+          <div className="bg-brand-cream p-6 flex flex-col items-center justify-center text-center gap-2">
             {(vendor.logoUrl || vendor.photos?.[0])
               ? <img className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" src={vendor.logoUrl || vendor.photos[0]} alt={`${vendor.name} logo`} />
               : <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center"><span className="text-brand-blue text-4xl font-serif">{vendor.name[0]}</span></div>
@@ -80,8 +80,9 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           </div>
 
           {/* Right panel */}
-          <div className="flex-1 p-5 md:px-[22px] md:py-5">
-            <p className="text-sm text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
+          <div className="md:col-span-2 p-6 md:p-8">
+            <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
+            <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
             <hr className="my-4 border-gray-200" />
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
             {vendor.tags && vendor.tags.length > 0 ? (
@@ -113,7 +114,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
         {vendor.photos && vendor.photos.length > 0 && (
           <div className="p-6 md:p-8 border-t">
             <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {vendor.photos.map((photo, i) => (
                 <img
                   key={i}
@@ -131,7 +132,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
             {/* Left: Connect */}
-            <div>
+            <div className="order-2 md:order-1">
               <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
               {hasSocials && (
                 <div className="flex gap-3 mb-5">
@@ -173,7 +174,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
             </div>
 
             {/* Right: Find Us At */}
-            <div>
+            <div className="order-1 md:order-2">
               <h2 className="text-2xl text-brand-blue font-serif mb-5">Find Us At</h2>
               {vendorMarkets.length > 0 ? (
                 <div className="space-y-3">
@@ -183,9 +184,9 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                       onClick={() => onSelectMarket(market.id)}
                       className="cursor-pointer group"
                     >
-                      <p className="text-brand-light-blue font-medium group-hover:underline">{market.name}</p>
+                      <p className="text-base text-brand-light-blue font-medium group-hover:underline">{market.name}</p>
                       {(market.location?.city || market.location?.address) && (
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-sm text-gray-500 mt-0.5">
                           {market.location.city || market.location.address}
                         </p>
                       )}
