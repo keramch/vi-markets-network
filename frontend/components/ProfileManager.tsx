@@ -584,7 +584,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 <p className="mt-2 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Origin Story</label>
+                                <label className="block text-sm font-medium text-gray-700">Your Story</label>
+                                <p className="text-xs text-gray-400 mt-0.5 mb-1">Tell shoppers who you are, what you make, and what makes you different.</p>
                                 <textarea name="originStory" value={formData.originStory || ''} onChange={handleChange} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                             </div>
                         </>
