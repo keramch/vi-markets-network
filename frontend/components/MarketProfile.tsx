@@ -1,10 +1,9 @@
 
 
 import React from 'react';
-import type { Market, Vendor, User, Review, Application } from '../types';
-import { MapPinIcon, CalendarIcon, StarIcon, InstagramIcon, FacebookIcon, PinterestIcon, TikTokIcon, AccessibilityIcon, CreditCardIcon, CheckCircleIcon, RibbonIcon } from './Icons';
+import type { Market, Vendor, User, Review, Application, MarketEvent } from '../types';
+import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, TikTokIcon, RibbonIcon } from './Icons';
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
-import VendorCard from './VendorCard';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import { formatTime } from '../utils';
@@ -24,47 +23,45 @@ interface MarketProfileProps {
   onFeatureMarket: (marketId: string) => void;
   onContactSubmit: (recipientEmail: string, subject: string) => void;
   onApply: (marketId: string) => void;
+  upcomingEvents?: MarketEvent[];
 }
 
 const formatScheduleToString = (schedule: Market['schedule']): string => {
   if (!schedule || !schedule.rules || schedule.rules.length === 0) {
-   return schedule?.notes || 'Schedule varies';
+    return schedule?.notes || 'Schedule varies';
   }
-  
   const mainRule = schedule.rules[0];
   const day = `${mainRule.dayOfWeek}s`;
   const time = `${formatTime(mainRule.startTime)} - ${formatTime(mainRule.endTime)}`;
-  
   const noteText = schedule.notes ? `, ${schedule.notes}` : '';
-
   return `${day}, ${time}${noteText}`;
 };
-
-const RatingStars: React.FC<{ rating: number }> = ({ rating }) => (
-  <div className="flex items-center">
-    {[...Array(5)].map((_, i) => (
-      <React.Fragment key={i}>
-        <StarIcon className="w-5 h-5 text-brand-gold" filled={i < rating} />
-      </React.Fragment>
-    ))}
-  </div>
-);
 
 const InfoRow: React.FC<{ label: string; value: string; icon: React.ReactNode }> = ({ label, value, icon }) => (
   <div className="flex items-start">
     <dt className="flex items-center text-gray-500 w-32 flex-shrink-0">
-        <span className="mr-2 text-brand-light-blue">{icon}</span>
-        <span className="font-semibold text-brand-blue">{label}</span>
+      <span className="mr-2 text-brand-light-blue">{icon}</span>
+      <span className="font-semibold text-brand-blue">{label}</span>
     </dt>
     <dd className="text-brand-text">{value}</dd>
   </div>
 );
 
-const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applications, owner, onSelectVendor, onBack, isFavorited, onToggleFavorite, currentUser, onAddReview, onFeatureMarket, onContactSubmit, onApply }) => {
-  const marketVendors = vendors.filter(v => (market.vendorIds || []).includes(v.id));  const approvedReviews = market.reviews.filter(r => r.status === 'approved');
-  const currentUserVendor = currentUser && currentUser.ownedVendorId ? vendors.find(v => v.id === currentUser.ownedVendorId) : null;
-  const isProVendor = currentUser?.subscription?.tier === 'pro' || currentUser?.subscription?.tier === 'superPro' || currentUser?.subscription?.foundingMember === true;
-  const hasApplied = applications.some(app => app.vendorId === currentUserVendor?.id && app.marketId === market.id);
+const MarketProfile: React.FC<MarketProfileProps> = ({
+  market, vendors, applications, owner,
+  isFavorited, onToggleFavorite, currentUser,
+  onAddReview, onFeatureMarket, onContactSubmit, onApply,
+  upcomingEvents = [],
+}) => {
+  const currentUserVendor = currentUser && currentUser.ownedVendorId
+    ? vendors.find(v => v.id === currentUser.ownedVendorId)
+    : null;
+  const isProVendor = currentUser?.subscription?.tier === 'pro'
+    || currentUser?.subscription?.tier === 'superPro'
+    || currentUser?.subscription?.foundingMember === true;
+  const hasApplied = applications.some(
+    app => app.vendorId === currentUserVendor?.id && app.marketId === market.id
+  );
 
   let canApply = true;
   let applicationDisabledReason = '';
@@ -79,21 +76,25 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
       applicationDisabledReason = `This market does not accept applications from the "${currentUserVendor?.category || 'your'}" category.`;
     }
   }
+
   const isFoundingMember = owner?.subscription?.foundingMember;
+  const approvedReviews = market.reviews.filter(r => r.status === 'approved');
+  const displayedReviews = approvedReviews.slice(0, 12);
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+
+        {/* ── Section 1: Hero ─────────────────────────────────────────────── */}
         <div className="relative">
-          {/* Hero banner */}
           {(market.headerPhotoUrl ?? market.photos?.[0])
             ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt={market.name} />
             : <div className="w-full h-56 md:h-72 bg-brand-cream flex items-center justify-center"><span className="text-brand-blue/20 text-8xl font-serif">{market.name[0]}</span></div>
           }
-          {/* Scrim — covers bottom two-thirds for text legibility regardless of photo colour */}
+          {/* Scrim */}
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
 
-          {/* Bottom-left: logo (fully inside hero) + market name + founding badge */}
+          {/* Bottom-left: logo + name + founding badge */}
           <div className="absolute bottom-4 left-4 right-36 md:bottom-5 md:left-6 md:right-44 flex items-end gap-3">
             {market.logoUrl && (
               <img src={market.logoUrl} alt={`${market.name} logo`} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-white shadow-lg object-cover flex-shrink-0" />
@@ -123,82 +124,91 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
           </div>
         </div>
 
+        {/* ── Section 2: About + Upcoming Events | Market Info + Good to Know ── */}
         <div className="p-6 md:p-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            {/* Left: About + Upcoming Events */}
             <div className="md:col-span-2">
               <h2 className="text-2xl font-serif text-brand-blue mb-4">About the Market</h2>
               <p className="text-brand-text leading-relaxed whitespace-pre-line">{market.description}</p>
-              
-              <div className="mt-8 border-t pt-6">
-                <h3 className="text-xl font-serif text-brand-blue mb-4">Good to Know</h3>
-                <dl className="space-y-4">
-                    {market.accessibility && <InfoRow label="Accessibility" value={market.accessibility} icon={<AccessibilityIcon className="w-5 h-5" />} />}
-                    {market.paymentOptions && <InfoRow label="Payments" value={market.paymentOptions.join(', ')} icon={<CreditCardIcon className="w-5 h-5" />} />}
-                    {market.seasonalInfo && <InfoRow label="Seasonal" value={market.seasonalInfo} icon={<CalendarIcon className="w-5 h-5" />} />}
-                    {market.amenities && market.amenities.length > 0 && <InfoRow label="Amenities" value={market.amenities.join(', ')} icon={<CheckCircleIcon className="w-5 h-5" />} />}
-                </dl>
-              </div>
 
-              <h3 className="text-xl font-serif text-brand-blue mt-8 mb-4">Hosted Vendors</h3>
-              {marketVendors.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {marketVendors.map(vendor => (
-                    <VendorCard key={vendor.id} vendor={vendor} onSelect={onSelectVendor} compact={true} />
-                  ))}
+              <hr className="my-6 border-gray-200" />
+
+              <h3 className="text-xl font-serif text-brand-blue mb-4">Upcoming Events</h3>
+              {upcomingEvents.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingEvents.map(event => {
+                    const dateStr = event.schedule.date || event.schedule.startDate || '';
+                    const formattedDate = dateStr
+                      ? new Date(dateStr).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+                      : '';
+                    const timeStr = `${formatTime(event.schedule.startTime)} – ${formatTime(event.schedule.endTime)}`;
+                    return (
+                      <div key={event.id} className="flex items-start gap-3">
+                        <span className="mt-2 w-2 h-2 rounded-full bg-brand-light-blue flex-shrink-0" />
+                        <div className="min-w-[90px] flex-shrink-0">
+                          <span className="text-sm text-gray-500">{formattedDate}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-brand-text">{event.name}</p>
+                          <p className="text-xs text-gray-500">{event.location.venueName} · {timeStr}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-gray-500">No vendors listed for this market yet.</p>
+                <p className="text-sm text-gray-400">No upcoming events listed yet.</p>
               )}
             </div>
-            <div className="bg-brand-cream rounded-lg p-6">
-              <h3 className="text-xl font-serif text-brand-blue mb-4">Market Info</h3>
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <MapPinIcon className="w-6 h-6 mr-3 text-brand-light-blue flex-shrink-0 mt-1" />
-                  <div>
-                    <h4 className="font-semibold text-brand-blue">Location</h4>
-                    <p className="text-brand-text">{market.location.address}</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <CalendarIcon className="w-6 h-6 mr-3 text-brand-light-blue flex-shrink-0 mt-1" />
-                  <div>
-                    <h4 className="font-semibold text-brand-blue">Schedule</h4>
-                    <p className="text-brand-text">{formatScheduleToString(market.schedule)}</p>
-                  </div>
-                </div>
-                 {currentUserVendor && isProVendor && market.applicationFormQuestions && (
-                  <div className="mt-6 pt-6 border-t border-gray-300">
+
+            {/* Right: Market Info + Good to Know stacked */}
+            <div className="space-y-5">
+
+              {/* Market Info card */}
+              <div className="bg-brand-cream rounded-lg p-5">
+                <h3 className="text-xl font-serif text-brand-blue mb-4">Market Info</h3>
+                <dl className="space-y-4">
+                  <InfoRow
+                    label="Location"
+                    value={market.location.address}
+                    icon={<MapPinIcon className="w-5 h-5" />}
+                  />
+                  <InfoRow
+                    label="Schedule"
+                    value={formatScheduleToString(market.schedule)}
+                    icon={<CalendarIcon className="w-5 h-5" />}
+                  />
+                </dl>
+
+                {currentUserVendor && isProVendor && market.applicationFormQuestions && (
+                  <div className="mt-5 pt-5 border-t border-gray-300">
                     {hasApplied ? (
                       <button disabled className="w-full bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-md cursor-not-allowed">
                         Application Submitted
                       </button>
+                    ) : canApply ? (
+                      <button
+                        onClick={() => onApply(market.id)}
+                        className="w-full bg-brand-blue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
+                      >
+                        Apply to this Market
+                      </button>
                     ) : (
-                      canApply ? (
-                        <button 
-                          onClick={() => onApply(market.id)}
-                          className="w-full bg-brand-blue text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
-                        >
-                          Apply to this Market
+                      <div className="text-center">
+                        <button disabled className="w-full bg-gray-300 text-gray-500 font-semibold py-2 px-4 rounded-md cursor-not-allowed">
+                          Cannot Apply
                         </button>
-                      ) : (
-                        <div className="text-center">
-                          <button 
-                            disabled 
-                            className="w-full bg-gray-300 text-gray-500 font-semibold py-2 px-4 rounded-md cursor-not-allowed"
-                          >
-                            Cannot Apply
-                          </button>
-                          <p className="text-xs text-red-600 mt-2">{applicationDisabledReason}</p>
-                        </div>
-                      )
+                        <p className="text-xs text-red-600 mt-2">{applicationDisabledReason}</p>
+                      </div>
                     )}
                   </div>
                 )}
-              </div>
-               {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
+
+                {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
                 {false && currentUser && !market.isFeatured && (
-                  <div className="mt-6 pt-6 border-t border-gray-300">
+                  <div className="mt-5 pt-5 border-t border-gray-300">
                     <button
                       onClick={() => onFeatureMarket(market.id)}
                       className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
@@ -207,65 +217,139 @@ const MarketProfile: React.FC<MarketProfileProps> = ({ market, vendors, applicat
                     </button>
                   </div>
                 )}
-              <div className="mt-6 h-48 bg-gray-300 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">[ Map Placeholder ]</p>
+
+                <div className="mt-5 h-48 bg-gray-300 rounded-lg flex items-center justify-center">
+                  <p className="text-gray-500">[ Map Placeholder ]</p>
+                </div>
               </div>
+
+              {/* Good to Know card */}
+              {(market.accessibility || (market.paymentOptions && market.paymentOptions.length > 0) || (market.tags && market.tags.length > 0) || market.seasonalInfo) && (
+                <div className="bg-brand-cream rounded-lg p-5">
+                  <h3 className="text-xl font-serif text-brand-blue mb-4">Good to Know</h3>
+                  <div className="space-y-4">
+                    {market.accessibility && (
+                      <div>
+                        <p className="text-xs font-semibold text-brand-blue uppercase tracking-wide mb-1">Accessibility</p>
+                        <p className="text-sm text-brand-text">{market.accessibility}</p>
+                      </div>
+                    )}
+                    {market.paymentOptions && market.paymentOptions.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-brand-blue uppercase tracking-wide mb-1.5">Payments</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {market.paymentOptions.map(opt => (
+                            <span key={opt} className="bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-0.5 rounded-full">{opt}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {market.seasonalInfo && (
+                      <div>
+                        <p className="text-xs font-semibold text-brand-blue uppercase tracking-wide mb-1">Seasonal</p>
+                        <p className="text-sm text-brand-text">{market.seasonalInfo}</p>
+                      </div>
+                    )}
+                    {market.tags && market.tags.length > 0 && (
+                      <div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {market.tags.map(tag => (
+                            <span key={tag} className="bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-0.5 rounded-full">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
 
-        {market.photos && market.photos.length > 0 && (
-          <div className="p-6 md:p-8 border-t">
-            <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {market.photos.map((photo, i) => (
-                <img
-                  key={i}
-                  src={photo}
-                  alt={`${market.name} photo ${i + 1}`}
-                  className="w-full h-40 object-cover rounded-lg"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* ── Section 3: Connect | Gallery ────────────────────────────────── */}
         <div className="p-6 md:p-8 border-t">
-          <h2 className="text-2xl text-brand-blue font-serif mb-6">Connect with {market.name}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            {/* Left: Connect */}
             <div>
-                {market.contact?.socials && (
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-brand-blue mb-3">Follow Us</h3>
-                        <div className="flex space-x-4">
-                            {market.contact?.socials.instagram && <a href={`https://instagram.com/${market.contact?.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><InstagramIcon className="w-6 h-6" /></a>}
-                            {market.contact?.socials.facebook && <a href={`https://facebook.com/${market.contact?.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><FacebookIcon className="w-6 h-6" /></a>}
-                            {market.contact?.socials.pinterest && <a href={`https://pinterest.com/${market.contact?.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><PinterestIcon className="w-6 h-6" /></a>}
-                            {market.contact?.socials.tiktok && <a href={`https://tiktok.com/@${market.contact?.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><TikTokIcon className="w-6 h-6" /></a>}
-                            {market.contact?.socials.website && <a href={market.contact?.socials.website.startsWith('http') ? market.contact?.socials.website : `https://${market.contact?.socials.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-blue"><Globe className="w-6 h-6" /></a>}
-                        </div>
-                    </div>
-                )}
+              <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {market.name}</h2>
+              {market.contact?.socials && (
+                <div className="flex gap-3 mb-5">
+                  {market.contact.socials.instagram && (
+                    <a href={`https://instagram.com/${market.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <InstagramIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {market.contact.socials.facebook && (
+                    <a href={`https://facebook.com/${market.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <FacebookIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {market.contact.socials.pinterest && (
+                    <a href={`https://pinterest.com/${market.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <PinterestIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {market.contact.socials.tiktok && (
+                    <a href={`https://tiktok.com/@${market.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <TikTokIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {market.contact.socials.website && (
+                    <a href={market.contact.socials.website.startsWith('http') ? market.contact.socials.website : `https://${market.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <Globe className="w-5 h-5" />
+                    </a>
+                  )}
+                </div>
+              )}
+              <ContactForm recipientEmail={market.contact?.email} currentUser={currentUser} onSend={onContactSubmit} />
             </div>
-            <ContactForm recipientEmail={market.contact?.email} currentUser={currentUser} onSend={onContactSubmit} />
+
+            {/* Right: Gallery */}
+            {market.photos && market.photos.length > 0 && (
+              <div>
+                <h2 className="text-2xl text-brand-blue font-serif mb-5">Gallery</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {market.photos.map((photo, i) => (
+                    <img
+                      key={i}
+                      src={photo}
+                      alt={`${market.name} photo ${i + 1}`}
+                      className="w-full aspect-square object-cover rounded-lg"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
-        
-         <div className="p-6 md:p-8 border-t">
-            <h2 className="text-2xl text-brand-blue font-serif mb-4">Reviews</h2>
-            {currentUser && <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>}
-            <div className="space-y-6">
-                {approvedReviews.length > 0 ? approvedReviews.map(review => (
-                    <div key={review.id} className="border-b pb-4">
-                        <div className="flex items-center mb-1">
-                            <span className="font-bold text-brand-text">{review.author}</span>
-                        </div>
-                        <p className="text-gray-600">{review.comment}</p>
-                        <p className="text-xs text-gray-400 mt-1">{review.date}</p>
-                    </div>
-                )) : <p className="text-gray-500">This market has no reviews yet.</p>}
-            </div>
+
+        {/* ── Section 4: Reviews ──────────────────────────────────────────── */}
+        <div className="p-6 md:p-8 border-t">
+          <h2 className="text-2xl text-brand-blue font-serif mb-6">Reviews</h2>
+          {currentUser && <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>}
+          {approvedReviews.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displayedReviews.map(review => (
+                  <div key={review.id} className="border rounded-lg p-4">
+                    <span className="font-medium text-brand-text">{review.author}</span>
+                    <p className="text-sm text-gray-600 mt-1">{review.comment}</p>
+                    <p className="text-xs text-gray-400 mt-1">{review.date}</p>
+                  </div>
+                ))}
+              </div>
+              {approvedReviews.length > 12 && (
+                <p className="text-sm text-gray-400 mt-4">Showing 12 of {approvedReviews.length} reviews</p>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-500">This market has no reviews yet.</p>
+          )}
         </div>
+
       </div>
     </div>
   );
