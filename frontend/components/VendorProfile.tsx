@@ -31,7 +31,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
   const approvedReviews = vendor.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
   const isFoundingMember = owner?.subscription?.foundingMember;
-  const storyText = vendor.originStory || vendor.description;
+  const storyText = vendor.description;
   const hasSocials = !!(
     vendor.contact?.socials?.instagram ||
     vendor.contact?.socials?.facebook ||

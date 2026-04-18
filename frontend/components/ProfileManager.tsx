@@ -377,11 +377,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                         <label className="block text-sm font-medium text-gray-700">Name</label>
                         <input type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea name="description" value={formData.description ?? ''} onChange={handleChange} rows={4} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                    </div>
-                    
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold text-brand-blue mb-2">Contact Info</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -404,6 +399,17 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
                     {isMarket(formData) ? (
                         <>
+                           <div>
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <p className="text-xs text-gray-400 mt-0.5 mb-1">Describe your market — what makes it special, what shoppers can expect.</p>
+                                <textarea
+                                    name="description"
+                                    value={formData.description ?? ''}
+                                    onChange={handleChange}
+                                    rows={4}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                />
+                            </div>
                            <div>
                                 <label className="block text-sm font-medium text-gray-700">Address</label>
                                 <input 
@@ -586,7 +592,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Your Story</label>
                                 <p className="text-xs text-gray-400 mt-0.5 mb-1">Tell shoppers who you are, what you make, and what makes you different.</p>
-                                <textarea name="originStory" value={formData.originStory || ''} onChange={handleChange} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <textarea name="description" value={formData.description ?? ''} onChange={handleChange} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                             </div>
                         </>
                     )}
