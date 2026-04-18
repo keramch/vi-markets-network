@@ -230,6 +230,7 @@ const App: React.FC = () => {
   const [isApplicationFormOpen, setApplicationFormOpen] = useState(false);
   const [marketToApplyTo, setMarketToApplyTo] = useState<Market | null>(null);
 
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [showVerifiedToast, setShowVerifiedToast] = useState(false);
   const [adminActiveTab, setAdminActiveTab] = useState<'reviews' | 'memberships'>('reviews');
@@ -306,6 +307,7 @@ const App: React.FC = () => {
           // user doc not found — stay logged out
         }
       }
+      setIsAuthReady(true);
     });
     return unsubscribe;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -803,7 +805,11 @@ const App: React.FC = () => {
         currentUser={currentUser}
       />
       <div className="flex-grow">
-          <Routes>
+          {!isAuthReady ? (
+            <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+              <div className="text-brand-blue text-sm">Loading...</div>
+            </div>
+          ) : <Routes>
             <Route path="/" element={
               <HomePage
                 markets={markets}
@@ -1006,7 +1012,7 @@ const App: React.FC = () => {
               />
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          </Routes>}
       </div>
       <footer className="bg-brand-blue text-white">
         <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
