@@ -114,8 +114,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
         {vendor.photos && vendor.photos.length > 0 && (
           <div className="p-6 md:p-8 border-t">
             <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {vendor.photos.map((photo, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {vendor.photos.slice(0, 4).map((photo, i) => (
                 <img
                   key={i}
                   src={photo}
@@ -212,10 +212,10 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {displayedReviews.map(review => (
-                  <div key={review.id} className="border rounded-lg p-4">
-                    <span className="font-medium text-brand-text">{review.author}</span>
+                  <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <p className="font-medium text-brand-text">{review.author}</p>
                     <p className="text-sm text-gray-600 mt-1">{review.comment}</p>
-                    <p className="text-xs text-gray-400 mt-1">{review.date}</p>
+                    <p className="text-xs text-gray-400 mt-2">{review.date}</p>
                   </div>
                 ))}
               </div>
