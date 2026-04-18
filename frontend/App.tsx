@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus } from './types';
-import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
@@ -203,6 +203,7 @@ const App: React.FC = () => {
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
@@ -236,6 +237,10 @@ const App: React.FC = () => {
   const [footerFirstName, setFooterFirstName] = useState('');
   const [footerEmail, setFooterEmail] = useState('');
   const [footerCity, setFooterCity] = useState('');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
