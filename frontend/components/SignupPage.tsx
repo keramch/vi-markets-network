@@ -127,7 +127,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
       const e: typeof errors4 = {};
       if (!businessName.trim())
         e.businessName = accountType === 'market' ? 'Market name is required' : 'Business name is required';
-      if (!city.trim()) e.city = 'City is required';
       setErrors4(e);
       return Object.keys(e).length === 0;
     }
