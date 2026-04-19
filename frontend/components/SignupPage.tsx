@@ -96,7 +96,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   // Step 4 (profile)
   const [businessName, setBusinessName] = useState('');
-  const [city, setCity] = useState('');
+  const [city] = useState('');
   const [description, setDescription] = useState('');
   const [logoFiles, setLogoFiles] = useState<File[]>([]);
   const [marketTypes, setMarketTypes] = useState<string[]>([]);
@@ -524,7 +524,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 <div className="space-y-5">
                   <div>
                     <label className={labelCls}>
-                      {accountType === 'market' ? 'Market Name' : 'Business / Stall Name'}
+                      {accountType === 'market' ? 'Organization Name' : 'Business / Stall Name'}
                     </label>
                     <input
                       type="text"
@@ -534,37 +534,22 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       className={inputCls}
                       placeholder={
                         accountType === 'market'
-                          ? 'e.g. Saanich Farmers Market'
+                          ? 'e.g. Elevate Arts Society, Saanich Peninsula Food Hub'
                           : 'e.g. Green Thumb Organics'
                       }
                     />
+                    {accountType === 'market' && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        This is your organizing entity's name — you'll create individual market events within your profile.
+                      </p>
+                    )}
                     {errors4.businessName && <p className={errCls}>{errors4.businessName}</p>}
-                  </div>
-
-                  <div>
-                    <label className={labelCls}>City</label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      onBlur={(e) => {
-                        const titled = e.target.value
-                          .trim()
-                          .replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-                        setCity(titled);
-                      }}
-                      onKeyDown={handleStepEnter}
-                      className={inputCls}
-                      placeholder="e.g. Victoria"
-                      autoComplete="address-level2"
-                    />
-                    {errors4.city && <p className={errCls}>{errors4.city}</p>}
                   </div>
 
                   {accountType === 'market' && (
                     <div>
                       <label className={labelCls}>Market Type</label>
-                      <p className="text-xs text-gray-400 mb-2">Select the type that best describes your market.</p>
+                      <p className="text-xs text-gray-400 mb-2">Select the types that describe the markets you organize.</p>
                       {marketTypes.length >= 3 && (
                         <p className="text-xs text-amber-600 mb-2">Maximum 3 types selected.</p>
                       )}
@@ -646,7 +631,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       className={`${inputCls} resize-none`}
                       placeholder={
                         accountType === 'market'
-                          ? 'Tell vendors and shoppers what makes your market special...'
+                          ? 'Tell vendors and shoppers what your organization does...'
                           : 'Tell shoppers what you make or sell...'
                       }
                     />
