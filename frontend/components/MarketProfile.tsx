@@ -130,7 +130,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
 
             {/* Left: About + Upcoming Events */}
             <div className="md:col-span-2">
-              <h2 className="text-2xl font-serif text-brand-blue mb-4">About the Market</h2>
+              <h2 className="text-2xl font-serif text-brand-blue mb-4">About Us</h2>
               <p className="text-brand-text leading-relaxed whitespace-pre-line">{market.description}</p>
 
               <hr className="my-6 border-gray-200" />

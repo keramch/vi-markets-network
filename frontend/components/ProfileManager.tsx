@@ -399,9 +399,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
                     {isMarket(formData) ? (
                         <>
-                           <div>
-                                <label className="block text-sm font-medium text-gray-700">Description</label>
-                                <p className="text-xs text-gray-400 mt-0.5 mb-1">Describe your market — what makes it special, what shoppers can expect.</p>
+                           <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold text-brand-blue mb-2">About Us</h3>
+                                <p className="text-xs text-gray-400 mb-1">Describe your market — what makes it special, what shoppers can expect.</p>
                                 <textarea
                                     name="description"
                                     value={formData.description ?? ''}
@@ -528,6 +528,17 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                     ) : (
                          <>
                             <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold text-brand-blue mb-2">About Us</h3>
+                                <p className="text-xs text-gray-400 mb-1">Tell shoppers who you are, what you make, and what makes you different.</p>
+                                <textarea
+                                    name="description"
+                                    value={formData.description ?? ''}
+                                    onChange={handleChange}
+                                    rows={4}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                />
+                            </div>
+                            <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">Vendor Type</h3>
                                 <p className="text-sm text-gray-500 mb-3">Select all types that describe your business.</p>
                                 {(formData.vendorTypes?.length ?? 0) >= 3 && (
@@ -588,11 +599,6 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 ))}
                                 </div>
                                 <p className="mt-2 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Your Story</label>
-                                <p className="text-xs text-gray-400 mt-0.5 mb-1">Tell shoppers who you are, what you make, and what makes you different.</p>
-                                <textarea name="description" value={formData.description ?? ''} onChange={handleChange} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                             </div>
                         </>
                     )}
