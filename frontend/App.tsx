@@ -1,7 +1,7 @@
 
 
 import React, { useState, useMemo, useEffect } from 'react';
-import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier } from './types';
+import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -85,6 +85,28 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const market = markets.find(m => m.slug === slug);
+
+  const [upcomingEvents, setUpcomingEvents] = React.useState<MarketEvent[]>([]);
+
+  React.useEffect(() => {
+    if (!market?.id) return;
+    api.getMarketEvents({ marketPageId: market.id, status: 'published' })
+      .then(events => {
+        const today = new Date().toISOString().split('T')[0];
+        const future = events.filter(e => {
+          const eventDate = e.schedule.date || e.schedule.startDate || '';
+          return eventDate >= today;
+        });
+        future.sort((a, b) => {
+          const da = a.schedule.date || a.schedule.startDate || '';
+          const db = b.schedule.date || b.schedule.startDate || '';
+          return da.localeCompare(db);
+        });
+        setUpcomingEvents(future);
+      })
+      .catch(() => {}); // non-fatal
+  }, [market?.id]);
+
   if (!market || market.status !== 'active') return <Navigate to="/" replace />;
   const marketOwner = users.find(u => u.id === market.ownerId);
   return (
@@ -105,6 +127,7 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
       onFeatureMarket={onFeatureMarket}
       onContactSubmit={onContactSubmit}
       onApply={onApply}
+      upcomingEvents={upcomingEvents}
     />
   );
 };
