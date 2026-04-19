@@ -1,7 +1,7 @@
 
 
 import React, { useState, useMemo, useEffect } from 'react';
-import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus } from './types';
+import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -350,7 +350,7 @@ const App: React.FC = () => {
   const handleUpgradeMembership = async (plan: MembershipPlan) => {
     if (!currentUser) return;
     try {
-        const updatedUser = await api.updateUser(currentUser.id, { membership: plan });
+        const updatedUser = await api.updateUser(currentUser.id, { subscription: { ...currentUser.subscription, tier: plan as SubscriptionTier } });
         setCurrentUser(updatedUser);
         setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
         setMembershipModalOpen(false);

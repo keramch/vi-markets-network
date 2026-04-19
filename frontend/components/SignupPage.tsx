@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth, sendEmailVerification } from '../services/firebase';
 import type { View, User } from '../types';
@@ -69,7 +69,6 @@ const STEP_TITLES: Record<number, string> = {
 };
 
 const SignupPage: React.FC<SignupPageProps> = ({
-  onNavigate,
   onLogin,
   onSignupSuccess,
 }) => {
@@ -374,29 +373,32 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   </ul>
                   <p className="text-sm text-gray-500 pt-1">
                     Want to read the full details?{' '}
-                    <button
-                      type="button"
-                      onClick={() => onNavigate({ type: 'terms' })}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-brand-blue hover:underline"
                     >
                       Terms of Use
-                    </button>
+                    </Link>
                     {', '}
-                    <button
-                      type="button"
-                      onClick={() => onNavigate({ type: 'memberAgreement' })}
+                    <Link
+                      to="/member-agreement"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-brand-blue hover:underline"
                     >
                       Member Agreement
-                    </button>
+                    </Link>
                     {', '}
-                    <button
-                      type="button"
-                      onClick={() => onNavigate({ type: 'privacy' })}
+                    <Link
+                      to="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-brand-blue hover:underline"
                     >
                       Privacy Policy
-                    </button>
+                    </Link>
                   </p>
                 </div>
               )}

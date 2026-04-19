@@ -199,12 +199,12 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                         <input
                             type="checkbox"
                             value={vt}
-                            checked={marketData.allowedVendorCategories?.includes(vt as never) || false}
+                            checked={marketData.allowedVendorCategories?.includes(vt) || false}
                             onChange={(e) => {
                                 const { value, checked } = e.target;
                                 const current = marketData.allowedVendorCategories || [];
                                 const updated = checked ? [...current, value] : current.filter((v: string) => v !== value);
-                                setFormData({ ...formData, allowedVendorCategories: updated as never[] });
+                                setFormData({ ...formData, allowedVendorCategories: updated as string[] });
                             }}
                             className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold"
                         />
