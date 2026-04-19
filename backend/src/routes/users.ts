@@ -194,7 +194,7 @@ router.post("/register", async (req, res) => {
           FIRSTNAME: firstName,
           LASTNAME: lastName,
           BUSINESSNAME: businessName,
-          CITY: city,
+          CITY: city ?? '',
           MEMBERTYPE: accountType === "vendor" ? "Vendor" : "Market",
           IS_MEMBER: true,
           SUBSCRIPTION_TIER: plan ?? "free",
