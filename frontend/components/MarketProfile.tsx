@@ -141,7 +141,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                   {upcomingEvents.map(event => {
                     const dateStr = event.schedule.date || event.schedule.startDate || '';
                     const formattedDate = dateStr
-                      ? new Date(dateStr).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+                      ? new Date(dateStr + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
                       : '';
                     const timeStr = `${formatTime(event.schedule.startTime)} – ${formatTime(event.schedule.endTime)}`;
                     return (
