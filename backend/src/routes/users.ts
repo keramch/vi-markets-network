@@ -61,13 +61,14 @@ router.post("/register", async (req, res) => {
     categories,
     tags,
     marketCategories,
+    newsletterOptIn,
   } = req.body as {
     email: string;
     password: string;
     firstName: string;
     lastName: string;
-    accountType: "vendor" | "market";
-    businessName: string;
+    accountType: "vendor" | "market" | "community";
+    businessName?: string;
     city?: string;
     description?: string;
     plan?: string;
@@ -75,9 +76,10 @@ router.post("/register", async (req, res) => {
     categories?: string[];
     tags?: string[];
     marketCategories?: string[];
+    newsletterOptIn?: boolean;
   };
 
-  if (!email || !password || !firstName || !lastName || !accountType || !businessName) {
+  if (!email || !password || !firstName || !lastName || !accountType) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -136,101 +138,106 @@ router.post("/register", async (req, res) => {
     let ownedMarketId = "";
     let ownedVendorId = "";
 
-    if (accountType === "market") {
-      const slug = await generateUniqueSlug(businessName, "markets");
-      const marketDoc = {
-        ownerId: userId,
-        name: businessName,
-        slug,
-        description: description || "",
-        marketTypes: marketCategories || [],
-        photos: [],
-        contact: { email },
-        location: {
-          address: city ?? '',
-          coordinates: { lat: 0, lng: 0 },
-        },
-        schedule: { rules: [] },
-        vendorIds: [],
-        reviews: [],
-        isFeatured: false,
-        joinDate: today,
-        status: "active",
-      };
-      const marketRef = await db.collection("markets").add(marketDoc);
-      ownedMarketId = marketRef.id;
-    } else {
-      const slug = await generateUniqueSlug(businessName, "vendors");
-      const vendorDoc = {
-        ownerId: userId,
-        name: businessName,
-        slug,
-        description: description || "",
-        category: "Artisan & Crafts",
-        photos: [],
-        contact: { email },
-        vendorTypes: vendorTypes || [],
-        categories: categories || [],
-        tags: tags || [],
-        priceRange: "moderate",
-        attendingMarketIds: [],
-        reviews: [],
-        isFeatured: false,
-        joinDate: today,
-        status: "active",
-      };
-      const vendorRef = await db.collection("vendors").add(vendorDoc);
-      ownedVendorId = vendorRef.id;
+    if (accountType !== "community") {
+      if (accountType === "market") {
+        const slug = await generateUniqueSlug(businessName!, "markets");
+        const marketDoc = {
+          ownerId: userId,
+          name: businessName,
+          slug,
+          description: description || "",
+          marketTypes: marketCategories || [],
+          photos: [],
+          contact: { email },
+          location: {
+            address: city ?? '',
+            coordinates: { lat: 0, lng: 0 },
+          },
+          schedule: { rules: [] },
+          vendorIds: [],
+          reviews: [],
+          isFeatured: false,
+          joinDate: today,
+          status: "active",
+        };
+        const marketRef = await db.collection("markets").add(marketDoc);
+        ownedMarketId = marketRef.id;
+      } else {
+        const slug = await generateUniqueSlug(businessName!, "vendors");
+        const vendorDoc = {
+          ownerId: userId,
+          name: businessName,
+          slug,
+          description: description || "",
+          category: "Artisan & Crafts",
+          photos: [],
+          contact: { email },
+          vendorTypes: vendorTypes || [],
+          categories: categories || [],
+          tags: tags || [],
+          priceRange: "moderate",
+          attendingMarketIds: [],
+          reviews: [],
+          isFeatured: false,
+          joinDate: today,
+          status: "active",
+        };
+        const vendorRef = await db.collection("vendors").add(vendorDoc);
+        ownedVendorId = vendorRef.id;
+      }
     }
 
     // Update the user document with the new profile ID
     await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
 
     // ── Brevo contact sync ────────────────────────────────────────────────────
-    try {
-      const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
-      if (!isNaN(brevoListId)) {
-        const brevoAttributes: Record<string, string | boolean> = {
-          FIRSTNAME: firstName,
-          LASTNAME: lastName,
-          BUSINESSNAME: businessName,
-          CITY: city ?? '',
-          MEMBERTYPE: accountType === "vendor" ? "Vendor" : "Market",
-          IS_MEMBER: true,
-          SUBSCRIPTION_TIER: plan ?? "free",
-          FOUNDING_MEMBER: false,
-        };
+    if (newsletterOptIn !== false) {
+      try {
+        const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
+        if (!isNaN(brevoListId)) {
+          const brevoAttributes: Record<string, string | boolean> = {
+            FIRSTNAME: firstName,
+            LASTNAME: lastName,
+            CITY: city ?? '',
+            MEMBERTYPE: accountType === "vendor" ? "Vendor" : accountType === "market" ? "Market" : "Community",
+            IS_MEMBER: true,
+            SUBSCRIPTION_TIER: plan ?? "free",
+            FOUNDING_MEMBER: false,
+          };
 
-        if (accountType === "vendor" && vendorTypes && vendorTypes.length > 0) {
-          brevoAttributes.VENDOR_TYPES = vendorTypes.join("|");
-        }
-        if (accountType === "market" && marketCategories && marketCategories.length > 0) {
-          brevoAttributes.MARKET_TYPES = marketCategories.join("|");
-        }
+          if (businessName) brevoAttributes.BUSINESSNAME = businessName;
 
-        const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "api-key": process.env.BREVO_API_KEY ?? "",
-          },
-          body: JSON.stringify({
-            email,
-            attributes: brevoAttributes,
-            listIds: [brevoListId],
-            updateEnabled: true,
-          }),
-        });
+          if (accountType === "vendor" && vendorTypes && vendorTypes.length > 0) {
+            brevoAttributes.VENDOR_TYPES = vendorTypes.join("|");
+          }
+          if (accountType === "market" && marketCategories && marketCategories.length > 0) {
+            brevoAttributes.MARKET_TYPES = marketCategories.join("|");
+          }
 
-        if (!brevoResponse.ok) {
-          const errorBody = await brevoResponse.text();
-          console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
+          const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "api-key": process.env.BREVO_API_KEY ?? "",
+            },
+            body: JSON.stringify({
+              email,
+              attributes: brevoAttributes,
+              listIds: [brevoListId],
+              updateEnabled: true,
+            }),
+          });
+
+          if (!brevoResponse.ok) {
+            const errorBody = await brevoResponse.text();
+            console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
+          }
+        } else {
+          console.warn("BREVO_LIST_ID not set -- skipping Brevo sync");
         }
-      } else {
-        console.warn("BREVO_LIST_ID not set -- skipping Brevo sync");
+      } catch (brevoErr) {
+        console.error("Brevo sync failed (non-fatal):", brevoErr);
       }
-    } catch (brevoErr) {
-      console.error("Brevo sync failed (non-fatal):", brevoErr);
     }
     // ── End Brevo sync ────────────────────────────────────────────────────────
 
