@@ -157,7 +157,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
           lastName: lastName.trim(),
           accountType: accountType!,
           businessName: businessName.trim(),
-          city: city.trim(),
           description: description.trim() || undefined,
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
           marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,

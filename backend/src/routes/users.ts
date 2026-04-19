@@ -68,7 +68,7 @@ router.post("/register", async (req, res) => {
     lastName: string;
     accountType: "vendor" | "market";
     businessName: string;
-    city: string;
+    city?: string;
     description?: string;
     plan?: string;
     vendorTypes?: string[];
@@ -77,7 +77,7 @@ router.post("/register", async (req, res) => {
     marketCategories?: string[];
   };
 
-  if (!email || !password || !firstName || !lastName || !accountType || !businessName || !city) {
+  if (!email || !password || !firstName || !lastName || !accountType || !businessName) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
