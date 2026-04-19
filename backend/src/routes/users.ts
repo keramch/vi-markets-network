@@ -113,7 +113,7 @@ router.post("/register", async (req, res) => {
       isAdmin: false,
       autoRenew: false,
       accountType,
-      businessName,
+      businessName: businessName ?? '',
       city: city ?? '',
       description: description || "",
       notificationSettings: {
