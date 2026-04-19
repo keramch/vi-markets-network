@@ -112,7 +112,7 @@ router.post("/register", async (req, res) => {
       autoRenew: false,
       accountType,
       businessName,
-      city,
+      city: city ?? '',
       description: description || "",
       notificationSettings: {
         favoriteMarket: true,
@@ -147,7 +147,7 @@ router.post("/register", async (req, res) => {
         photos: [],
         contact: { email },
         location: {
-          address: city,
+          address: city ?? '',
           coordinates: { lat: 0, lng: 0 },
         },
         schedule: { rules: [] },
