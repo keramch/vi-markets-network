@@ -11,7 +11,7 @@ import { CheckIcon } from './Icons';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type AccountType = 'vendor' | 'market';
+type AccountType = 'vendor' | 'market' | 'community';
 
 interface SignupPageProps {
   onNavigate: (view: View) => void;
@@ -23,12 +23,11 @@ interface SignupPageProps {
 // ── Step indicator ────────────────────────────────────────────────────────────
 
 const BETA_INVITE_CODE = import.meta.env.VITE_INVITE_CODE ?? '';
-const TOTAL_STEPS = 4;
 
-function StepDots({ step }: { step: number }) {
+function StepDots({ step, totalSteps }: { step: number; totalSteps: number }) {
   return (
     <div className="flex items-center justify-center gap-3 mb-6">
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+      {Array.from({ length: totalSteps }, (_, i) => {
         const n = i + 1;
         const done = n < step;
         const active = n === step;
@@ -45,7 +44,7 @@ function StepDots({ step }: { step: number }) {
             >
               {done ? <CheckIcon className="w-4 h-4" /> : n}
             </div>
-            {i < TOTAL_STEPS - 1 && (
+            {i < totalSteps - 1 && (
               <div
                 className={`w-10 h-0.5 transition-colors ${
                   n < step ? 'bg-brand-gold' : 'bg-gray-200'
@@ -93,6 +92,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [googleMsg, setGoogleMsg] = useState('');
   const [errors3, setErrors3] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
+
+  // Step 2
+  const [newsletterOptIn, setNewsletterOptIn] = useState(true);
+
+  // Step 3 (community)
+  const [communityCity, setCommunityCity] = useState('');
 
   // Step 4 (profile)
   const [businessName, setBusinessName] = useState('');
@@ -146,7 +151,36 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   const goNext = async () => {
     if (!validate()) return;
-    if (wizardStep === 4) {
+    if (wizardStep === 3 && accountType === 'community') {
+      setIsSubmitting(true);
+      setSubmitError('');
+      try {
+        const user = await api.register({
+          email: email.trim(),
+          password,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          accountType: 'community',
+          city: communityCity,
+          newsletterOptIn,
+        });
+        await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+        const firebaseUser = firebaseAuth.currentUser;
+        if (firebaseUser) {
+          await sendEmailVerification(firebaseUser, {
+            url: 'https://vimarkets.ca/?verified=true',
+            handleCodeInApp: false,
+          });
+        }
+        onSignupSuccess(user);
+        setIsSuccess(true);
+        window.scrollTo(0, 0);
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else if (wizardStep === 4) {
       setIsSubmitting(true);
       setSubmitError('');
       try {
@@ -223,6 +257,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const totalSteps = accountType === 'community' ? 3 : 4;
+
   return (
     <main className="min-h-screen bg-brand-cream">
       {/* Hero */}
@@ -294,16 +330,16 @@ const SignupPage: React.FC<SignupPageProps> = ({
             <div className="p-6 md:p-10">
               {/* Step counter + dots */}
               <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                Step {wizardStep} of {TOTAL_STEPS}
+                Step {wizardStep} of {totalSteps}
               </p>
-              <StepDots step={wizardStep} />
+              <StepDots step={wizardStep} totalSteps={totalSteps} />
               <h2 className="text-2xl font-serif text-brand-blue text-center mb-8">
-                {STEP_TITLES[wizardStep]}
+                {accountType === 'community' && wizardStep === 3 ? 'Almost there!' : STEP_TITLES[wizardStep]}
               </h2>
 
               {/* ── Step 1: Account type ─────────────────────────────────── */}
               {wizardStep === 1 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" onKeyDown={handleStepEnter}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" onKeyDown={handleStepEnter}>
                   {(
                     [
                       {
@@ -317,6 +353,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         emoji: '🏪',
                         title: 'Market Organizer',
                         desc: 'I run or organize a market and want to list it for vendors and shoppers.',
+                      },
+                      {
+                        type: 'community' as AccountType,
+                        emoji: '🛍️',
+                        title: 'Shopper / Community',
+                        desc: "I want to follow markets and vendors, discover what's on, and share my experiences.",
                       },
                     ] as const
                   ).map(({ type, emoji, title, desc }) => (
@@ -356,19 +398,38 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     By creating a VI Markets account you agree to a few simple things:
                   </p>
                   <ul className="space-y-3">
-                    {[
+                    {(accountType === 'community' ? [
+                      'Your first name and last initial will appear on any reviews you submit — reviews are public and cannot be edited after submission',
+                      'Be respectful — this is a community platform',
+                      "VI Markets is a directory — we're not responsible for outcomes between markets, vendors, or the public",
+                      'You can delete your account any time',
+                    ] : [
                       'Your profile information should be accurate and kept up to date',
                       'Be respectful — this is a community platform',
                       "VI Markets is a directory and toolset — we're not responsible for outcomes between markets, vendors, or the public",
                       'Free accounts are free forever. Paid subscriptions renew automatically unless you choose manual renewal',
                       'You can cancel or delete your account any time',
-                    ].map((item) => (
+                    ]).map((item) => (
                       <li key={item} className="flex items-start gap-3">
                         <span className="text-brand-gold mt-0.5 flex-shrink-0">✓</span>
                         <span className="text-gray-700 text-sm">{item}</span>
                       </li>
                     ))}
                   </ul>
+                  {accountType === 'community' && (
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="newsletter-opt-in"
+                        checked={newsletterOptIn}
+                        onChange={(e) => setNewsletterOptIn(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold mt-0.5 flex-shrink-0"
+                      />
+                      <label htmlFor="newsletter-opt-in" className="text-gray-700 text-sm cursor-pointer">
+                        Email me updates about new markets and vendors near me — you can unsubscribe anytime.
+                      </label>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-500 pt-1">
                     Want to read the full details?{' '}
                     <Link
@@ -462,7 +523,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       {errors3.firstName && <p className={errCls}>{errors3.firstName}</p>}
                     </div>
                     <div>
-                      <label className={labelCls}>Last Name</label>
+                      <label className={labelCls}>Last Name or Initial</label>
                       <input
                         type="text"
                         value={lastName}
@@ -514,6 +575,24 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     </div>
                     {errors3.password && <p className={errCls}>{errors3.password}</p>}
                   </div>
+
+                  {accountType === 'community' && (
+                    <div>
+                      <label className={labelCls}>Your City</label>
+                      <input
+                        type="text"
+                        value={communityCity}
+                        onChange={(e) => setCommunityCity(e.target.value)}
+                        onKeyDown={handleStepEnter}
+                        className={inputCls}
+                        placeholder="e.g. Courtenay, Victoria, Nanaimo"
+                        autoComplete="address-level2"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Optional — helps us understand where our community is growing. We use this for our own planning, never sold or shared.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -668,6 +747,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     ? 'I agree — Continue'
                     : wizardStep === 4
                     ? 'Create Profile'
+                    : accountType === 'community' && wizardStep === 3
+                    ? 'Create Account'
                     : 'Continue →'}
                 </button>
               </div>
@@ -692,11 +773,15 @@ const SignupPage: React.FC<SignupPageProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => navigate('/dashboard/profile')}
-                disabled={isUploadingLogo}
+                onClick={() => accountType === 'community' ? navigate('/') : navigate('/dashboard/profile')}
+                disabled={accountType !== 'community' && isUploadingLogo}
                 className="bg-brand-blue text-white font-semibold px-10 py-3 rounded-full hover:bg-brand-blue/90 transition-colors text-lg disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {isUploadingLogo ? 'Finishing up…' : 'Go to Your Hub →'}
+                {accountType !== 'community' && isUploadingLogo
+                  ? 'Finishing up…'
+                  : accountType === 'community'
+                  ? 'Explore VI Markets →'
+                  : 'Go to Your Hub →'}
               </button>
             </div>
           )}

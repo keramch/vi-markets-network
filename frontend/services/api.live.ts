@@ -136,15 +136,16 @@ export const register = (data: {
   password: string;
   firstName: string;
   lastName: string;
-  accountType: "vendor" | "market";
-  businessName: string;
-  city: string;
+  accountType: "vendor" | "market" | "community";
+  businessName?: string;
+  city?: string;
   description?: string;
   plan?: string;
   vendorTypes?: string[];
   categories?: string[];
   tags?: string[];
   marketCategories?: string[];
+  newsletterOptIn?: boolean;
 }): Promise<User> => {
   return request<User>("/users/register", {
     method: "POST",
