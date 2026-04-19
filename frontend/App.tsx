@@ -430,7 +430,7 @@ const App: React.FC = () => {
   ) => {
       if (!currentUser) return;
       try {
-          const newReview = await api.addReview(entityType, entityId, { ...reviewData, author: currentUser.email.split('@')[0] });
+          const newReview = await api.addReview(entityType, entityId, { ...reviewData, author: currentUser.firstName && currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName.charAt(0)}.` : currentUser.email.split('@')[0] });
           const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
           collectionSetter(prev => 
               prev.map(item => 
@@ -888,7 +888,7 @@ const App: React.FC = () => {
                 isFoundingMemberOfferActive={true}
                 onSignupSuccess={async (user: User) => {
                   setCurrentUser(user);
-                  showNotification(`Welcome to VI Markets, ${user.email}!`);
+                  showNotification(`Welcome to VI Markets, ${user.firstName || user.email}!`);
                   // Delay refetch to allow logo upload to complete before
                   // refreshing market/vendor data from Firestore
                   setTimeout(async () => {
@@ -958,6 +958,12 @@ const App: React.FC = () => {
                   settings={currentUser.notificationSettings}
                   onSave={handleUpdateNotificationSettings}
                   onBack={() => navigate('/')}
+                  currentUser={currentUser}
+                  onSaveCity={async (city: string) => {
+                    const updatedUser = await api.updateUser(currentUser.id, { city });
+                    setCurrentUser(updatedUser);
+                    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+                  }}
                 />
               )
             } />

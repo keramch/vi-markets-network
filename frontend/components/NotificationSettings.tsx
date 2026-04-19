@@ -4,7 +4,6 @@ import type { NotificationSettings, User } from '../types';
 import { SettingsIcon } from './Icons';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
-import * as api from '../services/api.live';
 
 interface NotificationSettingsProps {
   settings: NotificationSettings;
