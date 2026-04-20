@@ -151,7 +151,18 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                           <span className="text-base font-semibold text-gray-700">{formattedDate}</span>
                         </div>
                         <div>
-                          <p className="text-base font-medium text-brand-text">{event.name}</p>
+                          {event.externalEventUrl ? (
+                            <a
+                              href={event.externalEventUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-base font-medium text-brand-teal hover:underline"
+                            >
+                              {event.name}
+                            </a>
+                          ) : (
+                            <p className="text-base font-medium text-brand-text">{event.name}</p>
+                          )}
                           <p className="text-sm text-gray-500">{event.location.venueName} · {timeStr}</p>
                         </div>
                       </div>
