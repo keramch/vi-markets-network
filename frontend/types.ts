@@ -48,6 +48,8 @@ export interface Review {
   comment: string;
   date: string;
   status: 'pending' | 'approved' | 'declined';
+  userId?: string;
+  reviewerAccountType?: string;
 }
 
 // ── Market taxonomy ───────────────────────────────────────────────────────────

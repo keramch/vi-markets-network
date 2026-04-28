@@ -24,6 +24,7 @@ interface MarketProfileProps {
   onContactSubmit: (recipientEmail: string, subject: string) => void;
   onApply: (marketId: string) => void;
   upcomingEvents?: MarketEvent[];
+  onOpenLoginModal: () => void;
 }
 
 const formatScheduleToString = (schedule: Market['schedule']): string => {
@@ -51,7 +52,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   market, vendors, applications, owner,
   isFavorited, onToggleFavorite, currentUser,
   onAddReview, onFeatureMarket, onContactSubmit, onApply,
-  upcomingEvents = [],
+  upcomingEvents = [], onOpenLoginModal,
 }) => {
   const currentUserVendor = currentUser && currentUser.ownedVendorId
     ? vendors.find(v => v.id === currentUser.ownedVendorId)
@@ -80,6 +81,9 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   const isFoundingMember = owner?.subscription?.foundingMember;
   const approvedReviews = market.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
+  const hasAlreadyReviewed = currentUser
+    ? market.reviews.some(r => r.userId === currentUser.id)
+    : false;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -112,15 +116,26 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
           {/* Bottom-right: share + follow */}
           <div className="absolute bottom-4 right-4 md:bottom-5 md:right-6 flex items-center gap-2">
             <ShareButton />
-            <button
-              onClick={() => onToggleFavorite(market.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200 ${isFavorited ? 'bg-brand-blue text-white' : 'bg-black/30 text-white hover:bg-black/50'}`}
-              aria-label={isFavorited ? 'Unfollow this market' : 'Follow this market'}
-              title={isFavorited ? 'Unfollow this market' : 'Follow this market'}
-            >
-              {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-              {isFavorited ? 'Following' : 'Follow'}
-            </button>
+            {currentUser ? (
+              <button
+                onClick={() => onToggleFavorite(market.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200 ${isFavorited ? 'bg-brand-blue text-white' : 'bg-black/30 text-white hover:bg-black/50'}`}
+                aria-label={isFavorited ? 'Unfollow this market' : 'Follow this market'}
+                title={isFavorited ? 'Unfollow this market' : 'Follow this market'}
+              >
+                {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                {isFavorited ? 'Following' : 'Follow'}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLoginModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-black/30 text-white/50 hover:bg-black/40 transition-colors duration-200"
+                title="Log in or sign up to follow"
+              >
+                <UserPlus className="w-4 h-4" />
+                Follow
+              </button>
+            )}
           </div>
         </div>
 
@@ -340,14 +355,34 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
         {/* ── Section 4: Reviews ──────────────────────────────────────────── */}
         <div className="p-6 md:p-8 border-t">
           <h2 className="text-2xl text-brand-blue font-serif mb-6">Reviews</h2>
-          {currentUser && <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>}
+          {currentUser
+            ? hasAlreadyReviewed
+              ? <p className="text-sm text-gray-500 mb-8">You've already reviewed this profile.</p>
+              : <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>
+            : (
+              <p className="text-sm text-gray-500 mb-8">
+                <button onClick={onOpenLoginModal} className="text-brand-teal hover:underline font-medium">Log in</button>
+                {' '}or{' '}
+                <a href="/signup" className="text-brand-teal hover:underline font-medium">sign up free</a>
+                {' '}to leave a review.
+              </p>
+            )
+          }
           {approvedReviews.length > 0 ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {displayedReviews.map(review => (
                   <div key={review.id} className="border rounded-lg p-4">
-                    <span className="font-medium text-brand-text">{review.author}</span>
-                    <p className="text-sm text-gray-600 mt-1">{review.comment}</p>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-medium text-brand-text">{review.author}</span>
+                      {review.reviewerAccountType === 'vendor' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-teal font-medium">Vendor</span>
+                      )}
+                      {review.reviewerAccountType === 'market' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-teal font-medium">Organizer</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">{review.comment}</p>
                     <p className="text-xs text-gray-400 mt-1">{review.date}</p>
                   </div>
                 ))}

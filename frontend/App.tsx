@@ -77,10 +77,11 @@ interface MarketProfileRouteProps {
   onFeatureMarket: (marketId: string) => void;
   onContactSubmit: (recipientEmail: string, subject: string) => void;
   onApply: (marketId: string) => void;
+  onOpenLoginModal: () => void;
 }
 const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   markets, vendors, applications, users, favoritedMarketIds, currentUser,
-  onToggleFavorite, onAddReview, onFeatureMarket, onContactSubmit, onApply,
+  onToggleFavorite, onAddReview, onFeatureMarket, onContactSubmit, onApply, onOpenLoginModal,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -128,6 +129,7 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
       onContactSubmit={onContactSubmit}
       onApply={onApply}
       upcomingEvents={upcomingEvents}
+      onOpenLoginModal={onOpenLoginModal}
     />
   );
 };
@@ -142,10 +144,11 @@ interface VendorProfileRouteProps {
   onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureVendor: (vendorId: string) => void;
   onContactSubmit: (recipientEmail: string, subject: string) => void;
+  onOpenLoginModal: () => void;
 }
 const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
   vendors, markets, users, favoritedVendorIds, currentUser,
-  onToggleFavorite, onAddReview, onFeatureVendor, onContactSubmit,
+  onToggleFavorite, onAddReview, onFeatureVendor, onContactSubmit, onOpenLoginModal,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -168,6 +171,7 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
       onAddReview={(data) => onAddReview('vendor', vendor.id, data)}
       onFeatureVendor={onFeatureVendor}
       onContactSubmit={onContactSubmit}
+      onOpenLoginModal={onOpenLoginModal}
     />
   );
 };
@@ -875,6 +879,7 @@ const App: React.FC = () => {
                 onFeatureMarket={handleOpenFeatureMarketModal}
                 onContactSubmit={handleContactSubmit}
                 onApply={handleOpenApplicationForm}
+                onOpenLoginModal={() => setLoginModalOpen(true)}
               />
             } />
             <Route path="/vendors/:slug" element={
@@ -888,6 +893,7 @@ const App: React.FC = () => {
                 onAddReview={handleAddReview}
                 onFeatureVendor={handleOpenFeatureVendorModal}
                 onContactSubmit={handleContactSubmit}
+                onOpenLoginModal={() => setLoginModalOpen(true)}
               />
             } />
             <Route path="/calendar" element={
