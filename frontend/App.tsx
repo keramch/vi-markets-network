@@ -457,7 +457,7 @@ const App: React.FC = () => {
   ) => {
       if (!currentUser) return;
       try {
-          const newReview = await api.addReview(entityType, entityId, { ...reviewData, author: currentUser.firstName && currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName.charAt(0)}.` : currentUser.email.split('@')[0] });
+          const newReview = await api.addReview(entityType, entityId, { ...reviewData, author: currentUser.firstName && currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName.charAt(0)}.` : currentUser.email.split('@')[0], userId: currentUser?.id, reviewerAccountType: currentUser?.accountType });
           const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
           collectionSetter(prev => 
               prev.map(item => 

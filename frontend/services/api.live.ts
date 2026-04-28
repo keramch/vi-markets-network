@@ -200,7 +200,7 @@ export const addReview = (
   entityId: string,
   reviewData: Omit<Review, "id" | "date" | "status">
 ): Promise<Review> => {
-  const { rating, comment, author } = reviewData;
+  const { rating, comment, author, userId, reviewerAccountType } = reviewData;
 
   return request<Review>("/reviews", {
     method: "POST",
@@ -209,7 +209,9 @@ export const addReview = (
       entityId,
       rating,
       comment,
-      author
+      author,
+      ...(userId ? { userId } : {}),
+      ...(reviewerAccountType ? { reviewerAccountType } : {})
     })
   });
 };

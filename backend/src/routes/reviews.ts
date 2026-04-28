@@ -22,12 +22,14 @@ router.get("/", async (_req, res) => {
 // POST /reviews → create a new review
 // expected body: { entityType: 'market' | 'vendor', entityId, rating, comment, author }
 router.post("/", async (req, res) => {
-  const { entityType, entityId, rating, comment, author } = req.body as {
+  const { entityType, entityId, rating, comment, author, userId, reviewerAccountType } = req.body as {
     entityType: "market" | "vendor";
     entityId: string;
     rating: number;
     comment: string;
     author: string;
+    userId?: string;
+    reviewerAccountType?: string;
   };
 
   if (!entityType || !entityId || !rating || !comment || !author) {
@@ -42,6 +44,8 @@ router.post("/", async (req, res) => {
       rating,
       comment,
       author,
+      ...(userId ? { userId } : {}),
+      ...(reviewerAccountType ? { reviewerAccountType } : {}),
       status: "pending",
       date: now.toISOString().split("T")[0], // YYYY-MM-DD like your mock
       createdAt: now.getTime()
