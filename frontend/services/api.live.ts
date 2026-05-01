@@ -8,7 +8,8 @@ import type {
   Application,
   NotificationSettings,
   MemberStatus,
-  MarketEvent
+  MarketEvent,
+  Follow
 } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -312,4 +313,42 @@ export const hardDeleteMember = (
   return request<void>(`/admin/members/${type}/${memberId}`, {
     method: "DELETE",
   });
+};
+
+// FOLLOWS
+
+// Fetch all follows for a user. Returns two arrays for easy consumption in App.tsx.
+export const fetchFollows = async (
+  followerUid: string
+): Promise<{ marketIds: string[]; vendorIds: string[] }> => {
+  const follows = await request<Follow[]>(
+    `/follows?followerUid=${encodeURIComponent(followerUid)}`
+  );
+  return {
+    marketIds: follows.filter(f => f.targetType === "market").map(f => f.targetId),
+    vendorIds: follows.filter(f => f.targetType === "vendor").map(f => f.targetId),
+  };
+};
+
+// Create a follow. Returns the created Follow document.
+export const addFollow = (
+  followerUid: string,
+  targetId: string,
+  targetType: "market" | "vendor"
+): Promise<Follow> => {
+  return request<Follow>("/follows", {
+    method: "POST",
+    body: JSON.stringify({ followerUid, targetId, targetType }),
+  });
+};
+
+// Remove a follow by uid + targetId lookup (no doc ID needed).
+export const removeFollow = (
+  followerUid: string,
+  targetId: string
+): Promise<void> => {
+  return request<void>(
+    `/follows?followerUid=${encodeURIComponent(followerUid)}&targetId=${encodeURIComponent(targetId)}`,
+    { method: "DELETE" }
+  );
 };
