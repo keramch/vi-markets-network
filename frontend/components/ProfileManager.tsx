@@ -52,6 +52,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [pendingGalleryFiles, setPendingGalleryFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress]           = useState<number | null>(null);
   const [uploadError, setUploadError]                 = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const isProMember = user?.subscription?.tier === 'pro' || user?.subscription?.tier === 'superPro' || user?.subscription?.foundingMember === true;
 
@@ -134,6 +136,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const profileType = isMarket(formData) ? 'markets' : 'vendors';
 
   const saveWithUploads = async () => {
+    setIsSaving(true);
+    setSaveSuccess(false);
     setUploadError(null);
 
     let updatedData: Market | Vendor = { ...formData };
@@ -162,6 +166,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       } catch {
         setUploadError('Image upload failed. Please try again.');
         setUploadProgress(null);
+        setIsSaving(false);
         return;
       }
 
@@ -170,7 +175,13 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       setPendingGalleryFiles([]);
     }
 
-    onSaveChanges(updatedData);
+    try {
+      await onSaveChanges(updatedData);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -724,8 +735,18 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
           <div className="flex justify-end pt-6 border-t">
             <button type="button" onClick={onBack} className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-4 hover:bg-gray-300">Cancel</button>
-            <button type="submit" disabled={uploadProgress !== null} className="bg-brand-blue text-white font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 disabled:opacity-60">
-              {uploadProgress !== null ? 'Saving…' : 'Save Changes'}
+            <button
+              type="submit"
+              disabled={uploadProgress !== null || isSaving}
+              className="bg-brand-blue text-white font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 disabled:opacity-60 flex items-center gap-2"
+            >
+              {(uploadProgress !== null || isSaving) && (
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              )}
+              {saveSuccess ? '✓ Saved' : (uploadProgress !== null || isSaving) ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </form>
