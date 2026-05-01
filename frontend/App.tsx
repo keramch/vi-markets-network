@@ -330,6 +330,13 @@ const App: React.FC = () => {
         try {
           const user = await api.fetchMe(firebaseUser.email);
           setCurrentUser(user);
+          try {
+            const follows = await api.fetchFollows(user.id);
+            setFavoritedMarketIds(follows.marketIds);
+            setFavoritedVendorIds(follows.vendorIds);
+          } catch {
+            // follows failed — non-fatal, continue with empty state
+          }
         } catch {
           // user doc not found — stay logged out
         }
@@ -361,6 +368,13 @@ const App: React.FC = () => {
         setCurrentUser(user);
         setLoginModalOpen(false);
         showNotification(`Welcome, ${user.email}!`);
+        try {
+          const follows = await api.fetchFollows(user.id);
+          setFavoritedMarketIds(follows.marketIds);
+          setFavoritedVendorIds(follows.vendorIds);
+        } catch {
+          // follows failed — non-fatal
+        }
       } catch (error) {
           showNotification(error instanceof Error ? error.message : 'Login failed.');
       }
@@ -435,9 +449,15 @@ const App: React.FC = () => {
         setLoginModalOpen(true);
         return;
     }
+    const isFollowing = favoritedMarketIds.includes(id);
     setFavoritedMarketIds(prev =>
-      prev.includes(id) ? prev.filter(marketId => marketId !== id) : [...prev, id]
+      isFollowing ? prev.filter(marketId => marketId !== id) : [...prev, id]
     );
+    if (isFollowing) {
+      api.removeFollow(currentUser.id, id).catch(err => console.error('Unfollow failed:', err));
+    } else {
+      api.addFollow(currentUser.id, id, 'market').catch(err => console.error('Follow failed:', err));
+    }
   };
   
   const handleToggleVendorFavorite = (id: string) => {
@@ -445,9 +465,15 @@ const App: React.FC = () => {
         setLoginModalOpen(true);
         return;
     }
+    const isFollowing = favoritedVendorIds.includes(id);
     setFavoritedVendorIds(prev =>
-      prev.includes(id) ? prev.filter(vendorId => vendorId !== id) : [...prev, id]
+      isFollowing ? prev.filter(vendorId => vendorId !== id) : [...prev, id]
     );
+    if (isFollowing) {
+      api.removeFollow(currentUser.id, id).catch(err => console.error('Unfollow failed:', err));
+    } else {
+      api.addFollow(currentUser.id, id, 'vendor').catch(err => console.error('Follow failed:', err));
+    }
   };
 
   const handleAddReview = async (
