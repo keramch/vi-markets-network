@@ -34,6 +34,7 @@ import AboutPage from './components/AboutPage';
 import PrivacyPage from './components/PrivacyPage';
 import TermsOfUsePage from './components/TermsOfUsePage';
 import MemberAgreementPage from './components/MemberAgreementPage';
+import VerifiedPage from './components/VerifiedPage';
 
 
 // Maps a View discriminant to its URL path (used to adapt Header's onNavigate prop)
@@ -272,10 +273,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('verified') === 'true') {
-      setShowVerifiedToast(true);
-      window.history.replaceState({}, '', '/');
-      setTimeout(() => setShowVerifiedToast(false), 5000);
+    // Handle Firebase Auth email verification redirect
+    if (params.get('mode') === 'verifyEmail' || params.get('verified') === 'true') {
+      navigate('/verified');
     }
   }, []);
 
@@ -1072,6 +1072,7 @@ const App: React.FC = () => {
                 onSaveChanges={handleUpdateProfileAsAdmin}
               />
             } />
+            <Route path="/verified" element={<VerifiedPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>}
       </div>
