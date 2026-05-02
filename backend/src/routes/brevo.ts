@@ -94,15 +94,6 @@ router.post("/send-verification", async (req: Request, res: Response) => {
                 </a>
               </div>
 
-              <div style="background-color: #EBF5EC; border-left: 4px solid #2E7A72; padding: 20px; border-radius: 0 8px 8px 0; margin: 30px 0;">
-                <p style="color: #4A4243; font-size: 14px; line-height: 1.5; margin: 0;">
-                  <strong>Having trouble with the button?</strong> Copy and paste this link into your browser:
-                </p>
-                <p style="color: #2E7A72; word-break: break-all; font-size: 13px; margin: 10px 0 0 0; font-family: monospace;">
-                  ${verificationUrl}
-                </p>
-              </div>
-
               <div style="border-top: 2px solid #EBF5EC; padding-top: 30px; margin-top: 40px; text-align: center;">
                 <p style="color: #4A4243; font-size: 16px; margin: 0 0 20px 0;">
                   Questions? We're here to help! 💬
