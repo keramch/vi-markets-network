@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { firebaseAuth, sendEmailVerification } from '../services/firebase';
+import { firebaseAuth } from '../services/firebase';
 import type { View, User } from '../types';
 import { VendorTypes, MarketCategories } from '../types';
 import * as api from '../services/api.live';
@@ -114,6 +114,28 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [resendSent, setResendSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // ── Email verification ────────────────────────────────────────────────────
+
+  const sendCustomVerificationEmail = async (user: any) => {
+    try {
+      const verificationUrl = await user.getIdToken().then((token: string) => {
+        return `https://vimarkets.ca/__/auth/action?mode=verifyEmail&oobCode=${token}&continueUrl=https://vimarkets.ca/?verified=true`;
+      });
+
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/brevo/send-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          firstName: firstName.trim(),
+          verificationUrl,
+        }),
+      });
+    } catch (err) {
+      console.error('Custom verification email failed:', err);
+    }
+  };
+
   // ── Validation ────────────────────────────────────────────────────────────
 
   const validate = (): boolean => {
@@ -141,10 +163,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const handleResendVerification = async () => {
     const firebaseUser = firebaseAuth.currentUser;
     if (firebaseUser) {
-      await sendEmailVerification(firebaseUser, {
-        url: 'https://vimarkets.ca/?verified=true',
-        handleCodeInApp: false,
-      });
+      await sendCustomVerificationEmail(firebaseUser);
       setResendSent(true);
     }
   };
@@ -167,10 +186,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
         const firebaseUser = firebaseAuth.currentUser;
         if (firebaseUser) {
-          await sendEmailVerification(firebaseUser, {
-            url: 'https://vimarkets.ca/?verified=true',
-            handleCodeInApp: false,
-          });
+          await sendCustomVerificationEmail(firebaseUser);
         }
         onSignupSuccess(user);
         setIsSuccess(true);
@@ -199,10 +215,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         // Send verification email
         const firebaseUser = firebaseAuth.currentUser;
         if (firebaseUser) {
-          await sendEmailVerification(firebaseUser, {
-            url: 'https://vimarkets.ca/?verified=true',
-            handleCodeInApp: false,
-          });
+          await sendCustomVerificationEmail(firebaseUser);
         }
         onSignupSuccess(user);
         setIsSuccess(true);
