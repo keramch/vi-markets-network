@@ -755,7 +755,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   className="bg-brand-blue text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-blue/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting
-                    ? 'Creating…'
+                    ? 'Setting up your account...'
                     : wizardStep === 2
                     ? 'I agree — Continue'
                     : wizardStep === 4

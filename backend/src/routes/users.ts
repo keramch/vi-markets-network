@@ -93,7 +93,8 @@ router.post("/register", async (req, res) => {
       .limit(1)
       .get();
     if (!existing.empty) {
-      return res.status(409).json({ error: "An account with this email already exists" });
+      const existingDoc = existing.docs[0];
+      return res.status(200).json({ id: existingDoc.id, ...existingDoc.data() });
     }
 
     const newUser = {
@@ -140,6 +141,11 @@ router.post("/register", async (req, res) => {
 
     if (accountType !== "community") {
       if (accountType === "market") {
+        const existingMarket = await db.collection("markets").where("ownerId", "==", userId).limit(1).get();
+        if (!existingMarket.empty) {
+          const userDoc = await db.collection("users").doc(userId).get();
+          return res.status(200).json({ id: userId, ...userDoc.data(), ownedMarketId: existingMarket.docs[0].id });
+        }
         const slug = await generateUniqueSlug(businessName!, "markets");
         const marketDoc = {
           ownerId: userId,
@@ -163,6 +169,11 @@ router.post("/register", async (req, res) => {
         const marketRef = await db.collection("markets").add(marketDoc);
         ownedMarketId = marketRef.id;
       } else {
+        const existingVendor = await db.collection("vendors").where("ownerId", "==", userId).limit(1).get();
+        if (!existingVendor.empty) {
+          const userDoc = await db.collection("users").doc(userId).get();
+          return res.status(200).json({ id: userId, ...userDoc.data(), ownedVendorId: existingVendor.docs[0].id });
+        }
         const slug = await generateUniqueSlug(businessName!, "vendors");
         const vendorDoc = {
           ownerId: userId,
