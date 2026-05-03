@@ -186,8 +186,8 @@ const HomePage: React.FC<HomePageProps> = ({
       );
     };
 
-    const featuredMarkets = activeMarkets.filter((m) => m.isFeatured);
-    const featuredVendors = activeVendors.filter((v) => v.isFeatured);
+    const featuredMarkets = activeMarkets.filter((m) => m.isFeatured === true);
+    const featuredVendors = activeVendors.filter((v) => v.isFeatured === true);
 
     const topRatedMarkets = [...activeMarkets]
       .sort(
