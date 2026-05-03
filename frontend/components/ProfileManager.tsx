@@ -399,7 +399,10 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <h4 className="text-sm font-semibold text-brand-blue mb-3">Social & Web Links</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <input type="text" name="instagram" placeholder="Instagram username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                                <input type="text" name="facebook" placeholder="Facebook page name or URL" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <div>
+                                    <input type="text" name="facebook" placeholder="your-page-name" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <p className="text-xs text-gray-400 mt-1">We'll add https://www.facebook.com/ automatically</p>
+                                </div>
                                 <input type="text" name="etsy" placeholder="Etsy shop name" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 <input type="text" name="tiktok" placeholder="TikTok username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 <input type="text" name="pinterest" placeholder="Pinterest username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>

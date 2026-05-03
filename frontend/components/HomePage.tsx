@@ -157,8 +157,7 @@ const HomePage: React.FC<HomePageProps> = ({
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
 
   // What's New carousel
-  const [carouselIdx, setCarouselIdx] = useState(0);
-  const touchStartX = useRef<number | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   // card width (w-36 = 144px) + gap (gap-3 = 12px)
   const CARD_STEP = 156;
 
@@ -670,11 +669,11 @@ const HomePage: React.FC<HomePageProps> = ({
                   ))}
                 </div>
               ) : (
-              <div className="relative">
+              <div className="relative overflow-x-hidden">
                 {/* Left arrow */}
                 <button
                   type="button"
-                  onClick={() => setCarouselIdx((i) => (i === 0 ? whatsNewItems.length - 1 : i - 1))}
+                  onClick={() => carouselRef.current?.scrollBy({ left: -CARD_STEP, behavior: 'smooth' })}
                   className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-gold text-white shadow hover:bg-brand-gold/80 transition-colors"
                   aria-label="Previous"
                 >
@@ -682,57 +681,47 @@ const HomePage: React.FC<HomePageProps> = ({
                 </button>
 
                 {/* Track */}
-                <div className="overflow-hidden mx-9">
-                  <div
-                    className="flex gap-3 transition-transform duration-300 ease-in-out"
-                    style={{ transform: `translateX(-${carouselIdx * CARD_STEP}px)` }}
-                    onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-                    onTouchEnd={(e) => {
-                      if (touchStartX.current === null) return;
-                      const delta = touchStartX.current - e.changedTouches[0].clientX;
-                      if (delta > 40) setCarouselIdx((i) => (i === whatsNewItems.length - 1 ? 0 : i + 1));
-                      else if (delta < -40) setCarouselIdx((i) => (i === 0 ? whatsNewItems.length - 1 : i - 1));
-                      touchStartX.current = null;
-                    }}
-                  >
-                    {whatsNewItems.map((item) => {
-                      const imageSrc = item.logoUrl || item.photos?.[0];
-                      const joinLabel = (() => {
-                        if (!item.joinDate) return null;
-                        const parts = item.joinDate.split('-').map(Number);
-                        if (parts.length !== 3 || parts.some(isNaN)) return null;
-                        return new Date(parts[0], parts[1] - 1, parts[2])
-                          .toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
-                      })();
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex-shrink-0 w-36 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                          onClick={() => item.type === "market" ? onSelectMarket(item.id) : onSelectVendor(item.id)}
-                        >
-                          {imageSrc
-                            ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
-                            : <div className="w-full h-24 bg-brand-cream flex items-center justify-center">
-                                <span className="text-brand-blue/40 text-3xl font-serif">{item.name[0]}</span>
-                              </div>
-                          }
-                          <div className="p-2">
-                            <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-gold" : "text-brand-light-blue"}`}>
-                              {item.type === "market" ? "Market" : "Vendor"}
-                            </span>
-                            <p className="text-sm font-bold text-brand-blue truncate leading-tight">{item.name}</p>
-                            {joinLabel && <p className="text-xs text-gray-400 mt-0.5">{joinLabel}</p>}
-                          </div>
+                <div
+                  ref={carouselRef}
+                  className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pr-8 mx-9 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+                >
+                  {whatsNewItems.map((item) => {
+                    const imageSrc = item.logoUrl || item.photos?.[0];
+                    const joinLabel = (() => {
+                      if (!item.joinDate) return null;
+                      const parts = item.joinDate.split('-').map(Number);
+                      if (parts.length !== 3 || parts.some(isNaN)) return null;
+                      return new Date(parts[0], parts[1] - 1, parts[2])
+                        .toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+                    })();
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex-shrink-0 w-36 snap-start bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => item.type === "market" ? onSelectMarket(item.id) : onSelectVendor(item.id)}
+                      >
+                        {imageSrc
+                          ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
+                          : <div className="w-full h-24 bg-brand-cream flex items-center justify-center">
+                              <span className="text-brand-blue/40 text-3xl font-serif">{item.name[0]}</span>
+                            </div>
+                        }
+                        <div className="p-2">
+                          <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-gold" : "text-brand-light-blue"}`}>
+                            {item.type === "market" ? "Market" : "Vendor"}
+                          </span>
+                          <p className="text-sm font-bold text-brand-blue truncate leading-tight">{item.name}</p>
+                          {joinLabel && <p className="text-xs text-gray-400 mt-0.5">{joinLabel}</p>}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Right arrow */}
                 <button
                   type="button"
-                  onClick={() => setCarouselIdx((i) => (i === whatsNewItems.length - 1 ? 0 : i + 1))}
+                  onClick={() => carouselRef.current?.scrollBy({ left: CARD_STEP, behavior: 'smooth' })}
                   className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-brand-gold text-white shadow hover:bg-brand-gold/80 transition-colors"
                   aria-label="Next"
                 >
