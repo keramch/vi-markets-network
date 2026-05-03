@@ -179,40 +179,40 @@ const HomePage: React.FC<HomePageProps> = ({
   const activeTagCount = selectedVendorTags.length;
 
   const featuredItems = useMemo(() => {
-    const getAverageRating = (reviews: Review[]) => {
-      if (!reviews || reviews.length === 0) return 0;
-      return (
-        reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
-      );
+    const getApprovedRating = (reviews: Review[]) => {
+      const approved = (reviews || []).filter(r => r.status === 'approved');
+      if (approved.length === 0) return 0;
+      return approved.reduce((acc, r) => acc + r.rating, 0) / approved.length;
     };
 
-    const featuredMarkets = activeMarkets.filter((m) => m.isFeatured === true);
-    const featuredVendors = activeVendors.filter((v) => v.isFeatured === true);
-
-    const topRatedMarkets = [...activeMarkets]
-      .sort(
-        (a, b) => getAverageRating(b.reviews) - getAverageRating(a.reviews)
-      )
-      .slice(0, 2);
-
-    const topRatedVendors = [...activeVendors]
-      .sort(
-        (a, b) => getAverageRating(b.reviews) - getAverageRating(a.reviews)
-      )
-      .slice(0, 2);
-
-    const combined = [
-      ...featuredMarkets.map((m) => ({ type: "market", data: m as Market })),
-      ...featuredVendors.map((v) => ({ type: "vendor", data: v as Vendor })),
-      ...topRatedMarkets.map((m) => ({ type: "market", data: m as Market })),
-      ...topRatedVendors.map((v) => ({ type: "vendor", data: v as Vendor })),
+    const allActive = [
+      ...activeMarkets.map(m => ({ type: "market" as const, data: m as Market })),
+      ...activeVendors.map(v => ({ type: "vendor" as const, data: v as Vendor })),
     ];
 
+    // Tier 1: explicitly featured, shuffled
+    const tier1 = allActive
+      .filter(item => item.data.isFeatured === true)
+      .sort(() => Math.random() - 0.5);
+
+    // Tier 2: at least 1 approved review, sorted by rating desc, shuffled within same rating
+    const tier2 = allActive
+      .filter(item => (item.data.reviews || []).some(r => r.status === 'approved'))
+      .sort((a, b) => {
+        const diff = getApprovedRating(b.data.reviews) - getApprovedRating(a.data.reviews);
+        return diff !== 0 ? diff : Math.random() - 0.5;
+      });
+
+    // Tier 3: no approved reviews, sorted by joinDate descending
+    const tier3 = allActive
+      .filter(item => !(item.data.reviews || []).some(r => r.status === 'approved'))
+      .sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
+
     const uniqueItems = Array.from(
-      new Map(combined.map((item) => [item.data.id, item])).values()
+      new Map([...tier1, ...tier2, ...tier3].map(item => [item.data.id, item])).values()
     );
 
-    return uniqueItems.sort(() => 0.5 - Math.random()).slice(0, 6);
+    return uniqueItems.slice(0, 8);
   }, [activeMarkets, activeVendors]);
 
   const whatsNewItems = useMemo(() => {
@@ -731,16 +731,16 @@ const HomePage: React.FC<HomePageProps> = ({
               )}
             </section>
 
-            <section className="mb-12">
+            <section className="bg-white rounded-2xl p-6 mx-0 my-6">
               <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
                 Featured Markets & Vendors
               </h2>
               {isLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
                   {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
               ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
                 {featuredItems.map((item) =>
                   item.type === "market" ? (
                     <MarketCard
