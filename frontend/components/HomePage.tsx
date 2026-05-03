@@ -657,6 +657,49 @@ const HomePage: React.FC<HomePageProps> = ({
           </>
         ) : (
           <>
+            <section className="mb-12">
+              <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
+                Featured Markets & Vendors
+              </h2>
+              {isLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                  {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                {featuredItems.map((item) =>
+                  item.type === "market" ? (
+                    <MarketCard
+                      key={item.data.id}
+                      market={item.data as Market}
+                      onSelect={onSelectMarket}
+                    />
+                  ) : (
+                    <VendorCard
+                      key={item.data.id}
+                      vendor={item.data as Vendor}
+                      onSelect={onSelectVendor}
+                    />
+                  )
+                )}
+              </div>
+              )}
+              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => onViewAllMarkets()}
+                  className="px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
+                >
+                  View all markets →
+                </button>
+                <button
+                  onClick={() => onViewAllVendors()}
+                  className="px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
+                >
+                  View all vendors →
+                </button>
+              </div>
+            </section>
+
             <section className="mb-10">
               <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-4">
                 What's New
@@ -729,49 +772,6 @@ const HomePage: React.FC<HomePageProps> = ({
                 </button>
               </div>
               )}
-            </section>
-
-            <section className="mb-12">
-              <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
-                Featured Markets & Vendors
-              </h2>
-              {isLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-                  {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-                </div>
-              ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-                {featuredItems.map((item) =>
-                  item.type === "market" ? (
-                    <MarketCard
-                      key={item.data.id}
-                      market={item.data as Market}
-                      onSelect={onSelectMarket}
-                    />
-                  ) : (
-                    <VendorCard
-                      key={item.data.id}
-                      vendor={item.data as Vendor}
-                      onSelect={onSelectVendor}
-                    />
-                  )
-                )}
-              </div>
-              )}
-              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={() => onViewAllMarkets()}
-                  className="px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
-                >
-                  View all markets →
-                </button>
-                <button
-                  onClick={() => onViewAllVendors()}
-                  className="px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
-                >
-                  View all vendors →
-                </button>
-              </div>
             </section>
           </>
         )}
