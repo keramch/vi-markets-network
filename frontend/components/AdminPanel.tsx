@@ -12,6 +12,7 @@ interface AdminPanelProps {
   onUpdateMemberStatus: (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => void;
   onHardDeleteMember: (memberId: string, type: 'market' | 'vendor') => void;
   onToggleFoundingMember: (userId: string, isCurrentlyFounding: boolean) => void;
+  onToggleFeatured: (type: 'market' | 'vendor', id: string, currentValue: boolean) => void;
   onSendMessage: (to: string, subject: string, body: string) => Promise<void>;
   initialTab?: 'reviews' | 'memberships';
   onTabChange?: (tab: 'reviews' | 'memberships') => void;
@@ -26,6 +27,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateMemberStatus,
   onHardDeleteMember,
   onToggleFoundingMember,
+  onToggleFeatured,
   onSendMessage,
   initialTab = 'reviews',
   onTabChange,
@@ -281,7 +283,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             {/* Column headers */}
-            <div className="grid grid-cols-[1fr_80px_90px_60px] gap-4 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className="grid grid-cols-[1fr_80px_90px_90px] gap-4 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
               <span>Member</span>
               <span>Plan</span>
               <span>Status</span>
@@ -299,7 +301,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               const contactName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.displayName || null;
 
               return (
-                <div key={member.data.id} className="grid grid-cols-[1fr_80px_90px_60px] gap-4 items-center py-2 px-2">
+                <div key={member.data.id} className="grid grid-cols-[1fr_80px_90px_90px] gap-4 items-center py-2 px-2">
 
                   {/* Member cell */}
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -323,7 +325,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   </span>
 
                   {/* Actions */}
-                  <div className="relative inline-block text-right" data-dropdown>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onToggleFeatured(member.type, member.data.id, !!member.data.isFeatured)}
+                      title={member.data.isFeatured ? 'Remove from Featured' : 'Add to Featured'}
+                      className={`px-2 py-1.5 text-base rounded-lg transition-colors leading-none ${
+                        member.data.isFeatured
+                          ? 'text-brand-gold hover:text-brand-gold/70'
+                          : 'text-gray-300 hover:text-brand-gold'
+                      }`}
+                    >
+                      {member.data.isFeatured ? '★' : '☆'}
+                    </button>
+                  <div className="relative inline-block" data-dropdown>
                     <button
                       type="button"
                       onClick={() => setOpenDropdownId(isOpen ? null : member.data.id)}
@@ -408,6 +423,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         </div>
                       </div>
                     )}
+                  </div>
                   </div>
 
                 </div>

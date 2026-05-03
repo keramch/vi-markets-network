@@ -689,6 +689,30 @@ const App: React.FC = () => {
       }
   };
 
+  const handleToggleFeatured = async (type: 'market' | 'vendor', id: string, currentValue: boolean) => {
+    const newValue = !currentValue;
+    if (type === 'market') {
+      setMarkets(prev => prev.map(m => m.id === id ? { ...m, isFeatured: newValue } : m));
+    } else {
+      setVendors(prev => prev.map(v => v.id === id ? { ...v, isFeatured: newValue } : v));
+    }
+    try {
+      if (type === 'market') {
+        await api.updateMarket(id, { isFeatured: newValue });
+      } else {
+        await api.updateVendor(id, { isFeatured: newValue });
+      }
+      showNotification(newValue ? 'Featured!' : 'Removed from featured');
+    } catch {
+      if (type === 'market') {
+        setMarkets(prev => prev.map(m => m.id === id ? { ...m, isFeatured: currentValue } : m));
+      } else {
+        setVendors(prev => prev.map(v => v.id === id ? { ...v, isFeatured: currentValue } : v));
+      }
+      showNotification('Failed to update featured status.');
+    }
+  };
+
   const handleSendAdminMessage = async (to: string, subject: string, body: string): Promise<void> => {
       await api.sendAdminMessage(to, subject, body);
       showNotification(`Message sent to ${to}.`);
@@ -1057,6 +1081,7 @@ const App: React.FC = () => {
                   onUpdateMemberStatus={handleUpdateMemberStatus}
                   onHardDeleteMember={handleHardDeleteMember}
                   onToggleFoundingMember={handleToggleFoundingMember}
+                  onToggleFeatured={handleToggleFeatured}
                   onSendMessage={handleSendAdminMessage}
                   initialTab={adminActiveTab}
                   onTabChange={setAdminActiveTab}
