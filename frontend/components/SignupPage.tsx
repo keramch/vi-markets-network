@@ -110,6 +110,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   // Submission
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = React.useRef(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -169,9 +170,11 @@ const SignupPage: React.FC<SignupPageProps> = ({
   };
 
   const goNext = async () => {
+    if (isSubmittingRef.current) return;
     if (!validate()) return;
     if (wizardStep === 3 && accountType === 'community') {
       setIsSubmitting(true);
+      isSubmittingRef.current = true;
       setSubmitError('');
       try {
         const user = await api.register({
@@ -195,9 +198,11 @@ const SignupPage: React.FC<SignupPageProps> = ({
         setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
       } finally {
         setIsSubmitting(false);
+        isSubmittingRef.current = false;
       }
     } else if (wizardStep === 4) {
       setIsSubmitting(true);
+      isSubmittingRef.current = true;
       setSubmitError('');
       try {
         const user = await api.register({
@@ -247,6 +252,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
       } finally {
         setIsSubmitting(false);
+        isSubmittingRef.current = false;
       }
     } else {
       setWizardStep((s) => (s + 1) as 1 | 2 | 3 | 4);
@@ -258,7 +264,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
   };
 
   const handleStepEnter = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') goNext();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      goNext();
+    }
   };
 
   // ── Shared style tokens ───────────────────────────────────────────────────
