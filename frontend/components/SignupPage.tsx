@@ -305,7 +305,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
             <div className="mb-1">
               <label className={labelCls}>Invite Code</label>
               <input
-                type="password"
+                type="text"
                 value={inviteCode}
                 onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setInviteCodeError(''); }}
                 onKeyDown={(e) => {
