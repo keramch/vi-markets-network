@@ -409,28 +409,28 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="nickname" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
-                                    <input id="social-facebook" type="text" name="facebook" placeholder="your-page-name" autoComplete="off" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-facebook" type="text" name="facebook" placeholder="your-page-name" autoComplete="url" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                     <p className="text-xs text-gray-400 mt-1">We'll add https://www.facebook.com/ automatically</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Etsy</label>
-                                    <input id="social-etsy" type="text" name="etsy" placeholder="shop-name" autoComplete="off" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-etsy" type="text" name="etsy" placeholder="shop-name" autoComplete="url" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
-                                    <input id="social-tiktok" type="text" name="tiktok" placeholder="@username" autoComplete="off" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-tiktok" type="text" name="tiktok" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Pinterest</label>
-                                    <input id="social-pinterest" type="text" name="pinterest" placeholder="username" autoComplete="off" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-pinterest" type="text" name="pinterest" placeholder="username" autoComplete="username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                    <input id="social-website" type="text" name="website" placeholder="yoursite.com" autoComplete="off" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-website" type="text" name="website" placeholder="yoursite.com" autoComplete="url" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
                             </div>
                         </div>
