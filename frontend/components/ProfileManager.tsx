@@ -391,22 +391,47 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold text-brand-blue mb-2">Contact Info</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="email" name="email" placeholder="Email" value={formData.contact?.email ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                            <input type="tel" name="phone" placeholder="Phone" value={formData.contact?.phone ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                            <input type="text" name="website" placeholder="Website (e.g. yoursite.com)" value={formData.contact?.website ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" name="email" placeholder="e.g. hello@yourmarket.ca" value={formData.contact?.email ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="tel" name="phone" placeholder="e.g. 250-555-0100" value={formData.contact?.phone ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                <input type="text" name="website" placeholder="e.g. yoursite.com" value={formData.contact?.website ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
                         </div>
                         <div className="mt-6">
                             <h4 className="text-sm font-semibold text-brand-blue mb-3">Social & Web Links</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input type="text" name="instagram" placeholder="Instagram username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+                                    <input type="text" name="instagram" placeholder="@username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
                                     <input type="text" name="facebook" placeholder="your-page-name" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                     <p className="text-xs text-gray-400 mt-1">We'll add https://www.facebook.com/ automatically</p>
                                 </div>
-                                <input type="text" name="etsy" placeholder="Etsy shop name" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                                <input type="text" name="tiktok" placeholder="TikTok username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                                <input type="text" name="pinterest" placeholder="Pinterest username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                                <input type="text" name="website" placeholder="yoursite.com" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Etsy</label>
+                                    <input type="text" name="etsy" placeholder="shop-name" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
+                                    <input type="text" name="tiktok" placeholder="@username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Pinterest</label>
+                                    <input type="text" name="pinterest" placeholder="username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                    <input type="text" name="website" placeholder="yoursite.com" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -453,13 +478,16 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     <input type="time" value={formData.schedule?.rules[0]?.startTime} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                     <input type="time" value={formData.schedule?.rules[0]?.endTime} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
-                                <input
-                                    type="text"
-                                    placeholder="Notes (e.g., Year-round)"
-                                    value={formData.schedule?.notes ?? ''}
-                                    onChange={e => setFormData({...formData, schedule: {...formData.schedule, notes: e.target.value}})}
-                                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
-                                />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Year-round, May–October"
+                                        value={formData.schedule?.notes ?? ''}
+                                        onChange={e => setFormData({...formData, schedule: {...formData.schedule, notes: e.target.value}})}
+                                        className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                    />
+                                </div>
                                 {scheduleConflicts.length > 0 && (
                                     <div className="mt-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
                                         <div className="flex">
