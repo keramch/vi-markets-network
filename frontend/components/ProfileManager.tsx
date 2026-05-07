@@ -409,7 +409,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="off" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="instagram" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
