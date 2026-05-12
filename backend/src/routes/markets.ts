@@ -28,6 +28,23 @@ router.patch("/:id", async (req, res) => {
     await docRef.set(updates, { merge: true });
     const updated = await docRef.get();
 
+    // ── Users collection sync (non-fatal) ────────────────────────────────────
+    // When market.name is updated, also update users.businessName to keep in sync
+    if (updates.name) {
+      try {
+        const userSnap = await db.collection('users')
+          .where('ownedMarketId', '==', id)
+          .limit(1)
+          .get();
+        if (!userSnap.empty) {
+          await userSnap.docs[0].ref.update({ businessName: updates.name });
+        }
+      } catch (userSyncErr) {
+        console.error('User businessName sync failed (non-fatal):', userSyncErr);
+      }
+    }
+    // ── End Users sync ────────────────────────────────────────────────────────
+
     // ── Brevo type sync (non-fatal) ──────────────────────────────────────────
     try {
       const brevoApiKey = process.env.BREVO_API_KEY ?? '';
