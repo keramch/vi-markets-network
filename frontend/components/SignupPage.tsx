@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
@@ -80,6 +80,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
   // Wizard navigation
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => { window.scrollTo(0, 0); }, [wizardStep]);
 
   // Step 1
   const [accountType, setAccountType] = useState<AccountType | null>(null);

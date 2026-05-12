@@ -47,6 +47,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [scheduleConflicts, setScheduleConflicts] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>('details');
 
+  useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
+
   // Pending image files (set on selection, uploaded on save)
   const [pendingLogoFile, setPendingLogoFile]       = useState<File | null>(null);
   const [pendingGalleryFiles, setPendingGalleryFiles] = useState<File[]>([]);
