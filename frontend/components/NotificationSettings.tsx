@@ -19,7 +19,10 @@ const ToggleSwitch: React.FC<{
   enabled: boolean;
   onChange: (enabled: boolean) => void;
 }> = ({ label, description, enabled, onChange }) => (
-  <div className="flex items-center justify-between py-4 border-b">
+  <div
+    className="flex items-center justify-between py-4 border-b cursor-pointer"
+    onClick={() => onChange(!enabled)}
+  >
     <div>
       <h3 className="text-lg font-semibold text-brand-blue">{label}</h3>
       <p className="text-sm text-gray-500">{description}</p>
@@ -31,7 +34,8 @@ const ToggleSwitch: React.FC<{
       } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2`}
       role="switch"
       aria-checked={enabled}
-      onClick={() => onChange(!enabled)}
+      onClick={(e) => { e.stopPropagation(); onChange(!enabled); }}
+      tabIndex={0}
     >
       <span
         aria-hidden="true"
@@ -137,14 +141,14 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors w-64"
+                className="border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors w-64"
                 placeholder="e.g. Courtenay, Nanaimo, Victoria"
               />
               <button
                 type="button"
                 onClick={handleSaveCity}
                 disabled={isSavingCity}
-                className="bg-brand-blue text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50"
+                className="bg-brand-blue text-white text-sm font-semibold px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50 min-h-[48px]"
               >
                 {isSavingCity ? 'Saving…' : 'Save'}
               </button>
@@ -161,21 +165,21 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Current password"
-                className="w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
+                className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="New password (min 8 characters)"
-                className="w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
+                className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
+                className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
               {passwordError && <p className="text-red-500 text-xs">{passwordError}</p>}
               {passwordSuccess && <p className="text-green-600 text-xs">{passwordSuccess}</p>}
@@ -183,7 +187,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 type="button"
                 onClick={handleChangePassword}
                 disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
-                className="bg-brand-blue text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50"
+                className="bg-brand-blue text-white text-sm font-semibold px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50 min-h-[48px]"
               >
                 {isChangingPassword ? 'Updating…' : 'Update Password'}
               </button>
@@ -220,7 +224,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
           <div className="mt-8 pt-6 border-t flex justify-end">
             <button
               onClick={handleSaveChanges}
-              className="bg-brand-blue text-white font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 transition-colors"
+              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors min-h-[48px]"
             >
               Save Changes
             </button>

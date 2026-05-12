@@ -27,11 +27,11 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onSendRecoveryE
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
           required
         />
       </div>
-      <button type="submit" className="w-full bg-brand-blue text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center">
+      <button type="submit" className="w-full bg-brand-blue text-white py-3 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center">
         <SendIcon className="w-5 h-5 mr-2" />
         Send Recovery Email
       </button>

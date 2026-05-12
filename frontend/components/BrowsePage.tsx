@@ -65,13 +65,13 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={onBack}
-              className="text-brand-light-blue hover:text-white text-sm inline-flex items-center gap-1 transition-colors"
+              className="text-brand-light-blue hover:text-white text-sm inline-flex items-center gap-1 transition-colors py-3 px-1 min-h-[48px]"
             >
               ← Back to home
             </button>
             <button
               onClick={onSwitchMode}
-              className="text-sm px-4 py-1.5 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors"
+              className="text-sm px-4 py-3 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors min-h-[48px]"
             >
               {mode === "markets" ? "See all vendors →" : "See all markets →"}
             </button>
@@ -148,7 +148,7 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
           <div className="mt-10 text-center">
             <button
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-              className="px-8 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors"
+              className="px-8 py-3 rounded-full border-2 border-brand-blue text-brand-blue font-semibold hover:bg-brand-blue hover:text-white transition-colors min-h-[48px]"
             >
               Load more {noun}
             </button>

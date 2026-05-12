@@ -34,7 +34,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
               autoComplete="email"
               required
             />
@@ -62,7 +62,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
           </div>
           <button
             type="submit"
-            className="w-full bg-brand-blue text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors"
+            className="w-full bg-brand-blue text-white py-3 px-4 rounded-md hover:bg-opacity-90 transition-colors"
           >
             Sign In
           </button>
@@ -70,7 +70,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
             <button
               type="button"
               onClick={onForgotPassword}
-              className="text-sm text-brand-light-blue hover:underline"
+              className="text-sm text-brand-light-blue hover:underline py-3 min-h-[48px] flex items-center justify-center w-full"
             >
               Forgot Password?
             </button>

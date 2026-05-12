@@ -275,7 +275,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   // ── Shared style tokens ───────────────────────────────────────────────────
 
   const inputCls =
-    'w-full border border-gray-300 rounded-lg py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors';
+    'w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors';
   const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
   const errCls = 'text-red-500 text-xs mt-1';
 
@@ -497,7 +497,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         'Google sign-in requires Firebase Auth — coming soon! Please use email & password below.'
                       )
                     }
-                    className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-3 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0">
                       <path
@@ -656,7 +656,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       )}
                       <div className="grid grid-cols-1 gap-2">
                         {Object.values(MarketCategories).map(cat => (
-                          <label key={cat} className="flex items-center">
+                          <label key={cat} className="flex items-center min-h-[44px]">
                             <input
                               type="checkbox"
                               value={cat}
@@ -684,7 +684,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       )}
                       <div className="grid grid-cols-2 gap-2">
                         {(VendorTypes as readonly string[]).map(vt => (
-                          <label key={vt} className="flex items-center">
+                          <label key={vt} className="flex items-center min-h-[44px]">
                             <input
                               type="checkbox"
                               value={vt}

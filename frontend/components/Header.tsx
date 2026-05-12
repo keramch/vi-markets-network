@@ -32,13 +32,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
             <div className="ml-10 flex items-baseline space-x-4">
               <button
                 onClick={() => onNavigate({ type: 'home' })}
-                className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
               >
                 Home
               </button>
               <button
                 onClick={() => onNavigate({ type: 'calendar' })}
-                className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
               >
                 Calendar
               </button>
@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 <>
                   <button
                     onClick={() => onNavigate({ type: 'dashboard' })}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                   >
                     <UserCheck className="w-4 h-4 mr-2" />
                     Following
@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   {isVendorOwner && isProMember && (
                     <button
                         onClick={() => onNavigate({ type: 'myApplications' })}
-                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                     >
                         <FileTextIcon className="w-4 h-4 mr-2" />
                         My Applications
@@ -63,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   {currentUser.ownedMarketId && (
                     <button
                       onClick={() => onNavigate({ type: 'organizerHub' })}
-                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
                     >
                       My Market
                     </button>
@@ -72,14 +72,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     <>
                       <button
                         onClick={() => onNavigate({ type: 'manageProfile' })}
-                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
                       >
                         Manage Profile
                       </button>
                       {isProMember && (
                         <button
                           onClick={() => onNavigate({ type: 'promotions' })}
-                          className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                          className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                         >
                           <MegaphoneIcon className="w-4 h-4 mr-2" />
                           Promotions
@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     </>
                   )}
                   {currentUser.isAdmin && (
-                     <button onClick={() => onNavigate({ type: 'adminPanel' })} className="text-brand-gold hover:bg-brand-gold/10 px-3 py-2 rounded-md text-sm font-medium">Market HQ</button>
+                     <button onClick={() => onNavigate({ type: 'adminPanel' })} className="text-brand-gold hover:bg-brand-gold/10 px-3 py-3 rounded-md text-sm font-medium">Market HQ</button>
                   )}
                   <div className="flex items-center border-l pl-4 ml-2 space-x-4">
                     <div className="flex items-center text-sm text-brand-blue">
@@ -104,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                       </button>
                     <button
                       onClick={onLogout}
-                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
                     >
                       Logout
                     </button>
@@ -114,19 +114,19 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 <>
                   <button
                     onClick={() => onNavigate({ type: 'signup' })}
-                    className="bg-brand-gold text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors"
+                    className="bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors"
                   >
                     Join Free
                   </button>
                    <button
                     onClick={onMembership}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
                   >
                     Membership
                   </button>
                   <button
                     onClick={onLogin}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium"
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
                   >
                     User Login
                   </button>
@@ -136,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
           </div>
           {!currentUser && (
             <button
-              className="md:hidden bg-brand-gold text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors"
+              className="md:hidden bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors min-h-[48px]"
               onClick={() => onNavigate({ type: 'signup' })}
             >
               Join Free
@@ -156,13 +156,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
           <div className="flex flex-col px-4 py-3 space-y-1">
             <button
               onClick={() => { onNavigate({ type: 'home' }); setMenuOpen(false); }}
-              className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+              className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
             >
               Home
             </button>
             <button
               onClick={() => { onNavigate({ type: 'calendar' }); setMenuOpen(false); }}
-              className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+              className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
             >
               Calendar
             </button>
@@ -170,7 +170,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
               <>
                 <button
                   onClick={() => { onNavigate({ type: 'dashboard' }); setMenuOpen(false); }}
-                  className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                  className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                 >
                   <UserCheck className="w-4 h-4 mr-2" />
                   Following
@@ -178,7 +178,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 {isVendorOwner && isProMember && (
                   <button
                     onClick={() => { onNavigate({ type: 'myApplications' }); setMenuOpen(false); }}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                   >
                     <FileTextIcon className="w-4 h-4 mr-2" />
                     My Applications
@@ -187,7 +187,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 {currentUser.ownedMarketId && (
                   <button
                     onClick={() => { onNavigate({ type: 'organizerHub' }); setMenuOpen(false); }}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
                   >
                     My Market
                   </button>
@@ -196,14 +196,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   <>
                     <button
                       onClick={() => { onNavigate({ type: 'manageProfile' }); setMenuOpen(false); }}
-                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
                     >
                       Manage Profile
                     </button>
                     {isProMember && (
                       <button
                         onClick={() => { onNavigate({ type: 'promotions' }); setMenuOpen(false); }}
-                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                       >
                         <MegaphoneIcon className="w-4 h-4 mr-2" />
                         Promotions
@@ -214,7 +214,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 {currentUser.isAdmin && (
                   <button
                     onClick={() => { onNavigate({ type: 'adminPanel' }); setMenuOpen(false); }}
-                    className="text-brand-gold hover:bg-brand-gold/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+                    className="text-brand-gold hover:bg-brand-gold/10 px-3 py-3 rounded-md text-sm font-medium text-left"
                   >
                     Market HQ
                   </button>
@@ -226,7 +226,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   </div>
                   <button
                     onClick={() => { onNavigate({ type: 'notificationSettings' }); setMenuOpen(false); }}
-                    className="text-gray-500 hover:text-brand-blue px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                    className="text-gray-500 hover:text-brand-blue px-3 py-3 rounded-md text-sm font-medium flex items-center"
                     title="Notification Settings"
                   >
                     <SettingsIcon className="w-5 h-5 mr-2" />
@@ -234,7 +234,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   </button>
                   <button
                     onClick={() => { onLogout(); setMenuOpen(false); }}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left w-full"
+                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left w-full"
                   >
                     Logout
                   </button>
@@ -244,19 +244,19 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
               <>
                 <button
                   onClick={() => { onNavigate({ type: 'signup' }); setMenuOpen(false); }}
-                  className="bg-brand-gold text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors text-center"
+                  className="bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors text-center"
                 >
                   Join Free
                 </button>
                 <button
                   onClick={() => { onMembership(); setMenuOpen(false); }}
-                  className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+                  className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
                 >
                   Membership
                 </button>
                 <button
                   onClick={() => { onLogin(); setMenuOpen(false); }}
-                  className="text-brand-blue hover:bg-brand-blue/10 px-3 py-2 rounded-md text-sm font-medium text-left"
+                  className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
                 >
                   User Login
                 </button>

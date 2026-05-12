@@ -355,7 +355,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => downloadIcs(event, date, startTime, endTime)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+              className="flex items-center gap-1.5 px-3 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
             >
               <Download className="w-3.5 h-3.5" />
               Export .ics
@@ -364,7 +364,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
               href={buildGoogleCalendarUrl(event, date, startTime, endTime)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100"
+              className="flex items-center gap-1.5 px-3 py-3 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100"
             >
               <CalendarPlus className="w-3.5 h-3.5" />
               Add to Google
@@ -374,7 +374,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
                 onSelectMarket(event.marketPageId);
                 setSelectedOcc(null);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue/10 text-brand-blue rounded-lg text-sm hover:bg-brand-blue/20 ml-auto"
+              className="flex items-center gap-1.5 px-3 py-3 bg-brand-blue/10 text-brand-blue rounded-lg text-sm hover:bg-brand-blue/20 ml-auto"
             >
               View Market →
             </button>
@@ -405,7 +405,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
           {isOrganizer && (
             <button
               onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-brand-blue text-white rounded-lg text-sm font-semibold hover:bg-brand-blue/90"
+              className="flex items-center gap-1.5 px-4 py-3 bg-brand-blue text-white rounded-lg text-sm font-semibold hover:bg-brand-blue/90 min-h-[48px]"
             >
               <Plus className="w-4 h-4" />
               Add Event
@@ -414,13 +414,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
 
           {/* Month navigation */}
           <div className="flex items-center gap-1 bg-white rounded-lg shadow-sm px-2 py-1">
-            <button onClick={handlePrev} className="p-1 rounded hover:bg-gray-100">
+            <button onClick={handlePrev} className="p-2.5 rounded hover:bg-gray-100">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold w-40 text-center text-sm">
               {currentDate.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}
             </span>
-            <button onClick={handleNext} className="p-1 rounded hover:bg-gray-100">
+            <button onClick={handleNext} className="p-2.5 rounded hover:bg-gray-100">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>

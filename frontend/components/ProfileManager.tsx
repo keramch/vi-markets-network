@@ -195,7 +195,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
      <button 
         type="button"
         onClick={() => setActiveTab(tab)}
-        className={`px-4 py-2 text-sm font-medium rounded-md ${activeTab === tab ? 'bg-brand-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        className={`px-4 py-3 text-sm font-medium rounded-md min-h-[48px] ${activeTab === tab ? 'bg-brand-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
     >
         {label}
     </button>
@@ -208,7 +208,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             <p className="text-sm text-gray-500 mb-3">Select which vendor types can apply to your market. If none are selected, all types are allowed.</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {(VendorTypes as readonly string[]).map(vt => (
-                    <label key={vt} className="flex items-center">
+                    <label key={vt} className="flex items-center min-h-[44px]">
                         <input
                             type="checkbox"
                             value={vt}
@@ -233,7 +233,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 value={(marketData.applicationFormQuestions || []).join('\n')}
                 onChange={e => setFormData({...formData, applicationFormQuestions: e.target.value.split('\n')})}
                 rows={4}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
             />
         </div>
     </div>
@@ -350,8 +350,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       <div className="sticky top-20 z-10 bg-white/95 backdrop-blur-sm border-y shadow-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 flex items-center justify-between">
         <span className="font-semibold text-brand-blue truncate mr-4">{formData.name}</span>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors">Cancel</button>
-          <button type="button" onClick={saveWithUploads} disabled={uploadProgress !== null} className="bg-brand-blue text-white text-sm font-semibold py-1.5 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60">Save Changes</button>
+          <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-3 rounded-md hover:bg-gray-100 transition-colors min-h-[48px]">Cancel</button>
+          <button type="button" onClick={saveWithUploads} disabled={uploadProgress !== null} className="bg-brand-blue text-white text-sm font-semibold py-3 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60 min-h-[48px]">Save Changes</button>
         </div>
       </div>
 
@@ -388,22 +388,22 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 <>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Name</label>
-                        <input type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                        <input type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                     </div>
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold text-brand-blue mb-2">Contact Info</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input id="contact-email" type="email" name="email" placeholder="e.g. hello@yourmarket.ca" autoComplete="email" value={formData.contact?.email ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input id="contact-email" type="email" name="email" placeholder="e.g. hello@yourmarket.ca" autoComplete="email" value={formData.contact?.email ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                <input id="contact-phone" type="tel" name="phone" placeholder="e.g. 250-555-0100" autoComplete="tel" value={formData.contact?.phone ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input id="contact-phone" type="tel" name="phone" placeholder="e.g. 250-555-0100" autoComplete="tel" value={formData.contact?.phone ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                <input id="contact-website" type="text" name="website" placeholder="e.g. yoursite.com" autoComplete="url" value={formData.contact?.website ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                <input id="contact-website" type="text" name="website" placeholder="e.g. yoursite.com" autoComplete="url" value={formData.contact?.website ?? ''} onChange={handleContactChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                             </div>
                         </div>
                         <div className="mt-6">
@@ -411,28 +411,28 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
-                                    <input id="social-facebook" type="text" name="facebook" placeholder="your-page-name" autoComplete="url" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-facebook" type="text" name="facebook" placeholder="your-page-name" autoComplete="url" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                     <p className="text-xs text-gray-400 mt-1">We'll add https://www.facebook.com/ automatically</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Etsy</label>
-                                    <input id="social-etsy" type="text" name="etsy" placeholder="shop-name" autoComplete="url" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-etsy" type="text" name="etsy" placeholder="shop-name" autoComplete="url" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
-                                    <input id="social-tiktok" type="text" name="tiktok" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-tiktok" type="text" name="tiktok" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Pinterest</label>
-                                    <input id="social-pinterest" type="text" name="pinterest" placeholder="username" autoComplete="username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-pinterest" type="text" name="pinterest" placeholder="username" autoComplete="username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                    <input id="social-website" type="text" name="website" placeholder="yoursite.com" autoComplete="url" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input id="social-website" type="text" name="website" placeholder="yoursite.com" autoComplete="url" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                 </div>
                             </div>
                         </div>
@@ -448,7 +448,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     value={formData.description ?? ''}
                                     onChange={handleChange}
                                     rows={4}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
                                 />
                             </div>
                            <div>
@@ -458,7 +458,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     name="address"
                                     value={formData.location.address} 
                                     onChange={e => setFormData({...formData, location: {...formData.location, address: e.target.value }})}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
                                 />
                             </div>
                             <div className="border-t pt-6">
@@ -473,12 +473,12 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                                 setFormData({...formData, schedule: {...formData.schedule, rules: newRules }});
                                             }
                                         }}
-                                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                        className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
                                 >
                                     {Object.values(DayOfWeek).map(day => <option key={day} value={day}>{day}</option>)}
                                 </select>
-                                    <input type="time" value={formData.schedule?.rules[0]?.startTime} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                                    <input type="time" value={formData.schedule?.rules[0]?.endTime} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                                    <input type="time" value={formData.schedule?.rules[0]?.startTime} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
+                                    <input type="time" value={formData.schedule?.rules[0]?.endTime} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -487,7 +487,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                         placeholder="e.g. Year-round, May–October"
                                         value={formData.schedule?.notes ?? ''}
                                         onChange={e => setFormData({...formData, schedule: {...formData.schedule, notes: e.target.value}})}
-                                        className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                        className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
                                     />
                                 </div>
                                 {scheduleConflicts.length > 0 && (
@@ -579,7 +579,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     value={formData.description ?? ''}
                                     onChange={handleChange}
                                     rows={4}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
                                 />
                             </div>
                             <div className="border-t pt-6">
@@ -767,11 +767,11 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           )}
 
           <div className="flex justify-end pt-6 border-t">
-            <button type="button" onClick={onBack} className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md mr-4 hover:bg-gray-300">Cancel</button>
+            <button type="button" onClick={onBack} className="bg-gray-200 text-gray-700 py-3 px-4 rounded-md mr-4 hover:bg-gray-300 min-h-[48px]">Cancel</button>
             <button
               type="submit"
               disabled={uploadProgress !== null || isSaving}
-              className="bg-brand-blue text-white font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 disabled:opacity-60 flex items-center gap-2"
+              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 disabled:opacity-60 flex items-center gap-2 min-h-[48px]"
             >
               {(uploadProgress !== null || isSaving) && (
                 <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

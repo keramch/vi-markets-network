@@ -207,7 +207,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
               setEditScope('series');
               setEditModalOpen(true);
             }}
-            className="bg-brand-blue text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-blue/90 transition-colors"
+            className="bg-brand-blue text-white text-sm font-medium px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors min-h-[48px]"
           >
             + Add event
           </button>
@@ -244,13 +244,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     </span>
                     <button
                       onClick={() => handleDeleteConfirm(event.id)}
-                      className="text-xs font-semibold bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200"
+                      className="text-xs font-semibold bg-red-100 text-red-700 px-3 py-2 rounded hover:bg-red-200"
                     >
                       Confirm
                     </button>
                     <button
                       onClick={() => setConfirmDeleteId(null)}
-                      className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200"
+                      className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200"
                     >
                       Cancel
                     </button>
@@ -296,13 +296,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => openEdit(event)}
-                        className="text-brand-teal border border-brand-teal/40 rounded text-xs px-3 py-1 hover:bg-teal-50 transition-colors"
+                        className="text-brand-teal border border-brand-teal/40 rounded text-xs px-3 py-2 hover:bg-teal-50 transition-colors"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(event.id)}
-                        className="text-brand-rhubarb border border-brand-rhubarb/30 rounded text-xs px-3 py-1 hover:bg-red-50 transition-colors"
+                        className="text-brand-rhubarb border border-brand-rhubarb/30 rounded text-xs px-3 py-2 hover:bg-red-50 transition-colors"
                       >
                         Delete
                       </button>
@@ -390,7 +390,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                   key={scope}
                   type="button"
                   onClick={() => setEditScope(scope)}
-                  className={`flex-1 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                  className={`flex-1 py-2.5 rounded-full border text-xs font-medium transition-colors ${
                     editScope === scope
                       ? 'bg-brand-blue text-white border-brand-blue'
                       : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
