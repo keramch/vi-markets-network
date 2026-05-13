@@ -5,7 +5,7 @@ import type { Market, Vendor, Review, Application, User, ScheduleRule } from '..
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
 import ImageUploader from './ImageUploader';
 import { getDistance } from '../utils';
-import { WarningIcon, InboxIcon, RibbonIcon } from './Icons';
+import { WarningIcon, InboxIcon, RibbonIcon, XIcon } from './Icons';
 import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../services/storageUpload';
 
 interface ProfileManagerProps {
@@ -163,7 +163,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             const path = `${profileType}/${formData.id}/gallery_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
             urls.push(await uploadImage(file, path));
           }
-          updatedData = { ...updatedData, photos: urls };
+          updatedData = { ...updatedData, photos: [...(formData.photos ?? []), ...urls] };
         }
       } catch {
         setUploadError('Image upload failed. Please try again.');
@@ -697,6 +697,21 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                                     alt={`Gallery ${i + 1}`}
                                                     className={`w-full aspect-square object-cover rounded-md border-2 transition-colors ${isHeader ? 'border-brand-blue' : 'border-gray-200'}`}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updatedPhotos = formData.photos!.filter((_, j) => j !== i);
+                                                        setFormData({
+                                                            ...formData,
+                                                            photos: updatedPhotos,
+                                                            ...(isHeader ? { headerPhotoUrl: undefined } : {}),
+                                                        });
+                                                    }}
+                                                    className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    aria-label={`Remove photo ${i + 1}`}
+                                                >
+                                                    <XIcon className="w-3 h-3" />
+                                                </button>
                                                 {isMarket(formData) && (
                                                     <button
                                                         type="button"
@@ -712,14 +727,18 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 </div>
                             </div>
                         )}
-                        <ImageUploader
-                            id="gallery-manager"
-                            label="Upload Gallery Photos (replaces existing, up to 6)"
-                            onFilesChanged={(files) => setPendingGalleryFiles(files)}
-                            maxFiles={6}
-                            maxSizeKB={MAX_IMAGE_SIZE_BYTES / 1024}
-                            allowedTypes={ALLOWED_IMAGE_TYPES}
-                        />
+                        {(formData.photos?.length ?? 0) < 6 ? (
+                            <ImageUploader
+                                id="gallery-manager"
+                                label={`Add Gallery Photos (${6 - (formData.photos?.length ?? 0)} of 6 slots remaining)`}
+                                onFilesChanged={(files) => setPendingGalleryFiles(files)}
+                                maxFiles={6 - (formData.photos?.length ?? 0)}
+                                maxSizeKB={MAX_IMAGE_SIZE_BYTES / 1024}
+                                allowedTypes={ALLOWED_IMAGE_TYPES}
+                            />
+                        ) : (
+                            <p className="text-sm text-gray-500 italic">Gallery is full (6/6). Remove a photo above to add more.</p>
+                        )}
                     </div>
                 </>
             )}
