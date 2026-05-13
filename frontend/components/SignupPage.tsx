@@ -7,6 +7,7 @@ import { VendorTypes, MarketCategories } from '../types';
 import * as api from '../services/api.live';
 import { uploadImage } from '../services/storageUpload';
 import ImageUploader from './ImageUploader';
+import HelpTip from './HelpTip';
 import { CheckIcon } from './Icons';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -724,6 +725,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       Short Description{' '}
                       <span className="text-gray-400 font-normal">(optional)</span>
                     </label>
+                    <HelpTip tip="On iOS Safari, if the microphone button is greyed out, go to Settings › Safari › Microphone and select Ask instead of Allow." />
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}

@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import HelpTip from './HelpTip';
 import type { User } from '../types';
 import { SendIcon } from './Icons';
 
@@ -47,6 +48,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, 
             </div>
             <div>
                 <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700">Message</label>
+                <HelpTip tip="On iOS Safari, if the microphone button is greyed out, go to Settings › Safari › Microphone and select Ask instead of Allow." />
                 <textarea id="contact-message" rows={4} value={message} onChange={e => setMessage(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-gold focus:border-brand-gold"></textarea>
             </div>
             <button type="submit" className="w-full bg-brand-blue text-white font-semibold py-3 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import type { Market, Vendor, Review, Application, User, ScheduleRule } from '../types';
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
 import ImageUploader from './ImageUploader';
+import HelpTip from './HelpTip';
 import { getDistance } from '../utils';
 import { WarningIcon, InboxIcon, RibbonIcon, XIcon } from './Icons';
 import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../services/storageUpload';
@@ -453,6 +454,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                            <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">About Us</h3>
                                 <p className="text-xs text-gray-400 mb-1">Describe your market — what makes it special, what shoppers can expect.</p>
+                                <HelpTip tip="On iOS Safari, if the microphone button is greyed out, go to Settings › Safari › Microphone and select Ask instead of Allow." />
                                 <textarea
                                     name="description"
                                     value={formData.description ?? ''}
@@ -584,6 +586,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">About Us</h3>
                                 <p className="text-xs text-gray-400 mb-1">Tell shoppers who you are, what you make, and what makes you different.</p>
+                                <HelpTip tip="On iOS Safari, if the microphone button is greyed out, go to Settings › Safari › Microphone and select Ask instead of Allow." />
                                 <textarea
                                     name="description"
                                     value={formData.description ?? ''}
