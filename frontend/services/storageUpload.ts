@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firebaseStorage } from './firebase';
 
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif'];
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 /**
@@ -10,7 +10,7 @@ export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
  */
 export function validateImageFile(file: File): string | null {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return `${file.name}: Only JPG, PNG, and WebP images are accepted.`;
+    return `${file.name}: Only JPG, PNG, WebP, HEIC, and AVIF images are accepted.`;
   }
   if (file.size > MAX_IMAGE_SIZE_BYTES) {
     return `${file.name}: File exceeds the 5 MB size limit.`;

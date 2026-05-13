@@ -675,6 +675,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             maxSizeKB={MAX_IMAGE_SIZE_BYTES / 1024}
                             allowedTypes={ALLOWED_IMAGE_TYPES}
                             aspectRatio="1:1"
+                            maxDimension={600}
                         />
 
                         {/* Current gallery — square thumbnails with header designation */}
