@@ -143,7 +143,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
       cells.push(
         <div
           key={`blank-${i}`}
-          className={`border border-gray-100 min-h-[120px] ${isWkend ? 'bg-brand-cream/20' : 'bg-gray-50/40'}`}
+          className={`border border-gray-100 min-h-[7.5rem] ${isWkend ? 'bg-brand-cream/20' : 'bg-gray-50/40'}`}
         />
       );
     }
@@ -159,7 +159,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
       cells.push(
         <div
           key={d}
-          className={`border border-gray-200 p-1.5 min-h-[120px] ${isWkend ? 'bg-brand-cream/30' : 'bg-white'}`}
+          className={`border border-gray-200 p-1.5 min-h-[7.5rem] ${isWkend ? 'bg-brand-cream/30' : 'bg-white'}`}
         >
           {/* Day number */}
           <div
@@ -405,7 +405,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
           {isOrganizer && (
             <button
               onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-3 bg-brand-blue text-white rounded-lg text-sm font-semibold hover:bg-brand-blue/90 min-h-[48px]"
+              className="flex items-center gap-1.5 px-4 py-3 bg-brand-blue text-white rounded-lg text-sm font-semibold hover:bg-brand-blue/90 min-h-[3rem]"
             >
               <Plus className="w-4 h-4" />
               Add Event

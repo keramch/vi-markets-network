@@ -136,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
           </div>
           {!currentUser && (
             <button
-              className="md:hidden bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors min-h-[48px]"
+              className="md:hidden bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors min-h-[3rem]"
               onClick={() => onNavigate({ type: 'signup' })}
             >
               Join Free

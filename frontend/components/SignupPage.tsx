@@ -656,7 +656,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       )}
                       <div className="grid grid-cols-1 gap-2">
                         {Object.values(MarketCategories).map(cat => (
-                          <label key={cat} className="flex items-center min-h-[44px]">
+                          <label key={cat} className="flex items-center min-h-[2.75rem]">
                             <input
                               type="checkbox"
                               value={cat}
@@ -684,7 +684,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       )}
                       <div className="grid grid-cols-2 gap-2">
                         {(VendorTypes as readonly string[]).map(vt => (
-                          <label key={vt} className="flex items-center min-h-[44px]">
+                          <label key={vt} className="flex items-center min-h-[2.75rem]">
                             <input
                               type="checkbox"
                               value={vt}

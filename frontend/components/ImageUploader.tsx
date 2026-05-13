@@ -102,7 +102,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           <div>
             <label
               htmlFor={id}
-              className="inline-flex items-center justify-center px-5 py-3 min-h-[48px] bg-brand-blue text-white text-sm font-semibold rounded-lg cursor-pointer hover:bg-brand-blue/90 transition-colors"
+              className="inline-flex items-center justify-center px-5 py-3 min-h-[3rem] bg-brand-blue text-white text-sm font-semibold rounded-lg cursor-pointer hover:bg-brand-blue/90 transition-colors"
             >
               {maxFiles > 1 ? 'Choose Photos' : 'Choose Image'}
               <input

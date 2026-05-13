@@ -195,7 +195,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
      <button 
         type="button"
         onClick={() => setActiveTab(tab)}
-        className={`px-4 py-3 text-sm font-medium rounded-md min-h-[48px] ${activeTab === tab ? 'bg-brand-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        className={`px-4 py-3 text-sm font-medium rounded-md min-h-[3rem] ${activeTab === tab ? 'bg-brand-blue text-white' : 'text-gray-600 hover:bg-gray-100'}`}
     >
         {label}
     </button>
@@ -208,7 +208,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             <p className="text-sm text-gray-500 mb-3">Select which vendor types can apply to your market. If none are selected, all types are allowed.</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {(VendorTypes as readonly string[]).map(vt => (
-                    <label key={vt} className="flex items-center min-h-[44px]">
+                    <label key={vt} className="flex items-center min-h-[2.75rem]">
                         <input
                             type="checkbox"
                             value={vt}
@@ -345,12 +345,12 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <span className="font-semibold text-brand-blue truncate mr-4">{formData.name}</span>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-3 rounded-md hover:bg-gray-100 transition-colors min-h-[48px]">Cancel</button>
+            <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-3 rounded-md hover:bg-gray-100 transition-colors min-h-[3rem]">Cancel</button>
             <button
               type="button"
               onClick={saveWithUploads}
               disabled={uploadProgress !== null || isSaving}
-              className="bg-brand-blue text-white text-sm font-semibold py-3 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60 min-h-[48px]"
+              className="bg-brand-blue text-white text-sm font-semibold py-3 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60 min-h-[3rem]"
             >
               {saveSuccess ? '✓ Saved' : (uploadProgress !== null || isSaving) ? 'Saving…' : 'Save Changes'}
             </button>
@@ -777,11 +777,11 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           )}
 
           <div className="flex justify-end pt-6 border-t">
-            <button type="button" onClick={onBack} className="bg-gray-200 text-gray-700 py-3 px-4 rounded-md mr-4 hover:bg-gray-300 min-h-[48px]">Cancel</button>
+            <button type="button" onClick={onBack} className="bg-gray-200 text-gray-700 py-3 px-4 rounded-md mr-4 hover:bg-gray-300 min-h-[3rem]">Cancel</button>
             <button
               type="submit"
               disabled={uploadProgress !== null || isSaving}
-              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 disabled:opacity-60 flex items-center gap-2 min-h-[48px]"
+              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 disabled:opacity-60 flex items-center gap-2 min-h-[3rem]"
             >
               {(uploadProgress !== null || isSaving) && (
                 <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

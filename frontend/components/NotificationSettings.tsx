@@ -148,7 +148,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 type="button"
                 onClick={handleSaveCity}
                 disabled={isSavingCity}
-                className="bg-brand-blue text-white text-sm font-semibold px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50 min-h-[48px]"
+                className="bg-brand-blue text-white text-sm font-semibold px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50 min-h-[3rem]"
               >
                 {isSavingCity ? 'Saving…' : 'Save'}
               </button>
@@ -187,7 +187,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 type="button"
                 onClick={handleChangePassword}
                 disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
-                className="bg-brand-blue text-white text-sm font-semibold px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50 min-h-[48px]"
+                className="bg-brand-blue text-white text-sm font-semibold px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors disabled:opacity-50 min-h-[3rem]"
               >
                 {isChangingPassword ? 'Updating…' : 'Update Password'}
               </button>
@@ -224,7 +224,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
           <div className="mt-8 pt-6 border-t flex justify-end">
             <button
               onClick={handleSaveChanges}
-              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors min-h-[48px]"
+              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors min-h-[3rem]"
             >
               Save Changes
             </button>

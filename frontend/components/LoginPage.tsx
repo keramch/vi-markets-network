@@ -46,7 +46,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-14 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 pr-14 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                 autoComplete="current-password"
                 required
               />
@@ -70,7 +70,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
             <button
               type="button"
               onClick={onForgotPassword}
-              className="text-sm text-brand-light-blue hover:underline py-3 min-h-[48px] flex items-center justify-center w-full"
+              className="text-sm text-brand-light-blue hover:underline py-3 min-h-[3rem] flex items-center justify-center w-full"
             >
               Forgot Password?
             </button>

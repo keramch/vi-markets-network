@@ -207,7 +207,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
               setEditScope('series');
               setEditModalOpen(true);
             }}
-            className="bg-brand-blue text-white text-sm font-medium px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors min-h-[48px]"
+            className="bg-brand-blue text-white text-sm font-medium px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors min-h-[3rem]"
           >
             + Add event
           </button>
@@ -262,7 +262,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0"
                   >
                     {/* Date */}
-                    <div className="text-xs text-gray-500 flex-shrink-0" style={{ minWidth: 110 }}>
+                    <div className="text-xs text-gray-500 flex-shrink-0 min-w-[6.875rem]">
                       {event.type === 'oneTime' && event.schedule.date
                         ? formatOneTimeDate(event.schedule.date)
                         : formatRecurringDate(event)}

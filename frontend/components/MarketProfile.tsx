@@ -162,7 +162,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                     return (
                       <div key={event.id} className="flex items-start gap-3">
                         <span className="mt-2 w-2 h-2 rounded-full bg-brand-light-blue flex-shrink-0" />
-                        <div className="min-w-[90px] flex-shrink-0">
+                        <div className="min-w-[5.625rem] flex-shrink-0">
                           <span className="text-base font-semibold text-gray-700">{formattedDate}</span>
                         </div>
                         <div>
