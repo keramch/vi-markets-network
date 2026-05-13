@@ -95,7 +95,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     for (const file of rawFiles) {
       // Step 1: convert HEIC/HEIF to JPEG
       let converted = file;
-      if (file.type === 'image/heic' || file.type === 'image/heif') {
+      const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name);
+      if (isHeic) {
         try {
           const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
           const blob = Array.isArray(result) ? result[0] : result;
