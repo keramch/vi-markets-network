@@ -41,8 +41,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     const currentFiles: File[] = maxFiles === 1 ? [] : [...files];
     const currentErrors: string[] = [];
-    
-    // Fix: Explicitly type `file` as File to prevent type inference issues.
+
     newFiles.forEach((file: File) => {
       if (currentFiles.length >= maxFiles) {
         currentErrors.push(`You can only upload a maximum of ${maxFiles} files.`);
@@ -59,68 +58,81 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     setErrors(currentErrors);
 
-    // Clean up old object URLs before creating new ones
     previews.forEach(URL.revokeObjectURL);
-    
+
     setFiles(currentFiles);
     setPreviews(currentFiles.map(f => URL.createObjectURL(f)));
     onFilesChanged(currentFiles);
-    
-    // Clear the input value to allow re-selecting the same file
-    event.target.value = '';
 
+    event.target.value = '';
   }, [files, previews, maxFiles, allowedTypes, maxSizeKB, onFilesChanged]);
-  
+
   const handleRemoveImage = (index: number) => {
-    // Revoke the specific object URL being removed to prevent memory leaks
     URL.revokeObjectURL(previews[index]);
-    
+
     const updatedFiles = files.filter((_, i) => i !== index);
     const updatedPreviews = previews.filter((_, i) => i !== index);
 
     setFiles(updatedFiles);
     setPreviews(updatedPreviews);
-    onFilesChanged(updatedFiles); 
-  }
+    onFilesChanged(updatedFiles);
+  };
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-        <div className="space-y-1 text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <p className="text-sm font-medium text-gray-700 mb-2">{label}</p>
+
+      <div className="flex justify-center px-6 py-6 border-2 border-gray-300 border-dashed rounded-md">
+        <div className="space-y-3 text-center">
+          <svg
+            className="mx-auto h-10 w-10 text-gray-400"
+            stroke="currentColor"
+            fill="none"
+            viewBox="0 0 48 48"
+            aria-hidden="true"
+          >
+            <path
+              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
-          <div className="flex text-sm text-gray-600">
-            <label htmlFor={id} className="relative cursor-pointer bg-white rounded-md font-medium text-brand-blue hover:text-brand-blue/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-gold">
-              <span>Upload file(s)</span>
-              <input 
-                id={id} 
-                name={id} 
-                type="file" 
-                className="sr-only" 
+
+          <div>
+            <label
+              htmlFor={id}
+              className="inline-flex items-center justify-center px-5 py-3 min-h-[48px] bg-brand-blue text-white text-sm font-semibold rounded-lg cursor-pointer hover:bg-brand-blue/90 transition-colors"
+            >
+              {maxFiles > 1 ? 'Choose Photos' : 'Choose Image'}
+              <input
+                id={id}
+                name={id}
+                type="file"
+                className="sr-only"
                 multiple={maxFiles > 1}
                 accept={allowedTypes.join(',')}
                 onChange={handleFileChange}
                 aria-describedby={`${id}-description`}
               />
             </label>
-            <p className="pl-1">or drag and drop</p>
+            <p className="mt-2 text-xs text-gray-400">or drag and drop</p>
           </div>
+
           <p className="text-xs text-gray-500" id={`${id}-description`}>
-            {allowedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} up to {maxSizeKB / 1024}MB.
-            {aspectRatio && ` Recommended aspect ratio: ${aspectRatio}.`}
+            {allowedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} up to {maxSizeKB / 1024}MB
+            {aspectRatio && ` · ${aspectRatio} ratio recommended`}
           </p>
         </div>
       </div>
+
       {errors.length > 0 && (
         <div className="mt-2 text-sm text-red-600 space-y-1">
           {errors.map((error, i) => <p key={i}>{error}</p>)}
         </div>
       )}
-       {previews.length > 0 && (
+
+      {previews.length > 0 && (
         <div className="mt-4 grid grid-cols-3 gap-4">
           {previews.map((src, index) => (
             <div key={index} className="relative">

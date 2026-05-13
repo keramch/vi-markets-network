@@ -339,23 +339,33 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   }
   
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-8 overflow-x-hidden">
-      {isMarket(formData) && !isAdmin && (
-        <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
-          &larr; Back to My Market
-        </button>
-      )}
-
-      {/* Sticky save bar */}
-      <div className="sticky top-20 z-10 bg-white/95 backdrop-blur-sm border-y shadow-sm -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 flex items-center justify-between">
-        <span className="font-semibold text-brand-blue truncate mr-4">{formData.name}</span>
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-3 rounded-md hover:bg-gray-100 transition-colors min-h-[48px]">Cancel</button>
-          <button type="button" onClick={saveWithUploads} disabled={uploadProgress !== null} className="bg-brand-blue text-white text-sm font-semibold py-3 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60 min-h-[48px]">Save Changes</button>
+    <>
+      {/* Sticky save bar — outside the overflow container so sticky positioning works correctly */}
+      <div className="sticky top-20 z-10 bg-white/95 backdrop-blur-sm border-y shadow-md">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <span className="font-semibold text-brand-blue truncate mr-4">{formData.name}</span>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-3 rounded-md hover:bg-gray-100 transition-colors min-h-[48px]">Cancel</button>
+            <button
+              type="button"
+              onClick={saveWithUploads}
+              disabled={uploadProgress !== null || isSaving}
+              className="bg-brand-blue text-white text-sm font-semibold py-3 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60 min-h-[48px]"
+            >
+              {saveSuccess ? '✓ Saved' : (uploadProgress !== null || isSaving) ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white px-8 pb-8 pt-14 rounded-lg shadow-xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-8 overflow-x-hidden">
+        {isMarket(formData) && !isAdmin && (
+          <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
+            &larr; Back to My Market
+          </button>
+        )}
+
+        <div className="bg-white px-8 pb-8 pt-14 rounded-lg shadow-xl">
         {isAdmin && (
             <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
                 <p className="font-bold">Admin Mode</p>
@@ -784,7 +794,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
