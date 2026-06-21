@@ -347,10 +347,8 @@ const HomePage: React.FC<HomePageProps> = ({
       );
 
       resultsVendors = resultsVendors.map((v) => {
-        const attendingMarketIds = v.attendingMarketIds || [];
-
-        const distances = attendingMarketIds
-          .map((marketId) => marketCoordsMap.get(marketId))
+        const distances = (v.attendingMarkets || [])
+          .map(({ marketId }) => marketCoordsMap.get(marketId))
           .filter(
             (coords): coords is Coordinates => coords !== undefined
           )

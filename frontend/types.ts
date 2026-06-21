@@ -236,7 +236,7 @@ export interface Promotion {
   endDate: string;
 }
 
-export type MemberStatus = 'active' | 'suspended' | 'archived';
+export type MemberStatus = 'active' | 'suspended' | 'archived' | 'unclaimed';
 
 export interface Vendor {
   id: string;
@@ -255,7 +255,11 @@ export interface Vendor {
   contact: Contact;
   priceRange: 'affordable' | 'moderate' | 'premium';
   reviews: Review[];
-  attendingMarketIds: string[];
+  attendingMarkets: {
+    marketId: string;
+    date: string;
+    source: 'self' | 'organizer';
+  }[];
   isFeatured?: boolean;
   productHighlights?: string[];
   sustainabilityPractices?: string;

@@ -87,7 +87,10 @@ const vendors = [
         status: "approved",
       },
     ],
-    attendingMarketIds: ["market-1", "market-2"],
+    attendingMarkets: [
+      { marketId: "market-1", date: "2023-05-10", source: "organizer" },
+      { marketId: "market-2", date: "2023-05-10", source: "organizer" },
+    ],
     originStory:
       "Started from a small backyard garden, Green Thumb Organics has grown into a local leader in sustainable agriculture, all while maintaining our family-run roots and commitment to quality.",
     productHighlights: ["Rainbow Carrots", "Heirloom Tomatoes", "Spicy Arugula Mix"],
@@ -121,7 +124,9 @@ const vendors = [
         status: "approved",
       },
     ],
-    attendingMarketIds: ["market-1"],
+    attendingMarkets: [
+      { marketId: "market-1", date: "2024-06-20", source: "organizer" },
+    ],
     productHighlights: ["Classic Country Sourdough", "Chocolate Croissants", "Seeded Rye Bread"],
     sustainabilityPractices:
       "We source our flour from Vancouver Island grain growers and use renewable energy for our ovens.",
@@ -139,7 +144,10 @@ const vendors = [
     contact: { email: "buzz@hivehoney.com", website: "hivehoney.com" },
     priceRange: "moderate",
     reviews: [],
-    attendingMarketIds: ["market-2", "market-3"],
+    attendingMarkets: [
+      { marketId: "market-2", date: "2024-07-01", source: "organizer" },
+      { marketId: "market-3", date: "2024-07-01", source: "organizer" },
+    ],
     originStory:
       "Our journey began with a single hive to help pollinate our garden. Today, we manage over 50 hives across the Saanich Peninsula, promoting bee health and delicious honey.",
     productHighlights: ["Wildflower Honey", "Creamed Honey", "Honeycomb Frames"],
@@ -173,7 +181,10 @@ const vendors = [
         status: "approved",
       },
     ],
-    attendingMarketIds: ["market-1", "market-3"],
+    attendingMarkets: [
+      { marketId: "market-1", date: "2023-09-15", source: "organizer" },
+      { marketId: "market-3", date: "2023-09-15", source: "organizer" },
+    ],
     sustainabilityPractices:
       "We reclaim and recycle all our clay scraps and use a kiln powered by renewable energy.",
     certifications: ["Island Crafted Certified"],
@@ -192,7 +203,9 @@ const vendors = [
     contact: { email: "contact@silverstone.com", socials: { etsy: "silverstone" } },
     priceRange: "premium",
     reviews: [],
-    attendingMarketIds: ["market-3"],
+    attendingMarkets: [
+      { marketId: "market-3", date: "2024-08-01", source: "organizer" },
+    ],
     joinDate: "2024-08-01",
     status: "active",
   },
@@ -208,7 +221,9 @@ const vendors = [
     contact: { email: "finder@retro.com" },
     priceRange: "moderate",
     reviews: [],
-    attendingMarketIds: ["market-3"],
+    attendingMarkets: [
+      { marketId: "market-3", date: "2024-08-05", source: "organizer" },
+    ],
     joinDate: "2024-08-05",
     status: "active",
   },

@@ -49,7 +49,10 @@ export const vendors: Vendor[] = [
       { id: 'r1', author: 'Jane D.', rating: 5, comment: 'The freshest carrots I have ever tasted!', date: '2023-10-15', status: 'approved' },
       { id: 'r2', author: 'Mark T.', rating: 4, comment: 'Great selection, a bit pricey but worth it.', date: '2023-10-12', status: 'approved' },
     ],
-    attendingMarketIds: ['market-1', 'market-2'],
+    attendingMarkets: [
+      { marketId: 'market-1', date: '2023-10-01', source: 'organizer' },
+      { marketId: 'market-2', date: '2023-10-01', source: 'organizer' },
+    ],
     originStory: 'Started from a small backyard garden, Green Thumb Organics has grown into a local leader in sustainable agriculture, all while maintaining our family-run roots and commitment to quality.',
     productHighlights: ['Rainbow Carrots', 'Heirloom Tomatoes', 'Spicy Arugula Mix'],
     sustainabilityPractices: 'We use no-till farming methods, compost all organic waste, and utilize drip irrigation to conserve water. Our packaging is 100% compostable.',
@@ -70,7 +73,9 @@ export const vendors: Vendor[] = [
     reviews: [
       { id: 'r3', author: 'Sarah P.', rating: 5, comment: 'Best sourdough in the city, hands down.', date: '2023-10-14', status: 'approved' },
     ],
-    attendingMarketIds: ['market-1'],
+    attendingMarkets: [
+      { marketId: 'market-1', date: '2023-10-01', source: 'organizer' },
+    ],
     productHighlights: ['Classic Country Sourdough', 'Chocolate Croissants', 'Seeded Rye Bread'],
     sustainabilityPractices: 'We source our flour from Vancouver Island grain growers and use renewable energy for our ovens.',
     joinDate: '2024-06-20',
@@ -89,7 +94,10 @@ export const vendors: Vendor[] = [
     },
     priceRange: 'moderate',
     reviews: [],
-    attendingMarketIds: ['market-2', 'market-3'],
+    attendingMarkets: [
+      { marketId: 'market-2', date: '2023-10-01', source: 'organizer' },
+      { marketId: 'market-3', date: '2023-10-01', source: 'organizer' },
+    ],
     originStory: 'Our journey began with a single hive to help pollinate our garden. Today, we manage over 50 hives across the Saanich Peninsula, promoting bee health and delicious honey.',
     productHighlights: ['Wildflower Honey', 'Creamed Honey', 'Honeycomb Frames'],
     joinDate: '2024-07-01',
@@ -114,7 +122,10 @@ export const vendors: Vendor[] = [
     reviews: [
        { id: 'r4', author: 'Chris G.', rating: 5, comment: 'Beautiful and functional art. I love my new new mug!', date: '2023-09-28', status: 'approved' },
     ],
-    attendingMarketIds: ['market-1', 'market-3'],
+    attendingMarkets: [
+      { marketId: 'market-1', date: '2023-10-01', source: 'organizer' },
+      { marketId: 'market-3', date: '2023-10-01', source: 'organizer' },
+    ],
     sustainabilityPractices: 'We reclaim and recycle all our clay scraps and use a kiln powered by renewable energy.',
     certifications: ['Island Crafted Certified'],
     joinDate: '2023-09-15',
@@ -131,7 +142,9 @@ export const vendors: Vendor[] = [
     contact: { email: 'contact@silverstone.com', socials: { etsy: 'silverstone' } },
     priceRange: 'premium',
     reviews: [],
-    attendingMarketIds: ['market-3'],
+    attendingMarkets: [
+      { marketId: 'market-3', date: '2024-08-01', source: 'organizer' },
+    ],
     joinDate: '2024-08-01',
     status: 'active',
   },
@@ -146,7 +159,9 @@ export const vendors: Vendor[] = [
     contact: { email: 'finder@retro.com' },
     priceRange: 'moderate',
     reviews: [],
-    attendingMarketIds: ['market-3'],
+    attendingMarkets: [
+      { marketId: 'market-3', date: '2024-08-05', source: 'organizer' },
+    ],
     joinDate: '2024-08-05',
     status: 'active',
   },

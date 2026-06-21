@@ -68,7 +68,7 @@ function normalizeVendor(raw: any): Vendor {
     ...raw,
     reviews: raw.reviews || [],
     photos: raw.photos || [],
-    attendingMarketIds: raw.attendingMarketIds || [],
+    attendingMarkets: raw.attendingMarkets || [],
     status: raw.status || "active"
   } as Vendor;
 }

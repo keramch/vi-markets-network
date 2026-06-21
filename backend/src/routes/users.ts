@@ -187,7 +187,7 @@ router.post("/register", async (req, res) => {
           categories: categories || [],
           tags: tags || [],
           priceRange: "moderate",
-          attendingMarketIds: [],
+          attendingMarkets: [],
           reviews: [],
           isFeatured: false,
           joinDate: today,

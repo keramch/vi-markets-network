@@ -28,7 +28,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
   onSelectMarket, isFavorited, onToggleFavorite,
   currentUser, onAddReview, onFeatureVendor, onContactSubmit, onOpenLoginModal,
 }) => {
-  const vendorMarkets = markets.filter(m => vendor.attendingMarketIds.includes(m.id));
+  const vendorMarkets = markets.filter(m => (vendor.attendingMarkets || []).some(a => a.marketId === m.id));
   const approvedReviews = vendor.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
   const isFoundingMember = owner?.subscription?.foundingMember;

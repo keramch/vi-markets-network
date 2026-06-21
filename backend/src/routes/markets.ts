@@ -18,6 +18,42 @@ router.get("/", async (_req, res) => {
   }
 });
 
+// POST /markets → create a placeholder (unclaimed) market record
+router.post("/", async (req, res) => {
+  const { name, vendorId, city, address } = req.body;
+
+  if (!name || !vendorId) {
+    res.status(400).json({ error: "name and vendorId are required" });
+    return;
+  }
+
+  const data = {
+    name,
+    description: '',
+    marketTypes: [],
+    photos: [],
+    contact: { email: '' },
+    location: {
+      address: address ?? '',
+      city: city ?? '',
+      coordinates: { lat: 0, lng: 0 },
+    },
+    schedule: { rules: [] },
+    vendorIds: [vendorId],
+    reviews: [],
+    joinDate: new Date().toISOString(),
+    status: 'unclaimed',
+  };
+
+  try {
+    const docRef = await db.collection("markets").add(data);
+    res.status(201).json({ id: docRef.id, ...data });
+  } catch (err) {
+    console.error("Error creating placeholder market:", err);
+    res.status(500).json({ error: "Failed to create market" });
+  }
+});
+
 // PATCH /markets/:id → api.updateMarket(id, updates)
 router.patch("/:id", async (req, res) => {
   const { id } = req.params;
