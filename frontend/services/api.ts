@@ -115,6 +115,33 @@ export const moderateReview = (entityId: string, reviewId: string, status: 'appr
     });
 };
 
+export const createMarket = (payload: { name: string; vendorId: string; city?: string; address?: string }): Promise<Market> => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const newMarket: Market = {
+                id: `market-${Date.now()}`,
+                name: payload.name,
+                description: '',
+                marketTypes: [],
+                photos: [],
+                contact: { email: '' },
+                location: {
+                    address: payload.address ?? '',
+                    city: payload.city ?? '',
+                    coordinates: { lat: 0, lng: 0 },
+                },
+                schedule: { rules: [] },
+                vendorIds: [payload.vendorId],
+                reviews: [],
+                joinDate: new Date().toISOString(),
+                status: 'unclaimed',
+            };
+            markets.push(newMarket);
+            resolve(newMarket);
+        }, SIMULATED_LATENCY);
+    });
+};
+
 export const updateMarket = (marketId: string, updates: Partial<Market>): Promise<Market> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {

@@ -172,6 +172,15 @@ export const setFoundingMember = (userId: string, currentSub: User['subscription
 
 // MARKETS
 
+export const createMarket = (
+  payload: { name: string; vendorId: string; city?: string; address?: string }
+): Promise<Market> => {
+  return request<any>("/markets", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }).then(normalizeMarket);
+};
+
 export const updateMarket = (
   marketId: string,
   updates: Partial<Market>
