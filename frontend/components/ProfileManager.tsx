@@ -8,6 +8,7 @@ import HelpTip from './HelpTip';
 import { getDistance } from '../utils';
 import { WarningIcon, InboxIcon, RibbonIcon, XIcon } from './Icons';
 import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../services/storageUpload';
+import * as api from '../services/api.live';
 
 interface ProfileManagerProps {
   profileData: Market | Vendor;
@@ -26,6 +27,12 @@ interface ProfileManagerProps {
 
 const isMarket = (profile: Market | Vendor): profile is Market => {
   return 'location' in profile;
+};
+
+const fuzzyMatch = (term: string, target: string): boolean => {
+  const words = term.toLowerCase().split(' ').filter(Boolean);
+  const t = target.toLowerCase();
+  return words.every(w => t.includes(w));
 };
 
 type ActiveTab = 'details' | 'applications' | 'settings' | 'reviews' | 'promotions' | 'billing';
@@ -57,6 +64,19 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [uploadError, setUploadError]                 = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Markets I attend — vendor section (staged until save, not part of formData)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pendingLinks, setPendingLinks] = useState<{ marketId: string; date: string; name: string; city?: string; status: string }[]>([]);
+  const [pendingNewMarkets, setPendingNewMarkets] = useState<{ name: string; city?: string; address?: string; date: string }[]>([]);
+  const [manualFormOpen, setManualFormOpen] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualCity, setManualCity] = useState('');
+  const [manualAddress, setManualAddress] = useState('');
+  const [manualDate, setManualDate] = useState('');
+  const [selectedSearchResult, setSelectedSearchResult] = useState<{ id: string; name: string; city?: string; status: string } | null>(null);
+  const [selectedSearchDate, setSelectedSearchDate] = useState('');
+  const [dismissedSuggestionId, setDismissedSuggestionId] = useState<string | null>(null);
 
   const isProMember = user?.subscription?.tier === 'pro' || user?.subscription?.tier === 'superPro' || user?.subscription?.foundingMember === true;
 
@@ -179,7 +199,24 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     }
 
     try {
+      if (!isMarket(updatedData)) {
+        const vendor = updatedData;
+        const linkedEntries = pendingLinks.map(pl => ({ marketId: pl.marketId, date: pl.date, source: 'self' as const }));
+        const newMarketEntries: { marketId: string; date: string; source: 'self' }[] = [];
+        for (const pm of pendingNewMarkets) {
+          try {
+            const created = await api.createMarket({ name: pm.name, vendorId: vendor.id, city: pm.city, address: pm.address });
+            newMarketEntries.push({ marketId: created.id, date: pm.date, source: 'self' });
+          } catch {
+            setUploadError('One or more markets could not be created. Your other changes will still be saved.');
+          }
+        }
+        const existing = vendor.attendingMarkets || [];
+        updatedData = { ...vendor, attendingMarkets: [...existing, ...linkedEntries, ...newMarketEntries] };
+      }
       await onSaveChanges(updatedData);
+      setPendingLinks([]);
+      setPendingNewMarkets([]);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
     } finally {
@@ -656,6 +693,281 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 ))}
                                 </div>
                                 <p className="mt-2 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
+                            </div>
+                            <div className="border-t pt-6">
+                                <h3 className="text-lg font-semibold text-brand-blue mb-2">Markets I Attend</h3>
+                                <p className="text-sm text-gray-500 mb-4">Link your profile to the markets where you sell.</p>
+
+                                {/* Combined current list */}
+                                {(() => {
+                                  const vendor = formData as Vendor;
+                                  const existingItems = (vendor.attendingMarkets || []).map(entry => {
+                                    const m = allMarkets.find(am => am.id === entry.marketId);
+                                    return {
+                                      key: `existing-${entry.marketId}`,
+                                      name: m?.name ?? entry.marketId,
+                                      city: m?.location?.city,
+                                      date: entry.date,
+                                      isUnclaimed: m?.status === 'unclaimed',
+                                      onRemove: () => setFormData({
+                                        ...formData,
+                                        attendingMarkets: (vendor.attendingMarkets || []).filter(e => e.marketId !== entry.marketId),
+                                      } as Vendor),
+                                    };
+                                  });
+                                  const pendingLinkItems = pendingLinks.map(pl => ({
+                                    key: `pl-${pl.marketId}`,
+                                    name: pl.name,
+                                    city: pl.city,
+                                    date: pl.date,
+                                    isUnclaimed: pl.status === 'unclaimed',
+                                    onRemove: () => setPendingLinks(prev => prev.filter(p => p.marketId !== pl.marketId)),
+                                  }));
+                                  const pendingNewItems = pendingNewMarkets.map((pn, i) => ({
+                                    key: `pn-${i}-${pn.name}`,
+                                    name: pn.name,
+                                    city: pn.city,
+                                    date: pn.date,
+                                    isUnclaimed: true as const,
+                                    onRemove: () => setPendingNewMarkets(prev => prev.filter((_, j) => j !== i)),
+                                  }));
+                                  const allItems = [...existingItems, ...pendingLinkItems, ...pendingNewItems];
+                                  if (allItems.length === 0) return null;
+                                  return (
+                                    <ul className="mb-4 space-y-2">
+                                      {allItems.map(item => (
+                                        <li key={item.key} className="flex items-center justify-between gap-2 p-3 border border-gray-200 rounded-md bg-gray-50">
+                                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                            <span className="font-medium text-sm text-gray-800 truncate">{item.name}</span>
+                                            {item.city && <span className="text-xs text-gray-500">{item.city}</span>}
+                                            <span className="text-xs text-gray-400">{item.date}</span>
+                                            {item.isUnclaimed && (
+                                              <span className="bg-brand-gold/10 text-brand-gold text-xs rounded-full px-2 py-0.5 whitespace-nowrap">not yet in directory</span>
+                                            )}
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={item.onRemove}
+                                            className="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                                            aria-label={`Remove ${item.name}`}
+                                          >
+                                            <XIcon className="w-4 h-4" />
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  );
+                                })()}
+
+                                {/* Search for an existing market */}
+                                {!selectedSearchResult ? (
+                                  <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Search for a market</label>
+                                    <input
+                                      type="text"
+                                      value={searchQuery}
+                                      onChange={e => setSearchQuery(e.target.value)}
+                                      placeholder="Type a market name…"
+                                      className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
+                                    />
+                                    {searchQuery.length > 0 && (() => {
+                                      const vendor = formData as Vendor;
+                                      const alreadyLinked = new Set([
+                                        ...(vendor.attendingMarkets || []).map(m => m.marketId),
+                                        ...pendingLinks.map(pl => pl.marketId),
+                                      ]);
+                                      const results = allMarkets.filter(m => !alreadyLinked.has(m.id) && fuzzyMatch(searchQuery, m.name));
+                                      if (results.length === 0) {
+                                        return <p className="mt-2 text-sm text-gray-500">No markets found matching "{searchQuery}".</p>;
+                                      }
+                                      return (
+                                        <ul className="mt-1 border border-gray-200 rounded-md bg-white shadow-sm divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                                          {results.map(m => (
+                                            <li key={m.id}>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setSelectedSearchResult({ id: m.id, name: m.name, city: m.location?.city, status: m.status });
+                                                  setSearchQuery('');
+                                                }}
+                                                className="w-full text-left px-4 py-3 text-sm hover:bg-brand-cream/60 transition-colors flex items-center justify-between gap-2"
+                                              >
+                                                <span>
+                                                  <span className="font-medium">{m.name}</span>
+                                                  {m.location?.city && <span className="ml-2 text-gray-500 text-xs">{m.location.city}</span>}
+                                                </span>
+                                                {m.status === 'unclaimed' && (
+                                                  <span className="bg-brand-gold/10 text-brand-gold text-xs rounded-full px-2 py-0.5 flex-shrink-0">not yet in directory</span>
+                                                )}
+                                              </button>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      );
+                                    })()}
+                                  </div>
+                                ) : (
+                                  <div className="mb-4 p-3 border border-gray-200 rounded-md bg-brand-cream/40">
+                                    <p className="text-sm font-medium text-gray-700 mb-2">
+                                      Adding <span className="font-semibold text-brand-blue">{selectedSearchResult.name}</span>
+                                      {selectedSearchResult.city && <span className="text-gray-500"> — {selectedSearchResult.city}</span>}
+                                    </p>
+                                    <div className="flex items-end gap-2">
+                                      <div className="flex-1">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Date you attend (or next date)</label>
+                                        <input
+                                          type="date"
+                                          value={selectedSearchDate}
+                                          onChange={e => setSelectedSearchDate(e.target.value)}
+                                          className="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 text-sm"
+                                        />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        disabled={!selectedSearchDate}
+                                        onClick={() => {
+                                          setPendingLinks(prev => [...prev, {
+                                            marketId: selectedSearchResult.id,
+                                            date: selectedSearchDate,
+                                            name: selectedSearchResult.name,
+                                            city: selectedSearchResult.city,
+                                            status: selectedSearchResult.status,
+                                          }]);
+                                          setSelectedSearchResult(null);
+                                          setSelectedSearchDate('');
+                                        }}
+                                        className="bg-brand-blue text-white text-sm font-semibold px-4 py-2.5 rounded-md hover:bg-opacity-90 disabled:opacity-50 min-h-[2.75rem]"
+                                      >
+                                        Add
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setSelectedSearchResult(null); setSelectedSearchDate(''); }}
+                                        className="text-sm text-gray-600 px-3 py-2.5 rounded-md hover:bg-gray-100 min-h-[2.75rem]"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Manual add fallback */}
+                                {!manualFormOpen ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualFormOpen(true)}
+                                    className="text-sm text-brand-light-blue hover:text-brand-blue underline"
+                                  >
+                                    Can't find your market? Add it manually
+                                  </button>
+                                ) : (
+                                  <div className="border border-gray-200 rounded-md p-4 bg-gray-50 mt-2">
+                                    <h4 className="text-sm font-semibold text-brand-blue mb-3">Add a Market Not Yet in the Directory</h4>
+                                    {manualName.length >= 3 && (() => {
+                                      const suggestion = allMarkets.find(m => fuzzyMatch(manualName, m.name));
+                                      if (!suggestion || suggestion.id === dismissedSuggestionId) return null;
+                                      return (
+                                        <div className="mb-3 p-3 border border-gray-200 rounded-md bg-brand-cream/40 text-sm">
+                                          <p className="font-medium text-gray-700 mb-1">Did you mean this market?</p>
+                                          <p className="font-semibold text-brand-blue">{suggestion.name}{suggestion.location?.city ? ` — ${suggestion.location.city}` : ''}</p>
+                                          <div className="flex gap-2 mt-2">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedSearchResult({ id: suggestion.id, name: suggestion.name, city: suggestion.location?.city, status: suggestion.status });
+                                                setManualFormOpen(false);
+                                                setManualName(''); setManualCity(''); setManualAddress(''); setManualDate('');
+                                                setDismissedSuggestionId(null);
+                                              }}
+                                              className="text-xs font-semibold text-white bg-brand-blue px-3 py-1.5 rounded-md hover:bg-opacity-90"
+                                            >
+                                              Yes, this one
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setDismissedSuggestionId(suggestion.id)}
+                                              className="text-xs text-gray-600 px-3 py-1.5 rounded-md hover:bg-gray-200"
+                                            >
+                                              No, different
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                    <div className="space-y-3">
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Market name <span className="text-red-500">*</span></label>
+                                        <input
+                                          type="text"
+                                          value={manualName}
+                                          onChange={e => setManualName(e.target.value)}
+                                          className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
+                                          placeholder="e.g. Comox Valley Farmers Market"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                        <input
+                                          type="text"
+                                          value={manualCity}
+                                          onChange={e => setManualCity(e.target.value)}
+                                          className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
+                                          placeholder="e.g. Courtenay"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Venue or street address</label>
+                                        <input
+                                          type="text"
+                                          value={manualAddress}
+                                          onChange={e => setManualAddress(e.target.value)}
+                                          className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
+                                          placeholder="e.g. 1000 Cliffe Ave"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date you attend (or next date) <span className="text-red-500">*</span></label>
+                                        <input
+                                          type="date"
+                                          value={manualDate}
+                                          onChange={e => setManualDate(e.target.value)}
+                                          className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"
+                                        />
+                                      </div>
+                                      <div className="flex gap-2 pt-1">
+                                        <button
+                                          type="button"
+                                          disabled={!manualName.trim() || !manualDate}
+                                          onClick={() => {
+                                            setPendingNewMarkets(prev => [...prev, {
+                                              name: manualName.trim(),
+                                              city: manualCity.trim() || undefined,
+                                              address: manualAddress.trim() || undefined,
+                                              date: manualDate,
+                                            }]);
+                                            setManualName(''); setManualCity(''); setManualAddress(''); setManualDate('');
+                                            setManualFormOpen(false);
+                                            setDismissedSuggestionId(null);
+                                          }}
+                                          className="bg-brand-blue text-white text-sm font-semibold px-4 py-2.5 rounded-md hover:bg-opacity-90 disabled:opacity-50 min-h-[2.75rem]"
+                                        >
+                                          Add Market
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setManualFormOpen(false);
+                                            setManualName(''); setManualCity(''); setManualAddress(''); setManualDate('');
+                                            setDismissedSuggestionId(null);
+                                          }}
+                                          className="text-sm text-gray-600 px-3 py-2.5 rounded-md hover:bg-gray-100 min-h-[2.75rem]"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                             </div>
                         </>
                     )}
