@@ -695,7 +695,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 <p className="mt-2 text-xs text-gray-400">Don't see the right tag? Let us know at hello@vimarkets.ca</p>
                             </div>
                             <div className="border-t pt-6">
-                                <h3 className="text-lg font-semibold text-brand-blue mb-2">Markets I Attend</h3>
+                                <h3 className="text-lg font-semibold text-brand-blue mb-2">Markets I'm Attending:</h3>
                                 <p className="text-sm text-gray-500 mb-4">Link your profile to the markets where you sell.</p>
 
                                 {/* Combined current list */}
