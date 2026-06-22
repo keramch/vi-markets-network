@@ -529,6 +529,9 @@ const App: React.FC = () => {
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
+            // Refetch markets so any placeholder markets created during save appear immediately
+            const freshMarkets = await api.getMarkets();
+            setMarkets(freshMarkets);
         }
         showNotification("Your profile has been updated successfully!");
         navigate('/');
@@ -545,6 +548,9 @@ const App: React.FC = () => {
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
+            // Refetch markets so any placeholder markets created during save appear immediately
+            const freshMarkets = await api.getMarkets();
+            setMarkets(freshMarkets);
         }
         setAdminActiveTab('memberships');
         navigate('/hq');

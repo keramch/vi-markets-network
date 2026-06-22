@@ -23,12 +23,25 @@ interface VendorProfileProps {
   onOpenLoginModal: () => void;
 }
 
+// Returns today's date as YYYY-MM-DD in Pacific time
+const todayPacific = () =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' });
+
 const VendorProfile: React.FC<VendorProfileProps> = ({
   vendor, markets, owner,
   onSelectMarket, isFavorited, onToggleFavorite,
   currentUser, onAddReview, onFeatureVendor, onContactSubmit, onOpenLoginModal,
 }) => {
-  const vendorMarkets = markets.filter(m => (vendor.attendingMarkets || []).some(a => a.marketId === m.id));
+  const attendingEntries = (vendor.attendingMarkets || [])
+    .map(entry => {
+      const market = markets.find(m => m.id === entry.marketId);
+      return market ? { market, date: entry.date } : null;
+    })
+    .filter((x): x is { market: Market; date: string } => x !== null);
+
+  const todayStr = todayPacific();
+  const currentEntries = attendingEntries.filter(e => e.date >= todayStr);
+  const pastEntries = attendingEntries.filter(e => e.date < todayStr);
   const approvedReviews = vendor.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
   const isFoundingMember = owner?.subscription?.foundingMember;
@@ -191,22 +204,35 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
             {/* Right: Find Us At */}
             <div className="order-1 md:order-2">
               <h2 className="text-2xl text-brand-blue font-serif mb-5">Find Us At</h2>
-              {vendorMarkets.length > 0 ? (
+              {currentEntries.length > 0 ? (
                 <div className="space-y-3">
-                  {vendorMarkets.map(market => (
-                    <div
-                      key={market.id}
-                      onClick={() => onSelectMarket(market.id)}
-                      className="cursor-pointer group"
-                    >
-                      <p className="text-base text-brand-light-blue font-medium group-hover:underline">{market.name}</p>
-                      {(market.location?.city || market.location?.address) && (
-                        <p className="text-sm text-gray-500 mt-0.5">
-                          {market.location.city || market.location.address}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                  {currentEntries.map(({ market, date }) => {
+                    const isActive = market.status === 'active';
+                    return (
+                      <div
+                        key={market.id}
+                        onClick={isActive ? () => onSelectMarket(market.id) : undefined}
+                        className={isActive ? 'cursor-pointer group' : ''}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`text-base font-medium ${isActive ? 'text-brand-light-blue group-hover:underline' : 'text-brand-text'}`}>
+                            {market.name}
+                          </p>
+                          {!isActive && (
+                            <span className="bg-brand-gold/10 text-brand-gold text-xs rounded-full px-2 py-0.5">not yet in directory</span>
+                          )}
+                        </div>
+                        {(market.location?.city || market.location?.address) && (
+                          <p className="text-sm text-gray-500 mt-0.5">
+                            {market.location.city || market.location.address}
+                          </p>
+                        )}
+                        {!isActive && (
+                          <p className="text-xs text-gray-400 mt-0.5">{date}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">No markets listed yet.</p>
@@ -214,6 +240,18 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
               <p className="text-xs text-gray-400 italic mt-5">
                 Market dates and locations are approximate — confirm with the market organiser.
               </p>
+              {pastEntries.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">You may have seen me at</p>
+                  <ul className="space-y-1">
+                    {pastEntries.map(({ market }) => (
+                      <li key={market.id} className="text-xs text-gray-400">
+                        {market.name}{(market.location?.city || market.location?.address) ? `, ${market.location.city || market.location.address}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
           </div>
