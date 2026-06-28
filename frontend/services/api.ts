@@ -36,7 +36,7 @@ export const login = (email: string, postalCode: string): Promise<User> => {
                     id: `user-${Date.now()}`,
                     email,
                     postalCode,
-                    subscription: { tier: 'free', billingCycle: null, foundingMember: false },
+                    subscription: { tier: 'free', billingCycle: null, foundingMember: false, termEnds: null, introRate: false, stripeCustomerId: null, stripePaymentId: null },
                     isAdmin: false,
                     autoRenew: false,
                     notificationSettings: {

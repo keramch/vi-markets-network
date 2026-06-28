@@ -15,8 +15,12 @@ export type SubscriptionTier = 'free' | 'standard' | 'pro' | 'superPro';
 
 export interface UserSubscription {
   tier: SubscriptionTier;
-  billingCycle: 'monthly' | 'annual' | null;
+  billingCycle: '6month' | 'annual' | null;
   foundingMember: boolean;
+  termEnds: string | null;
+  introRate: boolean;
+  stripeCustomerId: string | null;
+  stripePaymentId: string | null;
 }
 
 export interface User {
@@ -356,7 +360,7 @@ export interface OrganizerAccount {
   contactEmail: string;
   subscription: {
     tier: SubscriptionTier;
-    billingCycle: 'monthly' | 'annual';
+    billingCycle: '6month' | 'annual';
     foundingMember: boolean;
     activeListingCount: number;
     maxActiveListings: number;

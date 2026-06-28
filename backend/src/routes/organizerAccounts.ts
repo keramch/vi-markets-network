@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
     orgName: string;
     contactEmail: string;
     tier?: SubscriptionTier;
-    billingCycle?: "monthly" | "annual";
+    billingCycle?: "6month" | "annual";
   };
 
   if (!uid || !orgName || !contactEmail) {

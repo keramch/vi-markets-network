@@ -29,7 +29,7 @@ export interface OrganizerAccount {
   contactEmail: string;
   subscription: {
     tier: SubscriptionTier;
-    billingCycle: 'monthly' | 'annual';
+    billingCycle: '6month' | 'annual';
     foundingMember: boolean;
     activeListingCount: number;
     maxActiveListings: number;  // derived from tier; -1 = unlimited

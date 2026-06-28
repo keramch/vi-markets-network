@@ -684,7 +684,7 @@ const App: React.FC = () => {
   const handleToggleFoundingMember = async (userId: string, isCurrentlyFounding: boolean) => {
       try {
         const targetUser = users.find(u => u.id === userId);
-        const currentSub = targetUser?.subscription ?? { tier: 'free' as const, billingCycle: null, foundingMember: false };
+        const currentSub = targetUser?.subscription ?? { tier: 'free' as const, billingCycle: null, foundingMember: false, termEnds: null, introRate: false, stripeCustomerId: null, stripePaymentId: null };
         const updatedUser = await api.updateUser(userId, {
           subscription: { ...currentSub, foundingMember: !isCurrentlyFounding },
         });
