@@ -48,6 +48,7 @@ router.post("/create-checkout-session", express.json(), async (req, res) => {
       cancel_url: "https://vimarkets.ca/dashboard?payment=cancelled",
       customer_email: decoded.email,
       metadata: { uid, billingCycle },
+      allow_promotion_codes: true,
     });
 
     return res.json({ url: session.url });
