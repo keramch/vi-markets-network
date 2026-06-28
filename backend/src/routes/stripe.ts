@@ -122,10 +122,10 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
     const contactEmail = session.customer_details?.email;
     if (contactEmail) {
-      const dd = String(termDate.getDate()).padStart(2, "0");
-      const mm = String(termDate.getMonth() + 1).padStart(2, "0");
+      const dd = String(termDate.getDate()).padStart(2, '0');
+      const mm = String(termDate.getMonth() + 1).padStart(2, '0');
       const yyyy = termDate.getFullYear();
-      const termEndsBrevo = `${dd}-${mm}-${yyyy}`;
+      const brevoDate = `${mm}/${dd}/${yyyy}`;
 
       try {
         const brevoRes = await fetch(
@@ -138,7 +138,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
             },
             body: JSON.stringify({
               attributes: {
-                MEMBERSHIP_ENDS: termEndsBrevo,
+                MEMBERSHIP_ENDS: brevoDate,
                 SUBSCRIPTION_TIER: "Pro",
                 BILLING_CYCLE: billingCycle,
               },
