@@ -80,6 +80,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const { uid, billingCycle } = session.metadata ?? {};
+    console.log("Stripe webhook session.metadata:", session.metadata);
 
     if (!uid || !billingCycle) {
       console.error("Stripe webhook: missing uid or billingCycle in session metadata", session.id);

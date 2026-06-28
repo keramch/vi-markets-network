@@ -333,48 +333,71 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   
   const BillingPanel = () => {
     if (!user) return null;
-    const nextRenewalDate = new Date();
-    nextRenewalDate.setFullYear(nextRenewalDate.getFullYear() + 1);
 
-    if (user.subscription?.foundingMember) {
+    const sub = user.subscription;
+    const termEndsDate = sub?.termEnds ? new Date(sub.termEnds) : null;
+    const tier = sub?.tier ?? 'free';
+    const isWithin30Days = termEndsDate
+      ? (termEndsDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 30
+      : false;
+    const showRenewButton = (tier === 'pro' && termEndsDate && isWithin30Days) || tier === 'free';
+    const cycleLabel = sub?.billingCycle === 'annual' ? '12-month term' : sub?.billingCycle === '6month' ? '6-month term' : null;
+
+    if (sub?.foundingMember) {
       return (
         <div className="bg-brand-gold/10 border-l-4 border-brand-gold text-brand-blue p-4 rounded-r-lg">
             <div className="flex">
                 <div className="py-1"><RibbonIcon className="h-6 w-6 text-brand-gold mr-3"/></div>
                 <div>
                     <h3 className="font-bold">Founding Member</h3>
-                    <p className="text-sm">Thank you for being an early supporter! You have lifetime Pro access to all features.</p>
+                    <p className="text-sm">You're a Founding Member with lifetime Pro access to all features.</p>
                 </div>
             </div>
         </div>
-      )
+      );
     }
 
     return (
-      <div>
-        <h3 className="text-lg font-semibold text-brand-blue mb-4">Current Plan: <span className="font-normal capitalize">{user.subscription?.tier ?? 'free'}</span></h3>
-        <div className="bg-brand-cream/60 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold">Auto-Renewal</p>
-              <p className="text-sm text-gray-600">
-                Your plan is set to {user.autoRenew ? 'automatically renew' : 'expire'} on {nextRenewalDate.toLocaleDateString()}.
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-brand-blue">
+          Current Plan:{' '}
+          <span className="font-normal capitalize">
+            {tier === 'pro' ? (sub?.introRate ? 'Pro (Introductory Rate)' : 'Pro') : 'Free'}
+          </span>
+        </h3>
+
+        <div className="bg-brand-cream/60 p-4 rounded-lg space-y-1">
+          {tier === 'pro' && termEndsDate ? (
+            <>
+              <p className="text-sm text-gray-700">
+                Your Pro membership is active until{' '}
+                <span className="font-semibold">{termEndsDate.toLocaleDateString()}</span>.
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                  We'll send a reminder 6 months before your renewal date.
-              </p>
-            </div>
-            <button
-                type="button"
-                className={`${user.autoRenew ? 'bg-brand-blue' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out`}
-                role="switch"
-                aria-checked={user.autoRenew}
-                onClick={() => onToggleAutoRenew(!user.autoRenew)}
-            >
-                <span className={`${user.autoRenew ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`} />
-            </button>
-          </div>
+              {sub?.introRate && (
+                <p className="text-sm text-gray-600">
+                  Renew before this date to keep your introductory rate.
+                </p>
+              )}
+              {cycleLabel && (
+                <p className="text-xs text-gray-500">{cycleLabel}</p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-gray-700">
+              You're on the Free plan. Upgrade to Pro to unlock unlimited photos and market connections.
+            </p>
+          )}
         </div>
+
+        {showRenewButton && onOpenUpgradeModal && (
+          <button
+            type="button"
+            onClick={onOpenUpgradeModal}
+            className="w-full bg-brand-gold text-white font-semibold py-3 px-6 rounded-full hover:bg-brand-gold/90 transition-colors"
+          >
+            {tier === 'pro' ? 'Renew Membership' : 'Upgrade to Pro'}
+          </button>
+        )}
       </div>
     );
   }
