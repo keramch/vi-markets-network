@@ -17,6 +17,7 @@ import ImageUploader from './components/ImageUploader';
 import ProfileManager from './components/ProfileManager';
 import Dashboard from './components/Dashboard';
 import StripePaymentForm from './components/StripePaymentForm';
+import PaymentSuccessModal from './components/PaymentSuccessModal';
 import CalendarView from './components/CalendarView';
 import NotificationToast from './components/NotificationToast';
 import AdminPanel from './components/AdminPanel';
@@ -239,6 +240,7 @@ const App: React.FC = () => {
 
   const [isVendorSignUpModalOpen, setVendorSignUpModalOpen] = useState(false);
   const [isMembershipModalOpen, setMembershipModalOpen] = useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   const [isFeatureMarketModalOpen, setFeatureMarketModalOpen] = useState(false);
   const [marketToFeature, setMarketToFeature] = useState<Market | null>(null);
@@ -282,6 +284,7 @@ const App: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get('payment');
     if (paymentStatus === 'success') {
+      setShowPaymentSuccess(true);
       showNotification('Payment successful! Your Pro membership is active.');
       navigate('/dashboard', { replace: true });
     } else if (paymentStatus === 'cancelled') {
@@ -1246,6 +1249,12 @@ const App: React.FC = () => {
       {/* Global Alerts */}
       <NotificationToast message={notification} />
       <CookieConsentBanner isVisible={showCookieBanner} onAccept={handleCookieConsent} />
+      {showPaymentSuccess && (
+        <PaymentSuccessModal
+          onClose={() => setShowPaymentSuccess(false)}
+          termEnds={currentUser?.subscription?.termEnds ?? null}
+        />
+      )}
     </div>
   );
 };

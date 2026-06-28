@@ -11,6 +11,7 @@
   "dependencies": {
     "@google/genai": "^1.28.0",
     "@stripe/stripe-js": "^9.8.0",
+    "canvas-confetti": "^1.9.4",
     "firebase": "^12.9.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.575.0",
@@ -19,6 +20,7 @@
     "react-router-dom": "^7.14.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
