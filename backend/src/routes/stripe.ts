@@ -119,6 +119,40 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       console.error("Stripe webhook: failed to update user subscription for uid", uid, err);
       // Return 200 so Stripe does not retry — error is logged for manual recovery
     }
+
+    const contactEmail = session.customer_details?.email;
+    if (contactEmail) {
+      const dd = String(termDate.getDate()).padStart(2, "0");
+      const mm = String(termDate.getMonth() + 1).padStart(2, "0");
+      const yyyy = termDate.getFullYear();
+      const termEndsBrevo = `${dd}-${mm}-${yyyy}`;
+
+      try {
+        const brevoRes = await fetch(
+          `https://api.brevo.com/v3/contacts/${encodeURIComponent(contactEmail)}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "api-key": process.env.BREVO_API_KEY ?? "",
+            },
+            body: JSON.stringify({
+              attributes: {
+                MEMBERSHIP_ENDS: termEndsBrevo,
+                SUBSCRIPTION_TIER: "Pro",
+                BILLING_CYCLE: billingCycle,
+              },
+            }),
+          }
+        );
+        if (!brevoRes.ok) {
+          const body = await brevoRes.text();
+          console.error("Stripe webhook: Brevo contact update failed", brevoRes.status, body);
+        }
+      } catch (err) {
+        console.error("Stripe webhook: Brevo contact update threw", err);
+      }
+    }
   }
 
   // checkout.session.expired — no action needed
