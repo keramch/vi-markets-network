@@ -239,8 +239,7 @@ const App: React.FC = () => {
 
   const [isVendorSignUpModalOpen, setVendorSignUpModalOpen] = useState(false);
   const [isMembershipModalOpen, setMembershipModalOpen] = useState(false);
-  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<{ plan: MembershipPlan, amount: number, description: string } | null>(null);
-  
+
   const [isFeatureMarketModalOpen, setFeatureMarketModalOpen] = useState(false);
   const [marketToFeature, setMarketToFeature] = useState<Market | null>(null);
 
@@ -277,6 +276,19 @@ const App: React.FC = () => {
     if (params.get('mode') === 'verifyEmail' || params.get('verified') === 'true') {
       navigate('/verified');
     }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    if (paymentStatus === 'success') {
+      showNotification('Payment successful! Your Pro membership is active.');
+      navigate('/dashboard', { replace: true });
+    } else if (paymentStatus === 'cancelled') {
+      showNotification('Payment cancelled.');
+      navigate('/dashboard', { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -1195,52 +1207,30 @@ const App: React.FC = () => {
         >
         <ForgotPasswordForm onSendRecoveryEmail={(email) => { showNotification(`Recovery email sent to ${email}.`); setForgotPasswordOpen(false); }} />
       </Modal>
-       <Modal 
-        isOpen={isMembershipModalOpen} 
-        onClose={() => {
-            setMembershipModalOpen(false);
-            setSelectedPlanForPayment(null);
-        }} 
-        title={selectedPlanForPayment ? `Payment for ${selectedPlanForPayment.description}`: "Membership Plans"}
-        maxWidth="2xl"
-       >
-        {!selectedPlanForPayment ? (
-            <MembershipForm onSelectPlan={(plan, amount, description) => setSelectedPlanForPayment({ plan, amount, description })} />
-        ) : (
-            <StripePaymentForm 
-                amount={selectedPlanForPayment.amount}
-                description={selectedPlanForPayment.description}
-                onSuccess={() => handleUpgradeMembership(selectedPlanForPayment.plan)}
-                onBack={() => setSelectedPlanForPayment(null)}
-            />
+      <Modal
+        isOpen={isMembershipModalOpen}
+        onClose={() => setMembershipModalOpen(false)}
+        title="Upgrade to Pro"
+        maxWidth="sm"
+      >
+        {currentUser && (
+          <StripePaymentForm
+            billingCycle="6month"
+            uid={currentUser.id}
+            userEmail={currentUser.email}
+            onCancel={() => setMembershipModalOpen(false)}
+          />
         )}
       </Modal>
       {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
       {false && <Modal isOpen={isFeatureMarketModalOpen} onClose={() => setFeatureMarketModalOpen(false)} title={`Feature ${marketToFeature?.name}`}>
-        <StripePaymentForm
-          amount={15}
-          description={`One-time fee to feature ${marketToFeature?.name}`}
-          onSuccess={handleConfirmFeatureMarket}
-          onBack={() => setFeatureMarketModalOpen(false)}
-        />
+        <p className="text-gray-500 text-sm text-center py-4">Payment flow — Phase 2.</p>
       </Modal>}
       {false && <Modal isOpen={isFeatureVendorModalOpen} onClose={() => setFeatureVendorModalOpen(false)} title={`Feature ${vendorToFeature?.name}`}>
-        <StripePaymentForm
-          amount={10}
-          description={`One-time fee to feature ${vendorToFeature?.name}`}
-          onSuccess={handleConfirmFeatureVendor}
-          onBack={() => setFeatureVendorModalOpen(false)}
-        />
+        <p className="text-gray-500 text-sm text-center py-4">Payment flow — Phase 2.</p>
       </Modal>}
-       <Modal isOpen={isPromotionModalOpen} onClose={() => setPromotionModalOpen(false)} title={`Purchase: ${selectedPromotion?.title}`}>
-        {selectedPromotion && (
-          <StripePaymentForm 
-            amount={selectedPromotion.price}
-            description={selectedPromotion.description}
-            onSuccess={handleConfirmPromotion}
-            onBack={() => setPromotionModalOpen(false)}
-          />
-        )}
+      <Modal isOpen={isPromotionModalOpen} onClose={() => setPromotionModalOpen(false)} title={`Purchase: ${selectedPromotion?.title}`}>
+        <p className="text-gray-500 text-sm text-center py-4">Payment flow — coming in Phase 2.</p>
       </Modal>
       <Modal isOpen={isApplicationFormOpen} onClose={() => setApplicationFormOpen(false)} title={`Apply to ${marketToApplyTo?.name}`}>
         {marketToApplyTo && ownedVendor && (

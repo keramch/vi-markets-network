@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
+    "@stripe/stripe-js": "^9.8.0",
     "firebase": "^12.9.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.575.0",

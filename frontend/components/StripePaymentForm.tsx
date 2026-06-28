@@ -1,88 +1,160 @@
-
 import React, { useState } from 'react';
-import { CreditCardIcon } from './Icons';
+import { loadStripe } from '@stripe/stripe-js';
+import { firebaseAuth } from '../services/firebase';
+
+// Initialized for future embedded payment flows if needed
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '');
+void stripePromise;
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 interface StripePaymentFormProps {
-  amount: number;
-  description: string;
-  onSuccess: () => void;
-  onBack?: () => void;
+  billingCycle: '6month' | 'annual';
+  uid: string;
+  userEmail: string;
+  onCancel: () => void;
 }
 
-const StripePaymentForm: React.FC<StripePaymentFormProps> = ({ amount, description, onSuccess, onBack }) => {
-  const [isLoading, setIsLoading] = useState(false);
+type PriceId = '6month' | '12month';
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+interface Plan {
+  priceId: PriceId;
+  label: string;
+  price: number;
+  note: string;
+  badge?: string;
+}
+
+const PLANS: Plan[] = [
+  {
+    priceId: '6month',
+    label: '6 Months',
+    price: 30,
+    note: 'CAD',
+  },
+  {
+    priceId: '12month',
+    label: '12 Months',
+    price: 50,
+    note: 'CAD',
+    badge: 'Save $20',
+  },
+];
+
+const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
+  billingCycle,
+  uid,
+  onCancel,
+}) => {
+  const [selectedPriceId, setSelectedPriceId] = useState<PriceId>(
+    billingCycle === 'annual' ? '12month' : '6month'
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleProceed = async () => {
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const token = await firebaseAuth.currentUser?.getIdToken();
+      const res = await fetch(`${BASE_URL}/stripe/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ priceId: selectedPriceId, uid }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error || `Request failed (${res.status})`);
+      }
+
+      const { url } = await res.json() as { url: string };
+      window.location.href = url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setIsLoading(false);
-      onSuccess();
-    }, 2000);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="text-center">
-        <p className="text-gray-600">{description}</p>
-        <p className="text-3xl font-bold text-brand-blue">${amount.toFixed(2)}</p>
-      </div>
-      
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700">Card Number</label>
-          <div className="relative mt-1">
-            <input type="text" id="cardNumber" className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pl-10" placeholder="0000 0000 0000 0000" required />
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <CreditCardIcon className="h-5 w-5 text-gray-400" />
+    <div className="space-y-6">
+      <p className="text-center text-gray-500 text-sm">
+        Choose your Pro membership term. You'll be redirected to a secure Stripe checkout page to complete payment.
+      </p>
+
+      <div className="space-y-3">
+        {PLANS.map((plan) => (
+          <button
+            key={plan.priceId}
+            type="button"
+            onClick={() => setSelectedPriceId(plan.priceId)}
+            className={`w-full text-left rounded-xl border-2 px-5 py-4 transition-all ${
+              selectedPriceId === plan.priceId
+                ? 'border-brand-light-blue bg-brand-light-blue/10'
+                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-brand-blue">{plan.label}</span>
+                  {plan.badge && (
+                    <span className="text-xs font-semibold bg-brand-gold text-white px-2 py-0.5 rounded-full">
+                      {plan.badge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-400 mt-0.5">{plan.note}</p>
+              </div>
+              <span className="text-2xl font-bold text-brand-blue">${plan.price}</span>
             </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-            <div>
-                 <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">Expiry (MM/YY)</label>
-                 <input type="text" id="expiryDate" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" placeholder="MM/YY" required />
-            </div>
-             <div>
-                 <label htmlFor="cvc" className="block text-sm font-medium text-gray-700">CVC</label>
-                 <input type="text" id="cvc" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3" placeholder="123" required />
-            </div>
-        </div>
+          </button>
+        ))}
       </div>
 
-      <div className="flex items-center space-x-4">
-        {onBack && (
-            <button
-                type="button"
-                onClick={onBack}
-                disabled={isLoading}
-                className="w-1/3 bg-gray-200 text-gray-700 py-2.5 px-4 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50"
-            >
-                Back
-            </button>
-        )}
-        <button 
-          type="submit" 
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-center">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
           disabled={isLoading}
-          className="w-full bg-brand-blue text-white font-semibold py-2.5 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center disabled:bg-brand-light-blue"
+          className="flex-1 border border-gray-300 text-gray-700 font-medium py-3 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-40"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleProceed}
+          disabled={isLoading}
+          className="flex-[2] bg-brand-blue text-white font-semibold py-3 px-6 rounded-full hover:bg-brand-blue/90 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
         >
           {isLoading ? (
             <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing...
+              <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Redirecting to Stripe…
             </>
           ) : (
-            `Pay $${amount.toFixed(2)}`
+            'Proceed to Payment →'
           )}
         </button>
       </div>
-       <p className="text-xs text-gray-500 text-center">This is a simulated payment form for demonstration purposes.</p>
-    </form>
+
+      <p className="text-xs text-gray-400 text-center">
+        Payments are processed securely by Stripe. VI Markets does not store your card details.
+      </p>
+    </div>
   );
 };
 
