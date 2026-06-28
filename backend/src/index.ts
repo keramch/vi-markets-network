@@ -14,11 +14,16 @@ import marketApplicationsRouter from "./routes/marketApplications";
 import vendorApplicationsRouter from "./routes/vendorApplications";
 import followsRouter from "./routes/follows";
 import brevoRouter from "./routes/brevo";
+import stripeRouter from "./routes/stripe";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
+
+// Stripe webhook MUST be registered before express.json() — raw body required for signature verification
+app.use("/stripe", stripeRouter);
+
 app.use(express.json());
 
 app.get("/", (_req, res) => {
