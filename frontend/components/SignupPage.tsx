@@ -23,8 +23,6 @@ interface SignupPageProps {
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
-const BETA_INVITE_CODE = import.meta.env.VITE_INVITE_CODE ?? '';
-
 function StepDots({ step, totalSteps }: { step: number; totalSteps: number }) {
   return (
     <div className="flex items-center justify-center gap-3 mb-6">
@@ -73,10 +71,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
   onSignupSuccess,
 }) => {
   const navigate = useNavigate();
-  // Invite code gate
-  const [inviteCode, setInviteCode] = useState('');
-  const [inviteCodeError, setInviteCodeError] = useState('');
-  const [inviteCodeVerified, setInviteCodeVerified] = useState(false);
 
   // Wizard navigation
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
@@ -296,62 +290,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
       <div className="container mx-auto px-4 py-10 max-w-2xl">
 
-        {/* ── Invite code gate ──────────────────────────────────────────── */}
-        {!inviteCodeVerified && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 mb-6">
-            <h2 className="text-2xl font-serif text-brand-blue text-center mb-2">
-              Enter Your Invite Code
-            </h2>
-            <p className="text-center text-sm text-gray-500 mb-6">
-              VI Markets Network is currently invite-only.
-            </p>
-            <div className="mb-1">
-              <label className={labelCls}>Invite Code</label>
-              <input
-                type="text"
-                value={inviteCode}
-                onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setInviteCodeError(''); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (inviteCode.trim() === BETA_INVITE_CODE) {
-                      setInviteCodeVerified(true);
-                    } else {
-                      setInviteCodeError('Invalid invite code. VI Markets Network is currently invite-only.');
-                    }
-                  }
-                }}
-                className={inputCls}
-                placeholder="Enter your invite code"
-                autoComplete="off"
-              />
-              {inviteCodeError && <p className={errCls}>{inviteCodeError}</p>}
-              <p className="text-xs text-gray-400 mt-1.5">
-                Don't have an invite code?{' '}
-                <a href="https://vimarkets.ca" target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline">
-                  Join the waitlist at vimarkets.ca
-                </a>
-              </p>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  if (inviteCode.trim() === BETA_INVITE_CODE) {
-                    setInviteCodeVerified(true);
-                  } else {
-                    setInviteCodeError('Invalid invite code. VI Markets Network is currently invite-only.');
-                  }
-                }}
-                className="bg-brand-blue text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-blue/90 transition-colors"
-              >
-                Continue →
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="bg-white rounded-2xl shadow-lg">
-          {!inviteCodeVerified ? null : !isSuccess ? (
+          {!isSuccess ? (
             <div className="p-6 md:p-10">
               {/* Step counter + dots */}
               <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
