@@ -23,6 +23,7 @@ interface ProfileManagerProps {
   onBack: () => void;
   isAdmin: boolean;
   onToggleAutoRenew: (autoRenew: boolean) => void;
+  onOpenUpgradeModal?: () => void;
 }
 
 const isMarket = (profile: Market | Vendor): profile is Market => {
@@ -49,7 +50,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     onModerateReview,
     onUpdateApplicationStatus,
     isAdmin,
-    onToggleAutoRenew
+    onToggleAutoRenew,
+    onOpenUpgradeModal
 }) => {
   const [formData, setFormData] = useState(profileData);
   const [scheduleConflicts, setScheduleConflicts] = useState<string[]>([]);
@@ -79,6 +81,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [dismissedSuggestionId, setDismissedSuggestionId] = useState<string | null>(null);
 
   const isProMember = user?.subscription?.tier === 'pro' || user?.subscription?.tier === 'superPro' || user?.subscription?.foundingMember === true;
+  const isFreeUser = !user?.subscription?.foundingMember && (user?.subscription?.tier === 'free' || !user?.subscription?.tier);
 
   useEffect(() => {
     if (!isMarket(formData)) return;
@@ -759,6 +762,15 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                   );
                                 })()}
 
+                                {isFreeUser && ((formData as Vendor).attendingMarkets?.length ?? 0) + pendingLinks.length + pendingNewMarkets.length >= 3 ? (
+                                  <p className="text-sm text-gray-500 italic mt-2">
+                                    Free accounts can connect to up to 3 markets.{' '}
+                                    {onOpenUpgradeModal ? (
+                                      <button type="button" onClick={onOpenUpgradeModal} className="underline text-brand-light-blue hover:text-brand-blue">Upgrade to Pro</button>
+                                    ) : 'Upgrade to Pro'}{' '}
+                                    for unlimited connections.
+                                  </p>
+                                ) : (<>
                                 {/* Search for an existing market */}
                                 {!selectedSearchResult ? (
                                   <div className="mb-4">
@@ -968,6 +980,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                     </div>
                                   </div>
                                 )}
+                                </>)}
                             </div>
                         </>
                     )}
@@ -1042,17 +1055,23 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 </div>
                             </div>
                         )}
-                        {(formData.photos?.length ?? 0) < 6 ? (
+                        {isFreeUser && (formData.photos?.length ?? 0) >= 3 ? (
+                            <p className="text-sm text-gray-500 italic">
+                                Free accounts include up to 3 gallery photos.{' '}
+                                {onOpenUpgradeModal ? (
+                                    <button type="button" onClick={onOpenUpgradeModal} className="underline text-brand-light-blue hover:text-brand-blue">Upgrade to Pro</button>
+                                ) : 'Upgrade to Pro'}{' '}
+                                for unlimited photos.
+                            </p>
+                        ) : (
                             <ImageUploader
                                 id="gallery-manager"
-                                label={`Add Gallery Photos (${6 - (formData.photos?.length ?? 0)} of 6 slots remaining)`}
+                                label={isFreeUser ? `Add Gallery Photos (${3 - (formData.photos?.length ?? 0)} of 3 slots remaining)` : 'Add Gallery Photos'}
                                 onFilesChanged={(files) => setPendingGalleryFiles(files)}
-                                maxFiles={6 - (formData.photos?.length ?? 0)}
+                                maxFiles={isFreeUser ? 3 - (formData.photos?.length ?? 0) : undefined}
                                 maxSizeKB={MAX_IMAGE_SIZE_BYTES / 1024}
                                 allowedTypes={ALLOWED_IMAGE_TYPES}
                             />
-                        ) : (
-                            <p className="text-sm text-gray-500 italic">Gallery is full (6/6). Remove a photo above to add more.</p>
                         )}
                     </div>
                 </>

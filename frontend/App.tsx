@@ -1032,6 +1032,7 @@ const App: React.FC = () => {
                   onUpdateApplicationStatus={handleUpdateApplicationStatus}
                   onSaveChanges={handleUpdateProfile}
                   onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
+                  onOpenUpgradeModal={() => setMembershipModalOpen(true)}
                   onBack={() => navigate(isMarket(profileData) ? '/dashboard/my-market' : '/')}
                   isAdmin={false}
                 />
