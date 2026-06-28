@@ -49,6 +49,8 @@ router.post("/create-checkout-session", express.json(), async (req, res) => {
       customer_email: decoded.email,
       metadata: { uid, billingCycle },
       allow_promotion_codes: true,
+      automatic_tax: { enabled: true },
+      billing_address_collection: 'auto',
     });
 
     return res.json({ url: session.url });
