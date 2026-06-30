@@ -67,9 +67,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
 
         {/* ── Hero Strip ──────────────────────────────────────────────── */}
         <div
-          className="relative w-full"
+          className="relative w-full h-56 md:h-72"
           style={{
-            height: '140px',
             // Swap back to illustration once a properly-cropped wide asset is ready:
             // backgroundImage: 'url(/vendor-hero-fallback.png)',
             // backgroundSize: 'cover',
