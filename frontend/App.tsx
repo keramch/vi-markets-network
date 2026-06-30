@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 
 import Header from './components/Header';
@@ -1208,7 +1208,21 @@ const App: React.FC = () => {
           title="Forgot Password"
           maxWidth="sm"
         >
-        <ForgotPasswordForm onSendRecoveryEmail={(email) => { showNotification(`Recovery email sent to ${email}.`); setForgotPasswordOpen(false); }} />
+        <ForgotPasswordForm onSendRecoveryEmail={async (email) => {
+          try {
+            await sendPasswordResetEmail(firebaseAuth, email);
+            showNotification(`Recovery email sent to ${email}.`);
+            setForgotPasswordOpen(false);
+          } catch (err: unknown) {
+            const code = (err as { code?: string }).code;
+            if (code === 'auth/user-not-found' || code === 'auth/invalid-email') {
+              showNotification('If an account exists for this email, a reset link has been sent.');
+              setForgotPasswordOpen(false);
+            } else {
+              showNotification('Something went wrong. Please try again.');
+            }
+          }
+        }} />
       </Modal>
       <Modal
         isOpen={isMembershipModalOpen}
