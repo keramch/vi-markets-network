@@ -423,7 +423,7 @@ const HomePage: React.FC<HomePageProps> = ({
             Your Guide to Island Markets
           </h1>
           <p className="max-w-2xl mx-auto mb-8 text-lg text-brand-teal-light">
-            Find farmers markets, artisan goods, and fresh produce on Vancouver
+            Find all things handmade, homemade, and locally grown or created on Vancouver
             Island.
           </p>
 

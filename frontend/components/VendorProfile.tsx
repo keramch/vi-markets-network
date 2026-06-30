@@ -7,6 +7,7 @@ import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import ShareButton from './ShareButton';
+import PhotoGallery from './PhotoGallery';
 
 interface VendorProfileProps {
   vendor: Vendor;
@@ -142,16 +143,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
         {vendor.photos && vendor.photos.length > 0 && (
           <div className="p-6 md:p-8 border-t">
             <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {vendor.photos.slice(0, 4).map((photo, i) => (
-                <img
-                  key={i}
-                  src={photo}
-                  alt={`${vendor.name} photo ${i + 1}`}
-                  className="w-full aspect-square object-cover rounded-lg"
-                />
-              ))}
-            </div>
+            <PhotoGallery photos={vendor.photos} altPrefix={vendor.name} />
           </div>
         )}
 
