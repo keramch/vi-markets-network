@@ -70,9 +70,11 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           className="relative w-full"
           style={{
             height: '140px',
-            backgroundImage: 'url(/vendor-hero-fallback.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            // Swap back to illustration once a properly-cropped wide asset is ready:
+            // backgroundImage: 'url(/vendor-hero-fallback.png)',
+            // backgroundSize: 'cover',
+            // backgroundPosition: 'center',
+            background: 'linear-gradient(135deg, #2E7A72 0%, #4A4243 100%)',
           }}
           aria-hidden="true"
         >
