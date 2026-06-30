@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { Vendor, Market, User } from '../types';
 import { InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, TikTokIcon, RibbonIcon } from './Icons';
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
@@ -33,6 +33,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
   onSelectMarket, isFavorited, onToggleFavorite,
   currentUser, onAddReview, onFeatureVendor, onContactSubmit, onOpenLoginModal,
 }) => {
+  const [contactOpen, setContactOpen] = useState(false);
+
   const attendingEntries = (vendor.attendingMarkets || [])
     .map(entry => {
       const market = markets.find(m => m.id === entry.marketId);
@@ -63,33 +65,80 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
 
-        {/* ── Section 1: Hero ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-3">
+        {/* ── Hero Strip ──────────────────────────────────────────────── */}
+        <div
+          className="relative w-full"
+          style={{
+            height: '140px',
+            backgroundImage: 'url(/vendor-hero-fallback.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+          aria-hidden="true"
+        >
+          {/* Gradient: transparent → charcoal, bottom 40% only */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(74,66,67,0.72) 0%, transparent 42%)' }}
+          />
+        </div>
 
-          {/* Left panel */}
-          <div className="bg-brand-cream p-6 flex flex-col items-center justify-center text-center gap-2">
-            {(vendor.logoUrl || vendor.photos?.[0])
-              ? <img className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" src={vendor.logoUrl || vendor.photos[0]} alt={`${vendor.name} logo`} />
-              : <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center"><span className="text-brand-blue text-4xl font-serif">{vendor.name[0]}</span></div>
-            }
-            <span className="text-xs font-semibold text-brand-light-blue uppercase tracking-wider leading-tight">
-              {vendor.vendorTypes && vendor.vendorTypes.length > 0 ? vendor.vendorTypes.join(' · ') : vendor.category}
-            </span>
-            <div className="flex items-center gap-1.5 flex-wrap justify-center">
-              {isFoundingMember && (
-                <div className="text-brand-gold" title="Founding Member">
-                  <RibbonIcon className="w-5 h-5" />
+        {/* ── Identity Panel ──────────────────────────────────────────── */}
+        <div className="bg-brand-cream px-6 md:px-8 pt-3 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+
+            {/* Logo + name block */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
+              {/* Logo — negative margin pulls it up to straddle the hero/panel seam */}
+              <div className="relative -mt-10 flex-shrink-0 z-10">
+                {(vendor.logoUrl || vendor.photos?.[0])
+                  ? <img
+                      className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                      src={vendor.logoUrl || vendor.photos[0]}
+                      alt={`${vendor.name} logo`}
+                    />
+                  : <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center">
+                      <span className="text-brand-blue text-4xl font-serif">{vendor.name[0]}</span>
+                    </div>
+                }
+              </div>
+
+              {/* Type label, name, vendorType chips */}
+              <div className="text-center sm:text-left sm:pt-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+                  {vendor.vendorTypes && vendor.vendorTypes.length > 0
+                    ? vendor.vendorTypes.join(' · ')
+                    : vendor.category}
+                </p>
+                <div className="flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
+                  {isFoundingMember && (
+                    <span className="text-brand-gold" title="Founding Member">
+                      <RibbonIcon className="w-5 h-5" />
+                    </span>
+                  )}
+                  <h1 className="text-2xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
                 </div>
-              )}
-              <h1 className="text-2xl font-extrabold text-brand-blue font-serif">{vendor.name}</h1>
+                {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 justify-center sm:justify-start">
+                    {vendor.vendorTypes.map(t => (
+                      <span key={t} className="text-xs bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-1">
+
+            {/* Follow + Message + Share buttons */}
+            <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end sm:pt-2 flex-shrink-0">
               {currentUser ? (
                 <button
                   onClick={() => onToggleFavorite(vendor.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 flex-shrink-0 ${isFavorited ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-brand-blue'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                    isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+                  }`}
                   aria-label={isFavorited ? 'Unfollow this vendor' : 'Follow this vendor'}
-                  title={isFavorited ? 'Unfollow this vendor' : 'Follow this vendor'}
                 >
                   {isFavorited ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
                   {isFavorited ? 'Following' : 'Follow'}
@@ -97,46 +146,73 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
               ) : (
                 <button
                   onClick={onOpenLoginModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-400 hover:bg-gray-200 transition-colors duration-200 flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200"
                   title="Log in or sign up to follow"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   Follow
                 </button>
               )}
-              <ShareButton className="p-2 rounded-full transition-colors duration-200 ease-in-out text-gray-400 hover:bg-gray-100 hover:text-brand-blue" />
-            </div>
-          </div>
 
-          {/* Right panel */}
-          <div className="md:col-span-2 p-6 md:p-8">
-            <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
-            <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
-            <hr className="my-4 border-gray-200" />
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
-            {vendor.tags && vendor.tags.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {vendor.tags.map(tag => (
-                  <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">{tag}</span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">No tags added yet.</p>
-            )}
-
-            {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
-            {false && currentUser && !vendor.isFeatured && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
+              {vendor.contact?.email && (
                 <button
-                  onClick={() => onFeatureVendor(vendor.id)}
-                  className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
+                  type="button"
+                  onClick={() => setContactOpen(o => !o)}
+                  aria-expanded={contactOpen}
+                  aria-controls="vendor-contact-disclosure"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                    contactOpen
+                      ? 'bg-brand-blue text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+                  }`}
                 >
-                  ⭐️ Feature this Vendor
+                  {contactOpen ? 'Close' : 'Message'}
                 </button>
-              </div>
-            )}
+              )}
+
+              <ShareButton className="p-2 rounded-full transition-colors duration-200 text-gray-400 hover:bg-white hover:text-brand-blue" />
+            </div>
+
           </div>
 
+          {/* Inline contact form — only mounted in the DOM when open */}
+          {contactOpen && vendor.contact?.email && (
+            <div id="vendor-contact-disclosure" className="mt-5 pt-5 border-t border-gray-200">
+              <ContactForm
+                recipientEmail={vendor.contact.email}
+                currentUser={currentUser}
+                onSend={onContactSubmit}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ── About + Good to know ────────────────────────────────────── */}
+        <div className="p-6 md:p-8 border-t bg-white">
+          <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
+          <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
+          <hr className="my-4 border-gray-200" />
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
+          {vendor.tags && vendor.tags.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {vendor.tags.map(tag => (
+                <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">{tag}</span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">No tags added yet.</p>
+          )}
+          {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
+          {false && currentUser && !vendor.isFeatured && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <button
+                onClick={() => onFeatureVendor(vendor.id)}
+                className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
+              >
+                ⭐️ Feature this Vendor
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Section 2: Gallery ──────────────────────────────────────────── */}
