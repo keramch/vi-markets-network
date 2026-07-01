@@ -249,6 +249,7 @@ export interface Vendor {
   name: string;
   logoUrl?: string;
   headerPhotoUrl?: string;
+  headerPhotoPosition?: 'top' | 'center' | 'bottom';
   description: string;
   vendorTypes?: VendorType[];
   tags?: string[];
@@ -294,6 +295,7 @@ export interface Market {
   name: string;
   logoUrl?: string;
   headerPhotoUrl?: string;
+  headerPhotoPosition?: 'top' | 'center' | 'bottom';
   description: string;
   marketTypes: MarketCategory[];
   tags?: string[];

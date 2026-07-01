@@ -1035,7 +1035,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 <p className="text-sm font-medium text-gray-700 mb-1">
                                     Current Gallery ({formData.photos.length} photo{formData.photos.length !== 1 ? 's' : ''})
                                 </p>
-                                <p className="text-xs text-gray-500 mb-2">Hover a photo and click "Set header" to use it as the hero banner.</p>
+                                <p className="text-xs text-gray-500 mb-2">Hover a photo and click "Set header" to use it as the hero banner. Wide, simple compositions work best — busy or portrait-oriented photos may get cropped. Use the Top / Ctr / Bot control on the active header to adjust framing.</p>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                     {formData.photos.map((url, i) => {
                                         const isHeader = formData.headerPhotoUrl === url;
@@ -1061,9 +1061,26 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                                 >
                                                     <XIcon className="w-3 h-3" />
                                                 </button>
+                                                {isHeader && (
+                                                    <div className="absolute inset-x-0 bottom-5 flex">
+                                                        {(['top', 'center', 'bottom'] as const).map(pos => {
+                                                            const active = (formData.headerPhotoPosition ?? 'center') === pos;
+                                                            return (
+                                                                <button
+                                                                    key={pos}
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); setFormData({ ...formData, headerPhotoPosition: pos }); }}
+                                                                    className={`flex-1 text-[9px] leading-none py-0.5 font-medium transition-colors border-x border-white/20 first:border-l-0 last:border-r-0 ${active ? 'bg-brand-blue text-white' : 'bg-black/55 text-white/80 hover:bg-black/70'}`}
+                                                                >
+                                                                    {pos === 'top' ? 'Top' : pos === 'center' ? 'Ctr' : 'Bot'}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
                                                 <button
                                                     type="button"
-                                                    onClick={() => setFormData({ ...formData, headerPhotoUrl: isHeader ? undefined : url })}
+                                                    onClick={() => setFormData({ ...formData, headerPhotoUrl: isHeader ? undefined : url, headerPhotoPosition: undefined })}
                                                     className={`absolute inset-x-0 bottom-0 text-xs py-0.5 rounded-b-md font-medium transition-all ${isHeader ? 'bg-brand-blue text-white' : 'bg-black/60 text-white opacity-0 group-hover:opacity-100'}`}
                                                 >
                                                     {isHeader ? '★ Header' : 'Set header'}

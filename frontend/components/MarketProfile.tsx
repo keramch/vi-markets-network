@@ -79,6 +79,9 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   }
 
   const isFoundingMember = owner?.subscription?.foundingMember;
+  const heroObjPosition = market.headerPhotoPosition === 'top' ? 'center top'
+    : market.headerPhotoPosition === 'bottom' ? 'center bottom'
+    : 'center center';
   const approvedReviews = market.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
   const hasAlreadyReviewed = currentUser
@@ -92,7 +95,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
         {/* ── Section 1: Hero ─────────────────────────────────────────────── */}
         <div className="relative">
           {(market.headerPhotoUrl ?? market.photos?.[0])
-            ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt="" />
+            ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt="" style={{ objectPosition: heroObjPosition }} />
             : <div className="w-full h-56 md:h-72 bg-brand-cream flex items-center justify-center"><span className="text-brand-blue/20 text-8xl font-serif">{market.name[0]}</span></div>
           }
           {/* Scrim */}

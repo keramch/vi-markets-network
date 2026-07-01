@@ -62,6 +62,9 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
     : false;
 
   const heroPhoto = vendor.headerPhotoUrl || vendor.photos?.[0];
+  const heroBgPosition = vendor.headerPhotoPosition === 'top' ? 'center top'
+    : vendor.headerPhotoPosition === 'bottom' ? 'center bottom'
+    : 'center center';
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -73,7 +76,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           style={heroPhoto ? {
             backgroundImage: `url(${heroPhoto})`,
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundPosition: heroBgPosition,
           } : {
             background: 'linear-gradient(135deg, #2E7A72 0%, #4A4243 100%)',
           }}
