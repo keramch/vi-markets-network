@@ -188,41 +188,50 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           )}
         </div>
 
-        {/* ── About + Good to know ────────────────────────────────────── */}
+        {/* ── About + Good to know | Gallery ───────────────────────────── */}
         <div className="p-6 md:p-8 border-t bg-white">
-          <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
-          <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
-          <hr className="my-4 border-gray-200" />
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
-          {vendor.tags && vendor.tags.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {vendor.tags.map(tag => (
-                <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">{tag}</span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-gray-400">No tags added yet.</p>
-          )}
-          {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
-          {false && currentUser && !vendor.isFeatured && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <button
-                onClick={() => onFeatureVendor(vendor.id)}
-                className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
-              >
-                ⭐️ Feature this Vendor
-              </button>
-            </div>
-          )}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
 
-        {/* ── Section 2: Gallery ──────────────────────────────────────────── */}
-        {vendor.photos && vendor.photos.length > 0 && (
-          <div className="p-6 md:p-8 border-t">
-            <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
-            <PhotoGallery photos={vendor.photos} altPrefix={vendor.name} />
+            {/* Left ~60%: About + Good to know */}
+            <div className="md:col-span-3">
+              <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
+              <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
+              <hr className="my-4 border-gray-200" />
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
+              {vendor.tags && vendor.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {vendor.tags.map(tag => (
+                    <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">{tag}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400">No tags added yet.</p>
+              )}
+              {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
+              {false && currentUser && !vendor.isFeatured && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => onFeatureVendor(vendor.id)}
+                    className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
+                  >
+                    ⭐️ Feature this Vendor
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right ~40%: Gallery */}
+            <div className="md:col-span-2">
+              {vendor.photos && vendor.photos.length > 0 && (
+                <>
+                  <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
+                  <PhotoGallery photos={vendor.photos} altPrefix={vendor.name} />
+                </>
+              )}
+            </div>
+
           </div>
-        )}
+        </div>
 
         {/* ── Section 3: Connect | Find Us At ─────────────────────────────── */}
         <div className="p-6 md:p-8 border-t">
