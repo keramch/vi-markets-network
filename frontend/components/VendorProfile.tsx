@@ -188,11 +188,11 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           )}
         </div>
 
-        {/* ── About + Good to know | Gallery ───────────────────────────── */}
+        {/* ── About + Good to know + Find Us At | Gallery ──────────────── */}
         <div className="p-6 md:p-8 border-t bg-white">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
 
-            {/* Left ~60%: About + Good to know */}
+            {/* Left ~60%: About + Good to know + Find Us At */}
             <div className="md:col-span-3">
               <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
               <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
@@ -218,70 +218,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* Right ~40%: Gallery */}
-            <div className="md:col-span-2">
-              {vendor.photos && vendor.photos.length > 0 && (
-                <>
-                  <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
-                  <PhotoGallery photos={vendor.photos} altPrefix={vendor.name} />
-                </>
-              )}
-            </div>
-
-          </div>
-        </div>
-
-        {/* ── Section 3: Connect | Find Us At ─────────────────────────────── */}
-        <div className="p-6 md:p-8 border-t">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-            {/* Left: Connect */}
-            <div className="order-2 md:order-1">
-              <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
-              {hasSocials && (
-                <div className="flex gap-3 mb-5">
-                  {vendor.contact?.socials?.instagram && (
-                    <a href={`https://instagram.com/${vendor.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <InstagramIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.facebook && (
-                    <a href={`https://facebook.com/${vendor.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <FacebookIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.pinterest && (
-                    <a href={`https://pinterest.com/${vendor.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <PinterestIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.etsy && (
-                    <a href={`https://etsy.com/shop/${vendor.contact.socials.etsy}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <EtsyIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.tiktok && (
-                    <a href={`https://tiktok.com/@${vendor.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <TikTokIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.website && (
-                    <a href={vendor.contact.socials.website.startsWith('http') ? vendor.contact.socials.website : `https://${vendor.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <Globe className="w-5 h-5" />
-                    </a>
-                  )}
-                </div>
-              )}
-              {vendor.contact?.email && (
-                <ContactForm recipientEmail={vendor.contact.email} currentUser={currentUser} onSend={onContactSubmit} />
-              )}
-            </div>
-
-            {/* Right: Find Us At */}
-            <div className="order-1 md:order-2">
-              <h2 className="text-2xl text-brand-blue font-serif mb-5">Find Us At</h2>
+              <hr className="my-4 border-gray-200" />
+              <h2 className="text-2xl text-brand-blue font-serif mb-3">Find Us At</h2>
               {currentEntries.length > 0 ? (
                 <div className="space-y-3">
                   {currentEntries.map(({ market, date }) => {
@@ -332,51 +270,110 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
               )}
             </div>
 
+            {/* Right ~40%: Gallery */}
+            <div className="md:col-span-2">
+              {vendor.photos && vendor.photos.length > 0 && (
+                <>
+                  <h2 className="text-2xl text-brand-blue font-serif mb-4">Gallery</h2>
+                  <PhotoGallery photos={vendor.photos} altPrefix={vendor.name} />
+                </>
+              )}
+            </div>
+
           </div>
         </div>
 
-        {/* ── Section 4: Reviews ──────────────────────────────────────────── */}
+        {/* ── Connect with [Vendor] | Reviews ─────────────────────────────── */}
         <div className="p-6 md:p-8 border-t">
-          <h2 className="text-2xl text-brand-blue font-serif mb-6">Reviews</h2>
-          {currentUser
-            ? hasAlreadyReviewed
-              ? <p className="text-sm text-gray-500 mb-8">You've already reviewed this profile.</p>
-              : <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>
-            : (
-              <p className="text-sm text-gray-500 mb-8">
-                <button onClick={onOpenLoginModal} className="text-brand-teal hover:underline font-medium">Log in</button>
-                {' '}or{' '}
-                <a href="/signup" className="text-brand-teal hover:underline font-medium">sign up free</a>
-                {' '}to leave a review.
-              </p>
-            )
-          }
-          {approvedReviews.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {displayedReviews.map(review => (
-                  <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="font-medium text-brand-text">{review.author}</p>
-                      {review.reviewerAccountType === 'vendor' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-teal font-medium">Vendor</span>
-                      )}
-                      {review.reviewerAccountType === 'market' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-teal font-medium">Organizer</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600">{review.comment}</p>
-                    <p className="text-xs text-gray-400 mt-2">{review.date}</p>
-                  </div>
-                ))}
-              </div>
-              {approvedReviews.length > 12 && (
-                <p className="text-sm text-gray-400 mt-4">Showing 12 of {approvedReviews.length} reviews</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            {/* Left: Connect */}
+            <div>
+              <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
+              {hasSocials && (
+                <div className="flex gap-3 mb-5">
+                  {vendor.contact?.socials?.instagram && (
+                    <a href={`https://instagram.com/${vendor.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <InstagramIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {vendor.contact?.socials?.facebook && (
+                    <a href={`https://facebook.com/${vendor.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <FacebookIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {vendor.contact?.socials?.pinterest && (
+                    <a href={`https://pinterest.com/${vendor.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <PinterestIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {vendor.contact?.socials?.etsy && (
+                    <a href={`https://etsy.com/shop/${vendor.contact.socials.etsy}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <EtsyIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {vendor.contact?.socials?.tiktok && (
+                    <a href={`https://tiktok.com/@${vendor.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <TikTokIcon className="w-5 h-5" />
+                    </a>
+                  )}
+                  {vendor.contact?.socials?.website && (
+                    <a href={vendor.contact.socials.website.startsWith('http') ? vendor.contact.socials.website : `https://${vendor.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                      <Globe className="w-5 h-5" />
+                    </a>
+                  )}
+                </div>
               )}
-            </>
-          ) : (
-            <p className="text-gray-500">This vendor has no reviews yet.</p>
-          )}
+              {vendor.contact?.email && (
+                <ContactForm recipientEmail={vendor.contact.email} currentUser={currentUser} onSend={onContactSubmit} />
+              )}
+            </div>
+
+            {/* Right: Reviews */}
+            <div>
+              <h2 className="text-2xl text-brand-blue font-serif mb-6">Reviews</h2>
+              {currentUser
+                ? hasAlreadyReviewed
+                  ? <p className="text-sm text-gray-500 mb-8">You've already reviewed this profile.</p>
+                  : <div className="mb-8"><ReviewForm onSubmit={onAddReview} /></div>
+                : (
+                  <p className="text-sm text-gray-500 mb-8">
+                    <button onClick={onOpenLoginModal} className="text-brand-teal hover:underline font-medium">Log in</button>
+                    {' '}or{' '}
+                    <a href="/signup" className="text-brand-teal hover:underline font-medium">sign up free</a>
+                    {' '}to leave a review.
+                  </p>
+                )
+              }
+              {approvedReviews.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {displayedReviews.map(review => (
+                      <div key={review.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-medium text-brand-text">{review.author}</p>
+                          {review.reviewerAccountType === 'vendor' && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-teal font-medium">Vendor</span>
+                          )}
+                          {review.reviewerAccountType === 'market' && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-teal font-medium">Organizer</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{review.comment}</p>
+                        <p className="text-xs text-gray-400 mt-2">{review.date}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {approvedReviews.length > 12 && (
+                    <p className="text-sm text-gray-400 mt-4">Showing 12 of {approvedReviews.length} reviews</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-500">This vendor has no reviews yet.</p>
+              )}
+            </div>
+
+          </div>
         </div>
 
       </div>
