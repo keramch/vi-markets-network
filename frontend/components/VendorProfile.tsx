@@ -62,9 +62,9 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
     : false;
 
   const heroPhoto = vendor.headerPhotoUrl || vendor.photos?.[0];
-  const heroBgPosition = vendor.headerPhotoPosition === 'top' ? 'center top'
-    : vendor.headerPhotoPosition === 'bottom' ? 'center bottom'
-    : 'center center';
+  const heroBgPosition = vendor.headerPhotoPosition === 'top' ? 'center 25%'
+    : vendor.headerPhotoPosition === 'bottom' ? 'center 75%'
+    : 'center 50%';
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -79,9 +79,9 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   }
 
   const isFoundingMember = owner?.subscription?.foundingMember;
-  const heroObjPosition = market.headerPhotoPosition === 'top' ? 'center top'
-    : market.headerPhotoPosition === 'bottom' ? 'center bottom'
-    : 'center center';
+  const heroObjPosition = market.headerPhotoPosition === 'top' ? 'center 25%'
+    : market.headerPhotoPosition === 'bottom' ? 'center 75%'
+    : 'center 50%';
   const approvedReviews = market.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
   const hasAlreadyReviewed = currentUser
