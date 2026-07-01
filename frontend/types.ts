@@ -248,6 +248,7 @@ export interface Vendor {
   slug?: string;
   name: string;
   logoUrl?: string;
+  headerPhotoUrl?: string;
   description: string;
   vendorTypes?: VendorType[];
   tags?: string[];

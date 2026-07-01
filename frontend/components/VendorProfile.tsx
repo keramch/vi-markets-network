@@ -61,6 +61,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
     ? vendor.reviews.some(r => r.userId === currentUser.id)
     : false;
 
+  const heroPhoto = vendor.headerPhotoUrl || vendor.photos?.[0];
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
@@ -68,11 +70,11 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
         {/* ── Hero Strip ──────────────────────────────────────────────── */}
         <div
           className="relative w-full h-56 md:h-72"
-          style={{
-            // Swap back to illustration once a properly-cropped wide asset is ready:
-            // backgroundImage: 'url(/vendor-hero-fallback.png)',
-            // backgroundSize: 'cover',
-            // backgroundPosition: 'center',
+          style={heroPhoto ? {
+            backgroundImage: `url(${heroPhoto})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          } : {
             background: 'linear-gradient(135deg, #2E7A72 0%, #4A4243 100%)',
           }}
           aria-hidden="true"

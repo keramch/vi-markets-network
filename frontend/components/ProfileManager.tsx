@@ -1035,12 +1035,10 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                 <p className="text-sm font-medium text-gray-700 mb-1">
                                     Current Gallery ({formData.photos.length} photo{formData.photos.length !== 1 ? 's' : ''})
                                 </p>
-                                {isMarket(formData) && (
-                                    <p className="text-xs text-gray-500 mb-2">Hover a photo and click "Set header" to use it as the hero banner.</p>
-                                )}
+                                <p className="text-xs text-gray-500 mb-2">Hover a photo and click "Set header" to use it as the hero banner.</p>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                     {formData.photos.map((url, i) => {
-                                        const isHeader = isMarket(formData) && formData.headerPhotoUrl === url;
+                                        const isHeader = formData.headerPhotoUrl === url;
                                         return (
                                             <div key={i} className="relative group">
                                                 <img
@@ -1063,15 +1061,13 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                                 >
                                                     <XIcon className="w-3 h-3" />
                                                 </button>
-                                                {isMarket(formData) && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData({ ...formData, headerPhotoUrl: isHeader ? undefined : url })}
-                                                        className={`absolute inset-x-0 bottom-0 text-xs py-0.5 rounded-b-md font-medium transition-all ${isHeader ? 'bg-brand-blue text-white' : 'bg-black/60 text-white opacity-0 group-hover:opacity-100'}`}
-                                                    >
-                                                        {isHeader ? '★ Header' : 'Set header'}
-                                                    </button>
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, headerPhotoUrl: isHeader ? undefined : url })}
+                                                    className={`absolute inset-x-0 bottom-0 text-xs py-0.5 rounded-b-md font-medium transition-all ${isHeader ? 'bg-brand-blue text-white' : 'bg-black/60 text-white opacity-0 group-hover:opacity-100'}`}
+                                                >
+                                                    {isHeader ? '★ Header' : 'Set header'}
+                                                </button>
                                             </div>
                                         );
                                     })}
