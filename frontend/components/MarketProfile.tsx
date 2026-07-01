@@ -92,11 +92,11 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
         {/* ── Section 1: Hero ─────────────────────────────────────────────── */}
         <div className="relative">
           {(market.headerPhotoUrl ?? market.photos?.[0])
-            ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt={market.name} />
+            ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt="" />
             : <div className="w-full h-56 md:h-72 bg-brand-cream flex items-center justify-center"><span className="text-brand-blue/20 text-8xl font-serif">{market.name[0]}</span></div>
           }
           {/* Scrim */}
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 
           {/* Bottom-left: logo + name + founding badge */}
           <div className="absolute bottom-4 left-4 right-36 md:bottom-5 md:left-6 md:right-44 flex items-end gap-3">
