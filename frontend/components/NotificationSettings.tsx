@@ -18,10 +18,11 @@ const ToggleSwitch: React.FC<{
   description: string;
   enabled: boolean;
   onChange: (enabled: boolean) => void;
-}> = ({ label, description, enabled, onChange }) => (
+  disabled?: boolean;
+}> = ({ label, description, enabled, onChange, disabled }) => (
   <div
-    className="flex items-center justify-between py-4 border-b cursor-pointer"
-    onClick={() => onChange(!enabled)}
+    className={`flex items-center justify-between py-4 border-b ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+    onClick={() => { if (!disabled) onChange(!enabled); }}
   >
     <div>
       <h3 className="text-lg font-semibold text-brand-blue">{label}</h3>
@@ -29,12 +30,13 @@ const ToggleSwitch: React.FC<{
     </div>
     <button
       type="button"
+      disabled={disabled}
       className={`${
         enabled ? 'bg-brand-blue' : 'bg-gray-200'
-      } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2`}
+      } relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       role="switch"
       aria-checked={enabled}
-      onClick={(e) => { e.stopPropagation(); onChange(!enabled); }}
+      onClick={(e) => { e.stopPropagation(); if (!disabled) onChange(!enabled); }}
       tabIndex={0}
     >
       <span
@@ -197,37 +199,31 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
 
         <div className="bg-white p-8 rounded-lg shadow-xl">
           <p className="mb-6 text-gray-600">
-            Choose what you want to be notified about. These settings will apply to push notifications on your mobile device.
+            Push notifications are coming soon. In the meantime, add VI Markets to your phone's home screen so you're ready the moment they launch — tap Share, then "Add to Home Screen."
           </p>
-          
+
           <div className="space-y-4">
             <ToggleSwitch
               label="Favorited Market Reminders"
               description="Get an alert when a market you've favorited is open today."
               enabled={currentSettings.favoriteMarket}
               onChange={(value) => handleSettingChange('favoriteMarket', value)}
+              disabled
             />
             <ToggleSwitch
               label="Favorited Vendor Updates"
               description="Get an alert when a vendor you've favorited is at a market today."
               enabled={currentSettings.favoriteVendor}
               onChange={(value) => handleSettingChange('favoriteVendor', value)}
+              disabled
             />
              <ToggleSwitch
               label="Nearby Market Alerts"
               description="Receive a notification when you are near any market that is currently open. This uses your device's location."
               enabled={currentSettings.nearbyMarket}
               onChange={(value) => handleSettingChange('nearbyMarket', value)}
+              disabled
             />
-          </div>
-
-          <div className="mt-8 pt-6 border-t flex justify-end">
-            <button
-              onClick={handleSaveChanges}
-              className="bg-brand-blue text-white font-semibold py-3 px-6 rounded-md hover:bg-opacity-90 transition-colors min-h-[3rem]"
-            >
-              Save Changes
-            </button>
           </div>
         </div>
       </div>
