@@ -1,7 +1,7 @@
 # CLAUDE.md — VI Markets Network
 
 This file is read automatically by Claude Code at session start.
-Last updated: July 2, 2026
+Last updated: July 2, 2026 (second pass, same day)
 
 ---
 
@@ -123,8 +123,15 @@ vi-markets-network/                   ← repo root
 │   ├── components/                   ← All UI components (NO /src/ subfolder)
 │   │   ├── AboutPage.tsx
 │   │   ├── AdminPanel.tsx
-│   │   ├── AIConcierge.tsx           ← Built, unused, not rendered anywhere
-│   │   │                               (Phase 3 stub — see Known Issues)
+│   │   ├── AIConcierge.tsx           ← ⚠️ ORPHANED — activation button was
+│   │   │                               already removed from the live site;
+│   │   │                               this component is fully disconnected.
+│   │   │                               Do NOT wire it back up: it would
+│   │   │                               expose the Gemini API key in the
+│   │   │                               public browser bundle. Recommended:
+│   │   │                               delete outright unless there's a
+│   │   │                               specific reason to keep the code for
+│   │   │                               reference (see Known Issues).
 │   │   ├── BrowsePage.tsx
 │   │   ├── CalendarView.tsx
 │   │   ├── ContactForm.tsx
@@ -327,13 +334,24 @@ Payment Accepted
 - Legal pages, About page, footer newsletter → Brevo
 - OG/Twitter Card meta tags + `og-image.png`
 - `dev` branch + Vercel preview workflow in place
+- Market Event Pages — individual public pages per event
+- Admin calendar tab — admin can add/edit/delete events from HQ
+- Location permission — no longer fires automatically on page load;
+  user-triggered "Set my location" button in place
+- TypeScript warnings (previously flagged at App.tsx:324,
+  ProfileManager.tsx:211) — resolved
+- `NotificationSettings.tsx` — misleading push-notification copy replaced
+  with honest "coming soon, add to home screen" messaging; all three
+  toggles disabled (opacity-50, cursor-not-allowed, onChange blocked);
+  "Save Changes" button and its wrapper removed. `handleSaveChanges` left
+  in place intentionally, currently unused — dormant until real push
+  notifications ship, not dead code to delete.
 
 ### ⚠️ Discovered but not built (confirm before relying on these)
 - **Admin "message a member"** — does not send anything, only logs to
   server console. Comment in code says "real email service wired later."
-- **Notification settings** — tells users it controls "push notifications
-  on your mobile device." No push notification system exists anywhere.
-  Copy is misleading; needs fixing or removing.
+  **Deliberately deprioritized** — admin-only, low visibility, Kera has
+  chosen to leave this as-is for now rather than build it out.
 - **Promotions (paid add-on) page** — confirm button does a `console.log`,
   no purchase is processed. Modal says "Payment flow — coming in Phase 2."
 - **Map on market profile** — literal placeholder, renders the text
@@ -341,23 +359,29 @@ Payment Accepted
 - Generic/mismatched help-tooltip copy about iOS microphone dictation,
   pasted identically across 4 unrelated form fields — needs real copy.
 
-### 🔴 Beta Blockers — carried from April 12, status unconfirmed since, verify before assuming resolved
-- Market Event Pages — individual public pages per event
-- Admin calendar tab — admin cannot yet add/edit/delete events from HQ
-- Location permission prompt fires too early on page load — fix is a
-  deliberate user-triggered "Set my location" button, not automatic
-  `navigator.geolocation` on mount
+### 🆕 Found July 2 (second pass) — need Kera's own action, not Claude Code
+- **"Your City" field data bug** — NOT a code bug. Traced `NotificationSettings.tsx`:
+  the `city` state and input are wired correctly (`currentUser.city ?? ''`).
+  The `hello@vimarkets.ca` account has its own email address stored as the
+  literal value of its `city` field in Firestore — a bad data entry, not a
+  bug in the component. Kera needs to correct this directly in Firebase
+  Console. No prompt needed.
+- **"VI Markets Guide Admin" account visible in the live Featured Markets
+  & Vendors grid on the homepage** — an internal/admin account is showing
+  up in public-facing Featured placement, tagged "Specialty Market · Night
+  Market." Needs Kera to check whether this account should be hidden from
+  the public directory entirely, or just excluded from Featured.
+- **`NotificationSettings.tsx` "Back to home" link** — same pattern as the
+  profile pages' back-link cleanup already tracked; this file has its own
+  instance, worth including in that same pass.
 
 ### 🟡 Phase 1.3 / Near Term
 - Market organizer profile — restructure body layout to mirror the
   vendor profile work (confirmed still desired, not started)
 - Vendor contact form vs. market Message-button disclosure pattern —
   open question, deliberately parked pending Kera's own feedback-gathering
-- "Featured" paid placement — confirmed still wanted. Two previously
-  separate threads need merging into one plan: paid slots (weekly/monthly,
-  limited spaces) and an admin "gift featured status" toggle in HQ.
-  Display-only fix (single row, cap 4) was done; business logic/payment
-  is Phase 2.
+- "Featured" paid placement — **fully spec'd July 2, 2026, ready to build.**
+  See dedicated section below.
 - Wire Brevo mailing list signup form in the footer
 - Add `id="hero"` to homepage hero div for scroll-to-top/anchor targeting
 - Fix remaining teal-on-dark text to `brand-teal-light` — Farmers Market
@@ -372,12 +396,67 @@ Payment Accepted
 - `useNavigate()` migration — replace remaining `onNavigate`/`onBack`
   props; three navigation patterns currently coexist
 
+### 🟡 Featured Placement — Full Spec (locked July 2, 2026)
+
+- **Eligibility:** Any member, Free or Pro, may purchase Featured
+- **Acquisition:** Self-serve Stripe checkout (mirrors existing Pro
+  flow) OR admin manually grants it (for gifting/rewarding — mirrors
+  the `foundingMember` override pattern)
+- **Duration/Price:** Monthly only, $10 CAD/month introductory rate —
+  revisit once real traffic data exists
+- **Bundle included:**
+  - Boosted ranking in Browse/search results
+  - Priority placement within category filter results
+  - Homepage rotation — true random draw of the pool every page load,
+    no hard cap on how many members can hold Featured at once
+  - Site-wide Spotlight toast/carousel — honest "Spotlight: [name],
+    [type] in [city]" framing, NOT styled as fake real-time social
+    proof (e.g. do not imply "someone just viewed/bought this" —
+    this isn't a live action, it's a promotional rotation). Capped to
+    once or twice per session, dismissible, non-blocking.
+- **Explicitly excluded:**
+  - Card badge — dropped deliberately; Kera's reasoning: badge value
+    is only at the discovery/browsing stage, irrelevant once someone's
+    already on the profile page
+  - Newsletter mention — dropped for now; **no newsletter exists yet**
+    to attach a mention to. "Build an actual newsletter" is a separate
+    future project (content strategy, cadence) — not part of this build.
+- **Impression stats:** Simple running total (not broken down by
+  surface). Visible to the vendor/market on their own dashboard
+  ("Your Featured listing was shown X times this month") and to admin
+  as a summary across all Featured listings. This is also the answer
+  to "why would anyone pay for a rotating pool with no visibility
+  guarantee" — real numbers replace a vague promise.
+
+**Build order — 7 isolated Claude Code prompts, commit between each:**
+```
+1. Data model — isFeatured + featuredUntil + impressionCount fields
+   on User/Vendor/Market types; admin HQ manual grant/revoke toggle
+   (foundation — testable without Stripe yet)
+2. Stripe self-serve checkout for Featured ($10/mo), webhook sets
+   isFeatured + featuredUntil on payment success
+3. Shared impression-tracking endpoint (increments impressionCount) —
+   build before the display pieces so each one can call it
+4. Homepage rotation component (logs impression on render)
+5. Browse/search ranking boost + category filter priority (logs impression)
+6. Site-wide Spotlight toast component (logs impression)
+7. Impression stats display — vendor/market dashboard + admin summary view
+```
+
+None of these 7 prompts have been written or run yet — this is a fresh
+build starting from prompt #1 next session.
+
 ### 🔵 Phase 2
 - Recurring Stripe billing (deferred from Phase 1)
-- "Featured" paid slots + booking (see above)
 - Vendor application system, market application management tools
 - Organizer dashboard (full build)
-- Email & push notifications (real push — none exists today)
+- **Real push notification system** — paired conceptually with
+  geolocation (below), since "Nearby Market Alerts" only becomes useful
+  once someone's carrying the app on their phone. Requires: service
+  worker, web app manifest, Add to Home Screen prompt (Safari-only
+  install step on iOS, works since iOS 16.4+), FCM wiring, permission
+  UX. `NotificationSettings.tsx` toggles are currently disabled pending
+  this build (see Working section).
 - Interactive map plotting all markets geographically
 - Click-to-set (Instagram-style) focal point picker for header photos
 - Multi-day market event support (high priority — vendors currently
@@ -386,11 +465,18 @@ Payment Accepted
   visible on individual vendor profiles, needs broader surface
 - `POST /vendors` endpoint — currently asymmetric with markets, which
   support "unclaimed" creation; vendors have no equivalent
+- **Build an actual newsletter** — content strategy, cadence, what goes
+  in it. Needed before "Featured newsletter mention" (dropped from the
+  Featured spec above) can be revisited.
 
 ### 🟣 Phase 3 / Future
-- AI Concierge (`AIConcierge.tsx` exists, fully built, not rendered
-  anywhere — do not activate as-is: it would expose the Gemini API key
-  in the public browser bundle. Needs a backend proxy before activation.)
+- AI Concierge — `AIConcierge.tsx` exists, fully built, but its
+  activation button has already been removed from the live site, so
+  it's currently orphaned dead code. If revived in Phase 3, it needs a
+  backend proxy first — activating as-is would expose the Gemini API
+  key in the public browser bundle. Recommended: delete the file now
+  rather than let unused, unsafe-to-reuse code sit in the repo (see
+  Known Issues).
 - JotForm or similar for advanced application management
 - Professional association features, policy/advocacy work,
   cooperative/revenue sharing model
@@ -406,7 +492,9 @@ Payment Accepted
   password, upgrade, etc.) silently loses its intended brand colour.
   One-line fix, high value.
 - **Dead code, safe to delete:** `LoginPage.tsx`, `AIConcierge.tsx`
-  (unless activating per above), duplicate `VendorSignUpForm` and
+  (orphaned — its activation button was already removed from the live
+  site; recommended for deletion given the API key exposure risk if
+  ever wired back up carelessly), duplicate `VendorSignUpForm` and
   `MembershipForm` inside `App.tsx`, `frontend/utils/slugify.ts`
 - **CORS wide open on backend; no rate limiting or request logging** —
   fine for beta, needs a decision before public launch
