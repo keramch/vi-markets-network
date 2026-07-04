@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { KeyIcon } from './Icons';
+import PasswordInput from './PasswordInput';
 
 interface ResetPasswordFormProps {
   email: string;
@@ -44,9 +45,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, onSubmit }
       </p>
       <div>
         <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">New Password</label>
-        <input
+        <PasswordInput
           id="new-password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
@@ -56,9 +56,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, onSubmit }
       </div>
       <div>
         <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700">Confirm New Password</label>
-        <input
+        <PasswordInput
           id="confirm-new-password"
-          type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           autoComplete="new-password"

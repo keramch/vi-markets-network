@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { NotificationSettings, User } from '../types';
 import { SettingsIcon } from './Icons';
+import PasswordInput from './PasswordInput';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
 
@@ -162,22 +163,19 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Change Password</h3>
             <div className="space-y-3 max-w-sm">
-              <input
-                type="password"
+              <PasswordInput
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Current password"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
-              <input
-                type="password"
+              <PasswordInput
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="New password (min 8 characters)"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"

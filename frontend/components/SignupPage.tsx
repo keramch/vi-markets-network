@@ -9,6 +9,7 @@ import { uploadImage } from '../services/storageUpload';
 import ImageUploader from './ImageUploader';
 import HelpTip from './HelpTip';
 import { CheckIcon } from './Icons';
+import PasswordInput from './PasswordInput';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,7 +87,6 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [googleMsg, setGoogleMsg] = useState('');
   const [errors3, setErrors3] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
 
@@ -518,26 +518,15 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
                   <div>
                     <label className={labelCls}>Password</label>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onKeyDown={handleStepEnter}
-                        className={`${inputCls} pr-14`}
-                        placeholder="At least 8 characters"
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
+                    <PasswordInput
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={handleStepEnter}
+                      className={inputCls}
+                      placeholder="At least 8 characters"
+                      autoComplete="new-password"
+                    />
                     {errors3.password && <p className={errCls}>{errors3.password}</p>}
                   </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PasswordInput from './PasswordInput';
 
 interface LoginPageProps {
   onLogin: (creds: { email: string; password: string }) => void;
@@ -10,7 +11,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,23 +41,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onForgotPassword }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
-            <div className="relative mt-1">
-              <input
-                type={showPassword ? 'text' : 'password'}
+            <div className="mt-1">
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 pr-14 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                 autoComplete="current-password"
                 required
               />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
             </div>
           </div>
           <button
