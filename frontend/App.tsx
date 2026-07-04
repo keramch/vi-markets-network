@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
-import { onAuthStateChanged, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 
 import Header from './components/Header';
@@ -27,6 +27,7 @@ import MyApplications from './components/MyApplications';
 import ApplicationForm from './components/ApplicationForm';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import ForgotPasswordForm from './components/ForgotPasswordForm';
+import ResetPasswordForm from './components/ResetPasswordForm';
 import SignupPage from './components/SignupPage';
 import OrganizerHub from './components/OrganizerHub';
 import BrowsePage from './components/BrowsePage';
@@ -237,6 +238,9 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
+  const [isResetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [resetPasswordEmail, setResetPasswordEmail] = useState<string | null>(null);
+  const [resetOobCode, setResetOobCode] = useState<string | null>(null);
 
   const [isVendorSignUpModalOpen, setVendorSignUpModalOpen] = useState(false);
   const [isMembershipModalOpen, setMembershipModalOpen] = useState(false);
@@ -278,6 +282,29 @@ const App: React.FC = () => {
     if (params.get('mode') === 'verifyEmail' || params.get('verified') === 'true') {
       navigate('/verified');
     }
+  }, []);
+
+  // Handle Firebase Auth password reset redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') !== 'resetPassword') return;
+
+    const oobCode = params.get('oobCode');
+    if (!oobCode) return;
+
+    verifyPasswordResetCode(firebaseAuth, oobCode)
+      .then((email) => {
+        setResetPasswordEmail(email);
+        setResetOobCode(oobCode);
+        setResetPasswordOpen(true);
+      })
+      .catch(() => {
+        showNotification('This password reset link has expired or is invalid. Please request a new one.');
+      })
+      .finally(() => {
+        window.history.replaceState(null, '', window.location.pathname);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -1223,6 +1250,36 @@ const App: React.FC = () => {
             }
           }
         }} />
+      </Modal>
+      <Modal
+          isOpen={isResetPasswordOpen}
+          onClose={() => setResetPasswordOpen(false)}
+          title="Set New Password"
+          maxWidth="sm"
+        >
+        <ResetPasswordForm
+          email={resetPasswordEmail ?? ''}
+          onSubmit={async (newPassword) => {
+            if (!resetOobCode) {
+              throw new Error('Something went wrong. Please request a new password reset link.');
+            }
+            try {
+              await confirmPasswordReset(firebaseAuth, resetOobCode, newPassword);
+              setResetPasswordOpen(false);
+              showNotification('Your password has been updated. Please sign in.');
+              setLoginModalOpen(true);
+            } catch (err: unknown) {
+              const code = (err as { code?: string }).code;
+              if (code === 'auth/expired-action-code' || code === 'auth/invalid-action-code') {
+                throw new Error('This link has expired. Please request a new password reset email.');
+              }
+              if (code === 'auth/weak-password') {
+                throw new Error('Please choose a stronger password.');
+              }
+              throw new Error('Something went wrong. Please try again.');
+            }
+          }}
+        />
       </Modal>
       <Modal
         isOpen={isMembershipModalOpen}
