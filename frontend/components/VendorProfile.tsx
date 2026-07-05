@@ -293,6 +293,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
             {/* Left: Connect */}
+            {hasSocials && (
             <div>
               <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
               {hasSocials && (
@@ -329,10 +330,8 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                   )}
                 </div>
               )}
-              {vendor.contact?.email && (
-                <ContactForm recipientEmail={vendor.contact.email} currentUser={currentUser} onSend={onContactSubmit} />
-              )}
             </div>
+            )}
 
             {/* Right: Reviews */}
             <div>
