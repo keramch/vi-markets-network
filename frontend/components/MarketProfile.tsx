@@ -88,58 +88,98 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
     ? market.reviews.some(r => r.userId === currentUser.id)
     : false;
 
+  const followButton = currentUser ? (
+    <button
+      onClick={() => onToggleFavorite(market.id)}
+      className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
+        isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+      }`}
+      aria-label={isFavorited ? 'Unfollow this market' : 'Follow this market'}
+    >
+      {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+      {isFavorited ? 'Following' : 'Follow'}
+    </button>
+  ) : (
+    <button
+      onClick={onOpenLoginModal}
+      className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
+      title="Log in or sign up to follow"
+    >
+      <UserPlus className="w-4 h-4" />
+      Follow
+    </button>
+  );
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
 
-        {/* ── Section 1: Hero ─────────────────────────────────────────────── */}
-        <div className="relative">
+        {/* ── Hero ────────────────────────────────────────────────────── */}
+        <div className="relative hidden md:block">
           {(market.headerPhotoUrl ?? market.photos?.[0])
             ? <img className="w-full h-56 md:h-72 object-cover" src={market.headerPhotoUrl ?? market.photos![0]} alt="" style={{ objectPosition: heroObjPosition }} />
             : <div className="w-full h-56 md:h-72 bg-brand-cream flex items-center justify-center"><span className="text-brand-blue/20 text-8xl font-serif">{market.name[0]}</span></div>
           }
-          {/* Scrim */}
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(74,66,67,0.72) 0%, transparent 42%)' }}
+          />
+        </div>
 
-          {/* Bottom-left: logo + name + founding badge */}
-          <div className="absolute bottom-4 left-4 right-36 md:bottom-5 md:left-6 md:right-44 flex items-end gap-3">
-            {market.logoUrl && (
-              <img src={market.logoUrl} alt={`${market.name} logo`} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-white shadow-lg object-cover flex-shrink-0" />
-            )}
-            <div className="flex items-center gap-2 pb-0.5 min-w-0">
-              <h1 className="text-2xl md:text-3xl font-extrabold text-white font-serif drop-shadow">{market.name}</h1>
-              {isFoundingMember && (
-                <div className="bg-brand-gold text-white p-1.5 rounded-full shadow flex-shrink-0" title="Founding Member">
-                  <RibbonIcon className="w-4 h-4" />
+        {/* ── Identity Panel ──────────────────────────────────────────── */}
+        <div className="bg-[#D6E9E6] border-b-[3px] border-brand-light-blue px-6 md:px-8 pt-4 md:pt-3 pb-6">
+          <div className="flex items-start gap-3">
+
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="flex flex-col items-start gap-2 flex-shrink-0">
+                <div className="relative md:-mt-10 flex-shrink-0 z-10">
+                  {market.logoUrl
+                    ? <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                        <img className="w-full h-full object-contain" src={market.logoUrl} alt={`${market.name} logo`} />
+                      </div>
+                    : <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center">
+                        <span className="text-brand-blue text-4xl font-serif">{market.name[0]}</span>
+                      </div>
+                  }
                 </div>
-              )}
+
+                {/* Mobile only: Follow stacked under logo */}
+                <div className="flex md:hidden flex-col items-start gap-2">
+                  {followButton}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap justify-start pt-2 min-w-0">
+                {isFoundingMember && (
+                  <span className="text-brand-gold" title="Founding Member">
+                    <RibbonIcon className="w-5 h-5" />
+                  </span>
+                )}
+                <h1 className="text-3xl font-serif font-normal text-brand-blue">{market.name}</h1>
+              </div>
             </div>
+
+            {/* Desktop only: Follow inline on the right */}
+            <div className="hidden md:flex items-center gap-2 flex-shrink-0 pt-2">
+              {followButton}
+            </div>
+
+            <div className="flex-shrink-0 pt-2">
+              <ShareButton className="p-2 rounded-full transition-colors duration-200 text-gray-400 hover:bg-white hover:text-brand-blue" />
+            </div>
+
           </div>
 
-          {/* Bottom-right: share + follow */}
-          <div className="absolute bottom-4 right-4 md:bottom-5 md:right-6 flex items-center gap-2">
-            <ShareButton />
-            {currentUser ? (
-              <button
-                onClick={() => onToggleFavorite(market.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors duration-200 ${isFavorited ? 'bg-brand-blue text-white' : 'bg-black/30 text-white hover:bg-black/50'}`}
-                aria-label={isFavorited ? 'Unfollow this market' : 'Follow this market'}
-                title={isFavorited ? 'Unfollow this market' : 'Follow this market'}
-              >
-                {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                {isFavorited ? 'Following' : 'Follow'}
-              </button>
-            ) : (
-              <button
-                onClick={onOpenLoginModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-black/30 text-white/50 hover:bg-black/40 transition-colors duration-200"
-                title="Log in or sign up to follow"
-              >
-                <UserPlus className="w-4 h-4" />
-                Follow
-              </button>
-            )}
-          </div>
+          {/* Tags — full-width row */}
+          {market.marketTypes && market.marketTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {market.marketTypes.map(t => (
+                <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Section 2: About + Upcoming Events | Market Info + Good to Know ── */}
