@@ -95,7 +95,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
 
             {/* Logo + name block */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
+            <div className="flex flex-row items-start gap-3">
               {/* Logo — negative margin pulls it up to straddle the hero/panel seam */}
               <div className="relative md:-mt-10 flex-shrink-0 z-10">
                 {(vendor.logoUrl || vendor.photos?.[0])
@@ -113,13 +113,13 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
               </div>
 
               {/* Type label, name, vendorType chips */}
-              <div className="text-center sm:text-left sm:pt-2">
+              <div className="text-left pt-2">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                   {vendor.vendorTypes && vendor.vendorTypes.length > 0
                     ? vendor.vendorTypes.join(' · ')
                     : vendor.category}
                 </p>
-                <div className="flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
+                <div className="flex items-center gap-1.5 flex-wrap justify-start">
                   {isFoundingMember && (
                     <span className="text-brand-gold" title="Founding Member">
                       <RibbonIcon className="w-5 h-5" />
@@ -128,7 +128,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                   <h1 className="text-2xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
                 </div>
                 {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2 justify-center sm:justify-start">
+                  <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
                     {vendor.vendorTypes.map(t => (
                       <span key={t} className="text-xs bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
                         {t}
