@@ -155,13 +155,24 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap justify-start pt-2 min-w-0">
-                {isFoundingMember && (
-                  <span className="text-brand-gold" title="Founding Member">
-                    <RibbonIcon className="w-5 h-5" />
-                  </span>
+              <div className="flex-1 min-w-0 pt-2">
+                <div className="flex items-center gap-1.5 flex-wrap justify-start">
+                  {isFoundingMember && (
+                    <span className="text-brand-gold" title="Founding Member">
+                      <RibbonIcon className="w-5 h-5" />
+                    </span>
+                  )}
+                  <h1 className="text-3xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
+                </div>
+                {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
+                    {vendor.vendorTypes.map(t => (
+                      <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 )}
-                <h1 className="text-3xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
               </div>
             </div>
 
@@ -177,17 +188,6 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
             </div>
 
           </div>
-
-          {/* Tags — full-width row, plenty of room to stay horizontal */}
-          {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {vendor.vendorTypes.map(t => (
-                <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Inline contact form — only mounted in the DOM when open */}
           {contactOpen && vendor.contact?.email && (
