@@ -161,7 +161,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                     <RibbonIcon className="w-5 h-5" />
                   </span>
                 )}
-                <h1 className="text-2xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
+                <h1 className="text-3xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
               </div>
             </div>
 
