@@ -67,6 +67,42 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
     : vendor.headerPhotoPosition === 'bottom' ? 'center 75%'
     : 'center 50%';
 
+  const followButton = currentUser ? (
+    <button
+      onClick={() => onToggleFavorite(vendor.id)}
+      className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
+        isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+      }`}
+      aria-label={isFavorited ? 'Unfollow this vendor' : 'Follow this vendor'}
+    >
+      {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+      {isFavorited ? 'Following' : 'Follow'}
+    </button>
+  ) : (
+    <button
+      onClick={onOpenLoginModal}
+      className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
+      title="Log in or sign up to follow"
+    >
+      <UserPlus className="w-4 h-4" />
+      Follow
+    </button>
+  );
+
+  const emailButton = vendor.contact?.email ? (
+    <button
+      type="button"
+      onClick={() => setContactOpen(o => !o)}
+      aria-expanded={contactOpen}
+      aria-controls="vendor-contact-disclosure"
+      className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
+        contactOpen ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+      }`}
+    >
+      {contactOpen ? 'Close' : 'Email'}
+    </button>
+  ) : null;
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
@@ -94,65 +130,32 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
         <div className="bg-[#D6E9E6] border-b-[3px] border-brand-light-blue px-6 md:px-8 pt-4 md:pt-3 pb-6">
           <div className="flex items-start gap-3">
 
-            {/* Logo + action buttons, stacked */}
-            <div className="flex flex-col items-start gap-2 flex-shrink-0">
-              <div className="relative flex-shrink-0 z-10">
-                {(vendor.logoUrl || vendor.photos?.[0])
-                  ? <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                      <img
-                        className="w-full h-full object-contain"
-                        src={vendor.logoUrl || vendor.photos[0]}
-                        alt={`${vendor.name} logo`}
-                      />
-                    </div>
-                  : <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center">
-                      <span className="text-brand-blue text-4xl font-serif">{vendor.name[0]}</span>
-                    </div>
-                }
+            {/* Logo + name group */}
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="flex flex-col items-start gap-2 flex-shrink-0">
+                <div className="relative md:-mt-10 flex-shrink-0 z-10">
+                  {(vendor.logoUrl || vendor.photos?.[0])
+                    ? <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                        <img
+                          className="w-full h-full object-contain"
+                          src={vendor.logoUrl || vendor.photos[0]}
+                          alt={`${vendor.name} logo`}
+                        />
+                      </div>
+                    : <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center">
+                        <span className="text-brand-blue text-4xl font-serif">{vendor.name[0]}</span>
+                      </div>
+                  }
+                </div>
+
+                {/* Mobile only: Follow/Email stacked under logo */}
+                <div className="flex md:hidden flex-col items-start gap-2">
+                  {followButton}
+                  {emailButton}
+                </div>
               </div>
 
-              {currentUser ? (
-                <button
-                  onClick={() => onToggleFavorite(vendor.id)}
-                  className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-                    isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
-                  }`}
-                  aria-label={isFavorited ? 'Unfollow this vendor' : 'Follow this vendor'}
-                >
-                  {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                  {isFavorited ? 'Following' : 'Follow'}
-                </button>
-              ) : (
-                <button
-                  onClick={onOpenLoginModal}
-                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
-                  title="Log in or sign up to follow"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Follow
-                </button>
-              )}
-
-              {vendor.contact?.email && (
-                <button
-                  type="button"
-                  onClick={() => setContactOpen(o => !o)}
-                  aria-expanded={contactOpen}
-                  aria-controls="vendor-contact-disclosure"
-                  className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-                    contactOpen
-                      ? 'bg-brand-blue text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
-                  }`}
-                >
-                  {contactOpen ? 'Close' : 'Email'}
-                </button>
-              )}
-            </div>
-
-            {/* Name + tags */}
-            <div className="pt-2 flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap justify-start">
+              <div className="flex items-center gap-1.5 flex-wrap justify-start pt-2 min-w-0">
                 {isFoundingMember && (
                   <span className="text-brand-gold" title="Founding Member">
                     <RibbonIcon className="w-5 h-5" />
@@ -160,23 +163,31 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                 )}
                 <h1 className="text-2xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
               </div>
-              {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
-                  {vendor.vendorTypes.map(t => (
-                    <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Share */}
+            {/* Desktop only: Follow/Email inline on the right */}
+            <div className="hidden md:flex items-center gap-2 flex-shrink-0 pt-2">
+              {followButton}
+              {emailButton}
+            </div>
+
+            {/* Share — always at the far right */}
             <div className="flex-shrink-0 pt-2">
               <ShareButton className="p-2 rounded-full transition-colors duration-200 text-gray-400 hover:bg-white hover:text-brand-blue" />
             </div>
 
           </div>
+
+          {/* Tags — full-width row, plenty of room to stay horizontal */}
+          {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {vendor.vendorTypes.map(t => (
+                <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Inline contact form — only mounted in the DOM when open */}
           {contactOpen && vendor.contact?.email && (
