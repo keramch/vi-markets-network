@@ -140,7 +140,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
             </div>
 
             {/* Follow + Message + Share buttons */}
-            <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end sm:pt-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end sm:pt-2 flex-shrink-0">
               {currentUser ? (
                 <button
                   onClick={() => onToggleFavorite(vendor.id)}
