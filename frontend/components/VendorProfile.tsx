@@ -34,6 +34,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
   currentUser, onAddReview, onFeatureVendor, onContactSubmit, onOpenLoginModal,
 }) => {
   const [contactOpen, setContactOpen] = useState(false);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
 
   const attendingEntries = (vendor.attendingMarkets || [])
     .map(entry => {
@@ -195,41 +196,16 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           )}
         </div>
 
-        {/* ── About + Good to know + Find Us At | Gallery ──────────────── */}
+        {/* ── Find Us At | Gallery ──────────────────────────────────────── */}
         <div className="p-6 md:p-8 border-t bg-white">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
 
-            {/* Left ~60%: About + Good to know + Find Us At */}
+            {/* Left ~60%: Find Us At */}
             <div className="md:col-span-3">
-              <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
-              <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
-              <hr className="my-4 border-gray-200" />
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
-              {vendor.tags && vendor.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {vendor.tags.map(tag => (
-                    <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">{tag}</span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400">No tags added yet.</p>
-              )}
-              {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
-              {false && currentUser && !vendor.isFeatured && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => onFeatureVendor(vendor.id)}
-                    className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
-                  >
-                    ⭐️ Feature this Vendor
-                  </button>
-                </div>
-              )}
-              <hr className="my-4 border-gray-200" />
               <h2 className="text-2xl text-brand-blue font-serif mb-3">Find Us At</h2>
               {currentEntries.length > 0 ? (
                 <div className="space-y-3">
-                  {currentEntries.map(({ market, date }) => {
+                  {(showAllUpcoming ? currentEntries : currentEntries.slice(0, 3)).map(({ market, date }) => {
                     const isActive = market.status === 'active';
                     return (
                       <div
@@ -259,6 +235,15 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">No markets listed yet.</p>
+              )}
+              {!showAllUpcoming && currentEntries.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllUpcoming(true)}
+                  className="text-sm text-brand-teal hover:underline font-medium mt-3"
+                >
+                  Show {currentEntries.length - 3} more
+                </button>
               )}
               <p className="text-xs text-gray-400 italic mt-5">
                 Market dates and locations are approximate — confirm with the market organiser.
@@ -290,50 +275,75 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
           </div>
         </div>
 
-        {/* ── Connect with [Vendor] | Reviews ─────────────────────────────── */}
+        {/* ── About + Good to know + Connect | Reviews ─────────────────── */}
         <div className="p-6 md:p-8 border-t">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-            {/* Left: Connect */}
-            {hasSocials && (
+            {/* Left: About + Good to know + Connect */}
             <div>
-              <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
-              {hasSocials && (
-                <div className="flex gap-3 mb-5">
-                  {vendor.contact?.socials?.instagram && (
-                    <a href={`https://instagram.com/${vendor.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <InstagramIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.facebook && (
-                    <a href={`https://facebook.com/${vendor.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <FacebookIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.pinterest && (
-                    <a href={`https://pinterest.com/${vendor.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <PinterestIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.etsy && (
-                    <a href={`https://etsy.com/shop/${vendor.contact.socials.etsy}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <EtsyIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.tiktok && (
-                    <a href={`https://tiktok.com/@${vendor.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <TikTokIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {vendor.contact?.socials?.website && (
-                    <a href={vendor.contact.socials.website.startsWith('http') ? vendor.contact.socials.website : `https://${vendor.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <Globe className="w-5 h-5" />
-                    </a>
-                  )}
+              <h3 className="text-xl font-serif text-brand-blue mb-3">About us</h3>
+              <p className="text-brand-text leading-relaxed whitespace-pre-line">{storyText}</p>
+              <hr className="my-4 border-gray-200" />
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Good to know</p>
+              {vendor.tags && vendor.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {vendor.tags.map(tag => (
+                    <span key={tag} className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full">{tag}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400">No tags added yet.</p>
+              )}
+              {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
+              {false && currentUser && !vendor.isFeatured && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => onFeatureVendor(vendor.id)}
+                    className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
+                  >
+                    ⭐️ Feature this Vendor
+                  </button>
                 </div>
               )}
+              {hasSocials && (
+                <>
+                  <hr className="my-4 border-gray-200" />
+                  <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
+                  <div className="flex gap-3 mb-5">
+                    {vendor.contact?.socials?.instagram && (
+                      <a href={`https://instagram.com/${vendor.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                        <InstagramIcon className="w-5 h-5" />
+                      </a>
+                    )}
+                    {vendor.contact?.socials?.facebook && (
+                      <a href={`https://facebook.com/${vendor.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                        <FacebookIcon className="w-5 h-5" />
+                      </a>
+                    )}
+                    {vendor.contact?.socials?.pinterest && (
+                      <a href={`https://pinterest.com/${vendor.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                        <PinterestIcon className="w-5 h-5" />
+                      </a>
+                    )}
+                    {vendor.contact?.socials?.etsy && (
+                      <a href={`https://etsy.com/shop/${vendor.contact.socials.etsy}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                        <EtsyIcon className="w-5 h-5" />
+                      </a>
+                    )}
+                    {vendor.contact?.socials?.tiktok && (
+                      <a href={`https://tiktok.com/@${vendor.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                        <TikTokIcon className="w-5 h-5" />
+                      </a>
+                    )}
+                    {vendor.contact?.socials?.website && (
+                      <a href={vendor.contact.socials.website.startsWith('http') ? vendor.contact.socials.website : `https://${vendor.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
+                        <Globe className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-            )}
 
             {/* Right: Reviews */}
             <div>
