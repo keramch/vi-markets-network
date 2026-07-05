@@ -17,7 +17,7 @@ const VendorCard: React.FC<VendorCardProps> = ({
   featured = false,
   distance,
 }) => {
-  const imageSrc = vendor.logoUrl || vendor.photos?.[0] || "/placeholder.jpg";
+  const imageSrc = vendor.headerPhotoUrl || vendor.photos?.[0] || vendor.logoUrl || "/placeholder.jpg";
 
   const avgRating =
     vendor.reviews?.length > 0
