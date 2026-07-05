@@ -149,13 +149,24 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap justify-start pt-2 min-w-0">
-                {isFoundingMember && (
-                  <span className="text-brand-gold" title="Founding Member">
-                    <RibbonIcon className="w-5 h-5" />
-                  </span>
+              <div className="flex-1 min-w-0 pt-2">
+                <div className="flex items-center gap-1.5 flex-wrap justify-start">
+                  {isFoundingMember && (
+                    <span className="text-brand-gold" title="Founding Member">
+                      <RibbonIcon className="w-5 h-5" />
+                    </span>
+                  )}
+                  <h1 className="text-3xl font-serif font-normal text-brand-blue">{market.name}</h1>
+                </div>
+                {market.marketTypes && market.marketTypes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
+                    {market.marketTypes.map(t => (
+                      <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 )}
-                <h1 className="text-3xl font-serif font-normal text-brand-blue">{market.name}</h1>
               </div>
             </div>
 
@@ -169,17 +180,6 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
             </div>
 
           </div>
-
-          {/* Tags — full-width row */}
-          {market.marketTypes && market.marketTypes.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {market.marketTypes.map(t => (
-                <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* ── Section 2: About + Upcoming Events | Market Info + Good to Know ── */}
