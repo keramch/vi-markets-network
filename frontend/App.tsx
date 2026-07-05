@@ -82,10 +82,12 @@ interface MarketProfileRouteProps {
   onContactSubmit: (recipientEmail: string, subject: string) => void;
   onApply: (marketId: string) => void;
   onOpenLoginModal: () => void;
+  isDataLoading: boolean;
 }
 const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   markets, vendors, applications, users, favoritedMarketIds, currentUser,
   onToggleFavorite, onAddReview, onFeatureMarket, onContactSubmit, onApply, onOpenLoginModal,
+  isDataLoading,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -111,6 +113,14 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
       })
       .catch(() => {}); // non-fatal
   }, [market?.id]);
+
+  if (isDataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+        <div className="text-brand-blue text-sm">Loading...</div>
+      </div>
+    );
+  }
 
   if (!market || market.status !== 'active') return <Navigate to="/" replace />;
   const marketOwner = users.find(u => u.id === market.ownerId);
@@ -149,14 +159,25 @@ interface VendorProfileRouteProps {
   onFeatureVendor: (vendorId: string) => void;
   onContactSubmit: (recipientEmail: string, subject: string) => void;
   onOpenLoginModal: () => void;
+  isDataLoading: boolean;
 }
 const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
   vendors, markets, users, favoritedVendorIds, currentUser,
   onToggleFavorite, onAddReview, onFeatureVendor, onContactSubmit, onOpenLoginModal,
+  isDataLoading,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const vendor = vendors.find(v => v.slug === slug);
+
+  if (isDataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+        <div className="text-brand-blue text-sm">Loading...</div>
+      </div>
+    );
+  }
+
   if (!vendor || vendor.status !== 'active') return <Navigate to="/" replace />;
   const vendorOwner = users.find(u => u.id === vendor.ownerId);
   return (
@@ -969,6 +990,7 @@ const App: React.FC = () => {
                 onContactSubmit={handleContactSubmit}
                 onApply={handleOpenApplicationForm}
                 onOpenLoginModal={() => setLoginModalOpen(true)}
+                isDataLoading={isDataLoading}
               />
             } />
             <Route path="/vendors/:slug" element={
@@ -983,6 +1005,7 @@ const App: React.FC = () => {
                 onFeatureVendor={handleOpenFeatureVendorModal}
                 onContactSubmit={handleContactSubmit}
                 onOpenLoginModal={() => setLoginModalOpen(true)}
+                isDataLoading={isDataLoading}
               />
             } />
             <Route path="/calendar" element={
