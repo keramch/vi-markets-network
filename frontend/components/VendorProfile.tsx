@@ -92,12 +92,11 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
 
         {/* ── Identity Panel ──────────────────────────────────────────── */}
         <div className="bg-[#D6E9E6] border-b-[3px] border-brand-light-blue px-6 md:px-8 pt-4 md:pt-3 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-start gap-3">
 
-            {/* Logo + name block */}
-            <div className="flex flex-row items-start gap-3">
-              {/* Logo — negative margin pulls it up to straddle the hero/panel seam */}
-              <div className="relative md:-mt-10 flex-shrink-0 z-10">
+            {/* Logo + action buttons, stacked */}
+            <div className="flex flex-col items-start gap-2 flex-shrink-0">
+              <div className="relative flex-shrink-0 z-10">
                 {(vendor.logoUrl || vendor.photos?.[0])
                   ? <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
                       <img
@@ -112,53 +111,24 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                 }
               </div>
 
-              {/* Type label, name, vendorType chips */}
-              <div className="text-left pt-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
-                  {vendor.vendorTypes && vendor.vendorTypes.length > 0
-                    ? vendor.vendorTypes.join(' · ')
-                    : vendor.category}
-                </p>
-                <div className="flex items-center gap-1.5 flex-wrap justify-start">
-                  {isFoundingMember && (
-                    <span className="text-brand-gold" title="Founding Member">
-                      <RibbonIcon className="w-5 h-5" />
-                    </span>
-                  )}
-                  <h1 className="text-2xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
-                </div>
-                {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
-                    {vendor.vendorTypes.map(t => (
-                      <span key={t} className="text-xs bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Follow + Message + Share buttons */}
-            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end sm:pt-2 flex-shrink-0">
               {currentUser ? (
                 <button
                   onClick={() => onToggleFavorite(vendor.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                  className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
                     isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
                   }`}
                   aria-label={isFavorited ? 'Unfollow this vendor' : 'Follow this vendor'}
                 >
-                  {isFavorited ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                  {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                   {isFavorited ? 'Following' : 'Follow'}
                 </button>
               ) : (
                 <button
                   onClick={onOpenLoginModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200"
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
                   title="Log in or sign up to follow"
                 >
-                  <UserPlus className="w-3.5 h-3.5" />
+                  <UserPlus className="w-4 h-4" />
                   Follow
                 </button>
               )}
@@ -169,16 +139,40 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                   onClick={() => setContactOpen(o => !o)}
                   aria-expanded={contactOpen}
                   aria-controls="vendor-contact-disclosure"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 ${
+                  className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
                     contactOpen
                       ? 'bg-brand-blue text-white'
                       : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
                   }`}
                 >
-                  {contactOpen ? 'Close' : 'Message'}
+                  {contactOpen ? 'Close' : 'Email'}
                 </button>
               )}
+            </div>
 
+            {/* Name + tags */}
+            <div className="pt-2 flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap justify-start">
+                {isFoundingMember && (
+                  <span className="text-brand-gold" title="Founding Member">
+                    <RibbonIcon className="w-5 h-5" />
+                  </span>
+                )}
+                <h1 className="text-2xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
+              </div>
+              {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
+                  {vendor.vendorTypes.map(t => (
+                    <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Share */}
+            <div className="flex-shrink-0 pt-2">
               <ShareButton className="p-2 rounded-full transition-colors duration-200 text-gray-400 hover:bg-white hover:text-brand-blue" />
             </div>
 
