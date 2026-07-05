@@ -72,7 +72,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
 
         {/* ── Hero Strip ──────────────────────────────────────────────── */}
         <div
-          className="relative w-full h-56 md:h-72"
+          className="hidden md:block relative w-full h-56 md:h-72"
           style={heroPhoto ? {
             backgroundImage: `url(${heroPhoto})`,
             backgroundSize: 'cover',
@@ -90,20 +90,22 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
         </div>
 
         {/* ── Identity Panel ──────────────────────────────────────────── */}
-        <div className="bg-brand-cream px-6 md:px-8 pt-3 pb-6">
+        <div className="bg-[#D6E9E6] border-b-[3px] border-brand-light-blue px-6 md:px-8 pt-4 md:pt-3 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
 
             {/* Logo + name block */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
               {/* Logo — negative margin pulls it up to straddle the hero/panel seam */}
-              <div className="relative -mt-10 flex-shrink-0 z-10">
+              <div className="relative md:-mt-10 flex-shrink-0 z-10">
                 {(vendor.logoUrl || vendor.photos?.[0])
-                  ? <img
-                      className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                      src={vendor.logoUrl || vendor.photos[0]}
-                      alt={`${vendor.name} logo`}
-                    />
-                  : <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center">
+                  ? <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                      <img
+                        className="w-full h-full object-contain"
+                        src={vendor.logoUrl || vendor.photos[0]}
+                        alt={`${vendor.name} logo`}
+                      />
+                    </div>
+                  : <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-brand-blue/10 flex items-center justify-center">
                       <span className="text-brand-blue text-4xl font-serif">{vendor.name[0]}</span>
                     </div>
                 }
