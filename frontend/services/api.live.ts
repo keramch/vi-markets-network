@@ -275,6 +275,22 @@ export const sendAdminMessage = async (
   });
 };
 
+// CONTACT — send a message via a vendor/market profile contact form
+
+export const sendContactMessage = (params: {
+  recipientEmail: string;
+  recipientName: string;
+  senderName: string;
+  senderEmail: string;
+  subject: string;
+  message: string;
+}): Promise<void> => {
+  return request<void>("/contact/send", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+};
+
 // MARKET EVENTS
 
 export const getMarketEvents = async (params: {
