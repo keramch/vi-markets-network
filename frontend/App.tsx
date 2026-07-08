@@ -79,7 +79,7 @@ interface MarketProfileRouteProps {
   onToggleFavorite: (id: string) => void;
   onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureMarket: (marketId: string) => void;
-  onContactSubmit: (recipientEmail: string, subject: string) => void;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
   onApply: (marketId: string) => void;
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
@@ -157,7 +157,7 @@ interface VendorProfileRouteProps {
   onToggleFavorite: (id: string) => void;
   onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureVendor: (vendorId: string) => void;
-  onContactSubmit: (recipientEmail: string, subject: string) => void;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
 }
@@ -624,8 +624,16 @@ const App: React.FC = () => {
     }
   };
 
-  const handleContactSubmit = (recipientEmail: string, subject: string) => {
-    showNotification(`Message sent to ${recipientEmail} regarding "${subject}"`);
+  const handleContactSubmit = async (params: {
+    recipientEmail: string;
+    recipientName: string;
+    senderName: string;
+    senderEmail: string;
+    subject: string;
+    message: string;
+  }): Promise<void> => {
+    await api.sendContactMessage(params);
+    showNotification(`Message sent to ${params.recipientEmail} regarding "${params.subject}"`);
   };
 
   const handlePurchasePromotion = (promotion: Promotion) => {

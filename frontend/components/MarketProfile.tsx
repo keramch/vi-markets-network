@@ -21,7 +21,7 @@ interface MarketProfileProps {
   currentUser: User | null;
   onAddReview: (reviewData: { rating: number, comment: string }) => void;
   onFeatureMarket: (marketId: string) => void;
-  onContactSubmit: (recipientEmail: string, subject: string) => void;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
   onApply: (marketId: string) => void;
   upcomingEvents?: MarketEvent[];
   onOpenLoginModal: () => void;
@@ -372,7 +372,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                   )}
                 </div>
               )}
-              <ContactForm recipientEmail={market.contact?.email} currentUser={currentUser} onSend={onContactSubmit} />
+              <ContactForm recipientEmail={market.contact?.email} currentUser={currentUser} onSend={(params) => onContactSubmit({ ...params, recipientName: market.name })} />
             </div>
 
             {/* Right: Gallery */}

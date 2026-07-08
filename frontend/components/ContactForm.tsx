@@ -7,7 +7,7 @@ import { SendIcon } from './Icons';
 interface ContactFormProps {
     recipientEmail: string;
     currentUser: User | null;
-    onSend: (recipientEmail: string, subject: string) => void;
+    onSend: (params: { recipientEmail: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
 }
 
 const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, onSend }) => {
@@ -16,11 +16,21 @@ const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, 
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [isSent, setIsSent] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [sendError, setSendError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSend(recipientEmail, subject);
-        setIsSent(true);
+        setSendError(null);
+        setIsSubmitting(true);
+        try {
+            await onSend({ recipientEmail, senderName, senderEmail, subject, message });
+            setIsSent(true);
+        } catch {
+            setSendError('Something went wrong sending your message — please try again or email us directly.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (isSent) {
@@ -51,9 +61,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, 
                 <HelpTip tip="On iOS Safari, if the microphone button is greyed out, go to Settings › Safari › Microphone and select Ask instead of Allow." />
                 <textarea id="contact-message" rows={4} value={message} onChange={e => setMessage(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-gold focus:border-brand-gold"></textarea>
             </div>
-            <button type="submit" className="w-full bg-brand-blue text-white font-semibold py-3 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center">
+            {sendError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-center">
+                    {sendError}
+                </p>
+            )}
+            <button type="submit" disabled={isSubmitting} className="w-full bg-brand-blue text-white font-semibold py-3 px-4 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
                 <SendIcon className="w-5 h-5 mr-2"/>
-                Send Message
+                {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
         </form>
     );

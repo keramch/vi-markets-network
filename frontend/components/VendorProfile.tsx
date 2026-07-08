@@ -20,7 +20,7 @@ interface VendorProfileProps {
   currentUser: User | null;
   onAddReview: (reviewData: { rating: number, comment: string }) => void;
   onFeatureVendor: (vendorId: string) => void;
-  onContactSubmit: (recipientEmail: string, subject: string) => void;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
   onOpenLoginModal: () => void;
 }
 
@@ -195,7 +195,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
               <ContactForm
                 recipientEmail={vendor.contact.email}
                 currentUser={currentUser}
-                onSend={onContactSubmit}
+                onSend={(params) => onContactSubmit({ ...params, recipientName: vendor.name })}
               />
             </div>
           )}
