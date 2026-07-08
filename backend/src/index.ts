@@ -15,6 +15,7 @@ import vendorApplicationsRouter from "./routes/vendorApplications";
 import followsRouter from "./routes/follows";
 import brevoRouter from "./routes/brevo";
 import stripeRouter from "./routes/stripe";
+import contactRouter from "./routes/contact";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -44,6 +45,7 @@ app.use("/market-applications", marketApplicationsRouter);
 app.use("/vendor-applications", vendorApplicationsRouter);
 app.use("/follows", followsRouter);
 app.use("/brevo", brevoRouter);
+app.use("/contact", contactRouter);
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
