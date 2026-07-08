@@ -1,7 +1,7 @@
 # CLAUDE.md — VI Markets Network
 
 This file is read automatically by Claude Code at session start.
-Last updated: July 2, 2026 (second pass, same day)
+Last updated: July 7, 2026
 
 ---
 
@@ -15,12 +15,14 @@ Island and the Gulf Islands, BC. Three core purposes:
 2. **Organizer tools** — lightweight management tools for market organizers
 3. **Vendor discoverability** — platform for creators and growers to be found
 
-**Beta is live.** Founding/beta members have permanent free access.
+**Public for Phase 1.** Signup is open to anyone — the beta gate code
+has been removed. Not yet being actively promoted beyond Kera's own
+circle while Phase 1.3 features get finished. Founding members
+(flagged manually, `foundingMember: true`) have permanent free access.
 Stripe payments are live and confirmed working (real test purchases
 completed successfully). Business license application submitted
-(Saanich/Victoria, sole proprietor). Active beta testers are using the
-platform and giving feedback. Focus is resolving beta feedback,
-finishing Phase 1.3 features, and prepping for public launch.
+(Saanich/Victoria, sole proprietor). Focus is resolving user feedback,
+finishing Phase 1.3 features, and prepping for a wider promotion push.
 
 ---
 
@@ -63,7 +65,7 @@ prompts drafted in a separate planning session (Claude.ai chat).
 - **Free forever** — get listed, be found, connect to markets manually
 - **Pro (introductory rate)** — $30 CAD/6mo or $50 CAD/12mo, one-time
   payment, manual renewal, rate locked in as long as renewed on time
-- **Founding/beta members** — permanent free access, flagged
+- **Founding members** — permanent free access, flagged
   `foundingMember: true` manually in admin panel, exempt from all tier gates
 - Phase 2 will introduce a fuller tier structure once application tools
   and other paid features exist; current introductory Pro members would
@@ -146,13 +148,18 @@ vi-markets-network/                   ← repo root
 │   │   ├── MarketCard.tsx
 │   │   ├── MarketEventForm.tsx
 │   │   ├── MarketProfile.tsx
-│   │   ├── Modal.tsx                 ← ⚠️ Uses nonexistent Tailwind class
-│   │   │                               `text-brand-dark-green` — every modal
-│   │   │                               title silently loses brand color
+│   │   ├── Modal.tsx
 │   │   ├── OrganizerHub.tsx
+│   │   ├── PasswordInput.tsx         ← Reusable show/hide password toggle,
+│   │   │                               used by Login, Signup, Reset
+│   │   │                               Password, and NotificationSettings
 │   │   ├── PhotoGallery.tsx          ← Reusable lightbox (vendor profiles)
 │   │   ├── PricingPage.tsx
 │   │   ├── ProfileManager.tsx        ← Shared vendor + market profile editor
+│   │   ├── ResetPasswordForm.tsx     ← "Set new password" half of the
+│   │   │                               password reset flow — verifies the
+│   │   │                               Firebase oobCode, confirms the new
+│   │   │                               password, opens Login modal on success
 │   │   ├── ReviewForm.tsx
 │   │   ├── ShareButton.tsx
 │   │   ├── SignupPage.tsx
@@ -175,10 +182,7 @@ vi-markets-network/                   ← repo root
 │   │                                    architecture rule. Safe to delete;
 │   │                                    do not call it if resurrected.
 │   ├── App.tsx                       ← Root component, routing, global state,
-│   │                                    footer. Also contains two unused dead
-│   │                                    duplicates: a second vendor signup
-│   │                                    modal and a second membership
-│   │                                    plan-picker form.
+│   │                                    footer.
 │   ├── index.tsx                     ← Entry point
 │   ├── types.ts                      ← ALL TypeScript interfaces + taxonomy constants
 │   ├── utils.ts                      ← General utility functions
@@ -246,7 +250,7 @@ than refactored. This is deliberately deferred, not new drift:
 
 Until this is cleaned up, use the existing token names as-is throughout
 components — do not introduce new names mid-codebase. Full rename is a
-post-beta refactor.
+deferred, post-launch refactor.
 
 **Colour rule:** On dark backgrounds, always use `brand-teal-light` (#9DD4CF),
 never `brand-light-blue` or `brand-blue` for text.
@@ -308,21 +312,33 @@ Payment Accepted
 
 ---
 
-## Current State — July 2, 2026
+## Current State — July 7, 2026
 
 ### ✅ Working (confirmed via full codebase audit)
-- User auth: signup, login, forgot-password (`sendPasswordResetEmail`,
-  no longer a placeholder), email verification page
+- User auth: signup, login, forgot-password, and **full password
+  reset** — `sendPasswordResetEmail` sends the link, and
+  `ResetPasswordForm.tsx` handles the receiving side (verifies the
+  Firebase oobCode via `verifyPasswordResetCode`, confirms the new
+  password via `confirmPasswordReset`, opens the Login modal on
+  success), plus email verification page
+- Show/hide password toggle (`PasswordInput.tsx`) on every password
+  field app-wide: Login, Signup, Reset Password, NotificationSettings
 - Market and vendor directory — browse, search, filter
-- Public market and vendor profiles — vendor profile restructured
-  (hero strip matching market height, identity panel with overlapping
-  logo, two-column body, Connect/Reviews as second row)
+- Public market and vendor profiles — both now share a common Identity
+  Panel design (light `#D6E9E6` panel with teal bottom border, white
+  circular logo plate, Follow button — vendor profile also has an
+  Email button — and a type-tags row under the name); hero photo strip
+  hidden on mobile for both; vendor profile body is two-row (Find Us
+  At | Gallery, then About + Connect | Reviews)
 - `headerPhotoUrl` + `headerPhotoPosition` on both Vendor and Market
   types, with Top/Center/Bottom focal point control (25/50/75%)
 - `PhotoGallery` component — built-from-scratch lightbox, full a11y
   (focus trap, ESC, arrow nav, screen reader attributes)
 - Client-side image resizing (`resizeToWebP` in `ImageUploader.tsx`) +
   HEIC/HEIF conversion — live across signup, vendor, and market uploads
+- `storage.rules` — admin-assisted uploads now allowed: market/vendor
+  image writes succeed if either `ownerId` matches the uploader or the
+  uploader's own `users/{uid}.isAdmin === true`
 - Admin panel (HQ): member list/search/pagination, review moderation,
   hard-delete member, direct profile editing
 - Organizer Hub — full Event Manager (add/edit/delete/archive,
@@ -376,8 +392,6 @@ Payment Accepted
   instance, worth including in that same pass.
 
 ### 🟡 Phase 1.3 / Near Term
-- Market organizer profile — restructure body layout to mirror the
-  vendor profile work (confirmed still desired, not started)
 - Vendor contact form vs. market Message-button disclosure pattern —
   open question, deliberately parked pending Kera's own feedback-gathering
 - "Featured" paid placement — **fully spec'd July 2, 2026, ready to build.**
@@ -392,7 +406,6 @@ Payment Accepted
   then automated permanent purge (status unconfirmed)
 - Light/dark mode toggle (status unconfirmed)
 - Accessibility pass — form field labels vs. placeholders (status unconfirmed)
-- Duplicate `PrivacyPolicyPage.tsx` / `PrivacyPage.tsx` — consolidate
 - `useNavigate()` migration — replace remaining `onNavigate`/`onBack`
   props; three navigation patterns currently coexist
 
@@ -487,17 +500,14 @@ build starting from prompt #1 next session.
 
 ## Known Issues / Watch List
 
-- **Modal.tsx colour bug:** uses nonexistent Tailwind class
-  `text-brand-dark-green` — every modal title in the app (login, forgot
-  password, upgrade, etc.) silently loses its intended brand colour.
-  One-line fix, high value.
 - **Dead code, safe to delete:** `LoginPage.tsx`, `AIConcierge.tsx`
   (orphaned — its activation button was already removed from the live
   site; recommended for deletion given the API key exposure risk if
-  ever wired back up carelessly), duplicate `VendorSignUpForm` and
-  `MembershipForm` inside `App.tsx`, `frontend/utils/slugify.ts`
+  ever wired back up carelessly), `frontend/utils/slugify.ts`
 - **CORS wide open on backend; no rate limiting or request logging** —
-  fine for beta, needs a decision before public launch
+  deferred through the closed-beta period; now that signup is public
+  (even if not actively promoted yet), this is worth prioritizing
+  before any wider promotion push
 - **Backend endpoints never called from frontend:** single-event fetch,
   `GET /reviews`, old `/auth/login`, `DELETE /follows/:id`
 - **`marketApplications`/`vendorApplications`/`organizerAccounts` routes**
@@ -506,14 +516,14 @@ build starting from prompt #1 next session.
 - **`seed.ts`** produces test data in a shape that no longer matches
   what live registration writes — low-stakes now, but would need
   re-syncing if ever reused
-- **Storage rules:** confirmed fixed as of this audit — ownership checks
-  and auth-gated reads are both in place. (Earlier "uncertain" language
-  is now resolved.)
+- **Storage rules:** ownership checks and auth-gated reads are both in
+  place, plus an admin-override OR condition on market/vendor writes
+  (see Known Issues entry on `isAdmin()` read cost, below).
 - **Token name contamination:** see Design Tokens section — deliberately
   deferred, not new drift.
 - **4-second post-signup refetch delay** in `App.tsx` `onSignupSuccess` —
   intentional timing hack to allow logo upload to complete before hub
-  renders. Replace with event-driven approach post-beta.
+  renders. Replace with event-driven approach when there's time.
 - **`organizerAccounts` collection** — Phase 2 only; avoid duplicating
   subscription fields already in `users` collection.
 - **Footer lives in App.tsx** — not a separate component.
@@ -522,6 +532,9 @@ build starting from prompt #1 next session.
   preview, then live vimarkets.ca after merge to `main`.
 - **`isAdmin()` Firestore rule** costs one extra read per evaluation —
   upgrade to custom claims before scaling. Confirmed still unresolved.
+  `storage.rules` now duplicates this same pattern (an extra read to
+  check `users/{uid}.isAdmin` on market/vendor image writes, to support
+  admin-assisted uploads) — same fix would cover both.
 - **Logout is instantaneous** — this is correct React/Firebase behaviour,
   not a bug. No fix needed.
 
@@ -554,10 +567,12 @@ build starting from prompt #1 next session.
 | `frontend/services/storageUpload.ts` | Firebase Storage upload helpers |
 | `frontend/components/ImageUploader.tsx` | Upload + client-side resize/HEIC conversion |
 | `frontend/components/PhotoGallery.tsx` | Reusable lightbox component |
-| `frontend/components/Modal.tsx` | ⚠️ Has the `text-brand-dark-green` colour bug |
+| `frontend/components/Modal.tsx` | Shared modal wrapper |
 | `frontend/components/MarketProfile.tsx` | Public market profile page |
 | `frontend/components/VendorProfile.tsx` | Public vendor profile page |
 | `frontend/components/ProfileManager.tsx` | Edit profile (market + vendor) |
+| `frontend/components/ResetPasswordForm.tsx` | "Set new password" — receiving side of the password reset flow |
+| `frontend/components/PasswordInput.tsx` | Reusable show/hide password toggle |
 | `frontend/components/OrganizerHub.tsx` | Organizer dashboard at /dashboard/my-market |
 | `frontend/components/MarketEventForm.tsx` | Add/edit market events |
 | `frontend/components/CalendarView.tsx` | Public calendar |
@@ -576,4 +591,4 @@ build starting from prompt #1 next session.
 | `backend/src/routes/brevo.ts` | Brevo API integration |
 | `backend/src/types/models.ts` | Backend TypeScript types |
 | `firestore.rules` | Firestore security rules |
-| `storage.rules` | Firebase Storage security rules — confirmed fixed |
+| `storage.rules` | Firebase Storage security rules — ownership + admin-override checks in place |
