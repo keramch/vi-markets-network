@@ -1,7 +1,36 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { db, auth } from "../firebase";
 
 const router = Router();
+
+// Verifies the request carries a valid Firebase ID token belonging to an admin user
+async function adminAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const token = authHeader.split("Bearer ")[1];
+
+  let decoded: Awaited<ReturnType<typeof auth.verifyIdToken>>;
+  try {
+    decoded = await auth.verifyIdToken(token);
+  } catch {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  try {
+    const userDoc = await db.collection("users").doc(decoded.uid).get();
+    if (!userDoc.exists || userDoc.data()?.isAdmin !== true) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  } catch {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  next();
+}
+
+router.use(adminAuthMiddleware);
 
 // POST /admin/message → log message details (real email service wired later)
 router.post("/message", async (req, res) => {

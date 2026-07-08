@@ -262,13 +262,15 @@ export const updateApplicationStatus = (
 
 // ADMIN — send message to a member
 
-export const sendAdminMessage = (
+export const sendAdminMessage = async (
   to: string,
   subject: string,
   body: string
 ): Promise<void> => {
+  const token = await firebaseAuth.currentUser?.getIdToken();
   return request<void>("/admin/message", {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: JSON.stringify({ to, subject, body }),
   });
 };
@@ -315,12 +317,14 @@ export const archiveMarketEvent = (id: string): Promise<void> => {
 
 // ADMIN — hard delete (market/vendor + owner user + Firebase Auth)
 
-export const hardDeleteMember = (
+export const hardDeleteMember = async (
   memberId: string,
   type: "market" | "vendor"
 ): Promise<void> => {
+  const token = await firebaseAuth.currentUser?.getIdToken();
   return request<void>(`/admin/members/${type}/${memberId}`, {
     method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 };
 
