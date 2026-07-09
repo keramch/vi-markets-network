@@ -538,6 +538,14 @@ build starting from prompt #1 next session.
 - **Logout is instantaneous** — this is correct React/Firebase behaviour,
   not a bug. No fix needed.
 
+- **Render has no preview/staging deployment — only `main`.** Unlike Vercel
+  (which builds a live preview for `dev`), Render's backend only deploys from
+  `main`. This means any backend route change is untestable until merged —
+  the usual dev→preview→main rhythm only fully applies to the frontend.
+  Discovered when testing the new /contact/send endpoint: frontend `dev`
+  preview called it fine, but got a 404 because Render was still serving
+  the old main-branch backend without that route.
+
 ---
 
 ## Firestore Collections
