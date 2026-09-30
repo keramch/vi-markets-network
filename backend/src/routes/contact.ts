@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
+import { db } from "../firebase";
+import { escapeHtml } from "../utils/escapeHtml";
 
 const router = Router();
 
@@ -11,24 +13,41 @@ const contactRateLimiter = rateLimit({
   message: { error: "Too many messages sent — please try again later" },
 });
 
-// Prevent sender-controlled fields from injecting markup into the HTML email body
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+// Returns the name of the active market/vendor whose public contact email is
+// `email`, or null. The contact form may only send to listed members — never
+// to an arbitrary address.
+async function findListingNameByContactEmail(email: string): Promise<string | null> {
+  for (const col of ["markets", "vendors"]) {
+    const snap = await db.collection(col).where("contact.email", "==", email).limit(1).get();
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      if (data.status === "active" || data.status === undefined) return data.name ?? "";
+    }
+  }
+  return null;
 }
 
 // Send a profile contact-form message via Brevo transactional email
 router.post("/send", contactRateLimiter, async (req: Request, res: Response) => {
-  const { recipientEmail, recipientName, senderName, senderEmail, subject, message } = req.body;
+  const { recipientEmail, senderName, senderEmail, subject, message } = req.body;
 
-  if (!recipientEmail || !recipientName || !senderName || !senderEmail || !subject || !message) {
+  if (!recipientEmail || !senderName || !senderEmail || !subject || !message) {
     res.status(400).json({
-      error: "recipientEmail, recipientName, senderName, senderEmail, subject, and message are required",
+      error: "recipientEmail, senderName, senderEmail, subject, and message are required",
     });
+    return;
+  }
+
+  let recipientName: string | null;
+  try {
+    recipientName = await findListingNameByContactEmail(String(recipientEmail));
+  } catch (err) {
+    console.error("Contact form recipient lookup failed:", err);
+    res.status(500).json({ error: "Failed to send message" });
+    return;
+  }
+  if (recipientName === null) {
+    res.status(400).json({ error: "This member can't receive messages right now." });
     return;
   }
 

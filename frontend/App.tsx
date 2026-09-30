@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
-import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
+import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 
 import Header from './components/Header';
@@ -300,10 +300,21 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Handle Firebase Auth email verification redirect
-    if (params.get('mode') === 'verifyEmail' || params.get('verified') === 'true') {
+    // Handle Firebase Auth email verification link: confirm the code with
+    // Firebase (this is what actually marks the email verified), then show /verified
+    const oobCode = params.get('oobCode');
+    if (params.get('mode') === 'verifyEmail' && oobCode) {
+      applyActionCode(firebaseAuth, oobCode)
+        .then(() => firebaseAuth.currentUser?.reload())
+        .then(() => navigate('/verified', { replace: true }))
+        .catch(() => {
+          showNotification('This verification link has expired or was already used.');
+          navigate('/', { replace: true });
+        });
+    } else if (params.get('verified') === 'true') {
       navigate('/verified');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Firebase Auth password reset redirect
@@ -639,7 +650,7 @@ const App: React.FC = () => {
     message: string;
   }): Promise<void> => {
     await api.sendContactMessage(params);
-    showNotification(`Message sent to ${params.recipientEmail} regarding "${params.subject}"`);
+    showNotification(`Message sent to ${params.recipientName} regarding "${params.subject}"`);
   };
 
   const handlePurchasePromotion = (promotion: Promotion) => {

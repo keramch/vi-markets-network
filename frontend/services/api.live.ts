@@ -304,6 +304,12 @@ export const sendAdminMessage = async (
   });
 };
 
+// EMAIL VERIFICATION — backend emails the signed-in user their own verification link
+
+export const sendVerificationEmail = (): Promise<void> => {
+  return request<void>("/brevo/send-verification", { method: "POST" });
+};
+
 // CONTACT — send a message via a vendor/market profile contact form
 
 export const sendContactMessage = (params: {

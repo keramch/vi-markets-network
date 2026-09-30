@@ -115,21 +115,11 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   // ── Email verification ────────────────────────────────────────────────────
 
-  const sendCustomVerificationEmail = async (user: any) => {
+  // The backend builds the real Firebase verification link and emails it to
+  // the signed-in user. (The user arg is kept for the existing call sites.)
+  const sendCustomVerificationEmail = async (_user: unknown) => {
     try {
-      const verificationUrl = await user.getIdToken().then((token: string) => {
-        return `https://vimarkets.ca/__/auth/action?mode=verifyEmail&oobCode=${token}&continueUrl=https://vimarkets.ca/?verified=true`;
-      });
-
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/brevo/send-verification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
-          firstName: firstName.trim(),
-          verificationUrl,
-        }),
-      });
+      await api.sendVerificationEmail();
     } catch (err) {
       console.error('Custom verification email failed:', err);
     }

@@ -1,8 +1,31 @@
 import { Router, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
+import { db, auth } from "../firebase";
+import { requireAuth } from "../middleware/auth";
+import { escapeHtml } from "../utils/escapeHtml";
 
 const router = Router();
 
-router.post("/subscribe", async (req: Request, res: Response) => {
+const subscribeRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many signups from this device — please try again later" },
+});
+
+const verificationRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many verification emails requested — please try again later" },
+});
+
+// Where members land after clicking the verification link
+const VERIFY_CONTINUE_URL = "https://www.vimarkets.ca/verified";
+
+router.post("/subscribe", subscribeRateLimiter, async (req: Request, res: Response) => {
   const { email, firstName, city } = req.body;
 
   if (!email || !firstName) {
@@ -46,16 +69,22 @@ router.post("/subscribe", async (req: Request, res: Response) => {
   }
 });
 
-// Send custom verification email
-router.post("/send-verification", async (req: Request, res: Response) => {
-  const { email, firstName, verificationUrl } = req.body;
-
-  if (!email || !firstName || !verificationUrl) {
-    res.status(400).json({ error: "email, firstName, and verificationUrl are required" });
+// Send custom verification email to the signed-in member.
+// Recipient, name and link are all determined server-side — the caller can
+// only ever send their own verification email.
+router.post("/send-verification", verificationRateLimiter, requireAuth, async (req: Request, res: Response) => {
+  const email = req.user!.email;
+  if (!email) {
+    res.status(400).json({ error: "Your account has no email address" });
     return;
   }
 
   try {
+    const userDoc = await db.collection("users").doc(req.user!.uid).get();
+    const rawFirstName = (userDoc.data()?.firstName as string | undefined) || req.user!.name?.split(" ")[0] || "there";
+    const firstName = escapeHtml(rawFirstName);
+    const verificationUrl = await auth.generateEmailVerificationLink(email, { url: VERIFY_CONTINUE_URL });
+
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -67,7 +96,7 @@ router.post("/send-verification", async (req: Request, res: Response) => {
           name: "VI Markets Network",
           email: "hello@vimarkets.ca"
         },
-        to: [{ email, name: firstName }],
+        to: [{ email, name: rawFirstName }],
         subject: "Please verify your VI Markets account",
         htmlContent: `
           <div style="font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #EBF5EC;">

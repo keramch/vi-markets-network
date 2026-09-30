@@ -26,10 +26,12 @@ router.post("/create-checkout-session", express.json(), async (req, res) => {
     return res.status(401).json({ error: "Invalid token" });
   }
 
-  const { priceId, uid } = req.body as { priceId?: string; uid?: string };
+  const { priceId } = req.body as { priceId?: string };
+  // The account being upgraded is always the signed-in caller (any uid in the body is ignored)
+  const uid = decoded.uid;
 
-  if (!priceId || !uid) {
-    return res.status(400).json({ error: "priceId and uid are required" });
+  if (!priceId) {
+    return res.status(400).json({ error: "priceId is required" });
   }
 
   const stripePriceId = PRICE_MAP[priceId];
