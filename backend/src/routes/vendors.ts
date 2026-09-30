@@ -31,6 +31,10 @@ router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
 
   try {
+    // Never create a record by editing one that doesn't exist
+    if (!(await db.collection("vendors").doc(id).get()).exists) {
+      return res.status(404).json({ error: "Not found" });
+    }
     const callerIsAdmin = await isAdminUser(req.user!.uid);
     if (!callerIsAdmin && !(await ownsListing(req.user!.uid, "vendors", id))) {
       return res.status(403).json({ error: "You can only edit your own vendor profile." });

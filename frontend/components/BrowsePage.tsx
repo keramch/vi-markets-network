@@ -14,7 +14,8 @@ interface BrowsePageProps {
   onSwitchMode: () => void;
 }
 
-const fuzzyMatch = (term: string, text: string) => {
+const fuzzyMatch = (term: string, text: string | undefined) => {
+  if (!text) return false;
   const words = term.toLowerCase().split(" ").filter(Boolean);
   const target = text.toLowerCase();
   return words.every((w) => target.includes(w));

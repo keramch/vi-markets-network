@@ -32,7 +32,8 @@ interface SearchableVendor extends Vendor {
 
 // --- helpers ---
 
-const fuzzySearch = (term: string, text: string) => {
+const fuzzySearch = (term: string, text: string | undefined) => {
+  if (!text) return false;
   const searchWords = term.toLowerCase().split(" ").filter((w) => w);
   const targetText = text.toLowerCase();
   return searchWords.every((word) => targetText.includes(word));

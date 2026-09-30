@@ -30,7 +30,8 @@ const isMarket = (profile: Market | Vendor): profile is Market => {
   return 'location' in profile;
 };
 
-const fuzzyMatch = (term: string, target: string): boolean => {
+const fuzzyMatch = (term: string, target: string | undefined): boolean => {
+  if (!target) return false; // skip malformed records (e.g. a market with no name) instead of crashing
   const words = term.toLowerCase().split(' ').filter(Boolean);
   const t = target.toLowerCase();
   return words.every(w => t.includes(w));
