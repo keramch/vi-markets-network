@@ -364,23 +364,29 @@ const App: React.FC = () => {
       }
     };
 
-    // Wave 2: admin/app data — fetch in background, no loading gate
-    const fetchAdminData = async () => {
+    // Wave 2: app data — fetch in background, no loading gate
+    const fetchAppData = async () => {
       try {
-        const [applicationsData, usersData] = await Promise.all([
-          api.getApplications(),
-          api.getUsers(),
-        ]);
-        setApplications(applicationsData);
-        setUsers(usersData);
+        setApplications(await api.getApplications());
       } catch (error) {
-        console.error("Failed to fetch admin data:", error);
+        console.error("Failed to fetch applications:", error);
       }
     };
 
     fetchPublicData();
-    fetchAdminData();
+    fetchAppData();
   }, []);
+
+  // Full member list is admin-only (backend enforces this too)
+  useEffect(() => {
+    if (!currentUser?.isAdmin) {
+      setUsers([]);
+      return;
+    }
+    api.getUsers()
+      .then(setUsers)
+      .catch((error) => console.error("Failed to fetch users:", error));
+  }, [currentUser?.isAdmin]);
 
   const handleCookieConsent = () => {
     localStorage.setItem('cookie_consent', 'true');

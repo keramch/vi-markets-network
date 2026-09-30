@@ -78,7 +78,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
     }
   }
 
-  const isFoundingMember = owner?.subscription?.foundingMember;
+  const isFoundingMember = market.ownerFoundingMember ?? owner?.subscription?.foundingMember;
   const heroObjPosition = market.headerPhotoPosition === 'top' ? 'center 25%'
     : market.headerPhotoPosition === 'bottom' ? 'center 75%'
     : 'center 50%';

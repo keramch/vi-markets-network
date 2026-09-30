@@ -1,7 +1,20 @@
 import { Router } from "express";
 import { db, auth } from "../firebase";
+import { requireAuth, requireAdmin, isAdminUser } from "../middleware/auth";
 
 const router = Router();
+
+// Fields a member may change on their own users doc. Everything else
+// (isAdmin, subscription, email, ownedMarketId, ...) is admin-only.
+const SELF_EDITABLE_USER_FIELDS = new Set([
+  "firstName",
+  "lastName",
+  "displayName",
+  "city",
+  "postalCode",
+  "notificationSettings",
+  "autoRenew",
+]);
 
 // ── Slug helpers ──────────────────────────────────────────────────────────────
 
@@ -30,8 +43,8 @@ async function generateUniqueSlug(
   }
 }
 
-// GET /users → return all users
-router.get("/", async (_req, res) => {
+// GET /users → return all users (admin only — contains every member's email)
+router.get("/", requireAdmin, async (_req, res) => {
   try {
     const snapshot = await db.collection("users").get();
     const users = snapshot.docs.map(doc => ({
@@ -275,8 +288,11 @@ router.post("/register", async (req, res) => {
       .limit(1)
       .get();
     if (!existing.empty) {
-      const existingDoc = existing.docs[0];
-      return res.status(200).json({ id: existingDoc.id, ...existingDoc.data() });
+      // Never return the existing record — the caller hasn't proven they own it
+      return res.status(409).json({
+        error: "An account with this email already exists. Try logging in instead.",
+        field: "email",
+      });
     }
 
     // Create Firebase Auth user and use its UID as the Firestore document ID
@@ -397,12 +413,25 @@ router.post("/register-oauth", async (req, res) => {
   }
 });
 
-// PATCH /users/:id → update user (for membership, notifications, etc.)
-router.patch("/:id", async (req, res) => {
+// PATCH /users/:id → update user (notifications, city, etc.)
+// Members can edit only their own doc and only SELF_EDITABLE_USER_FIELDS.
+// Admins can edit any user and any field (e.g. founding member toggle).
+router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const updates = (req.body ?? {}) as Record<string, unknown>;
 
   try {
+    const callerIsAdmin = await isAdminUser(req.user!.uid);
+    if (!callerIsAdmin) {
+      if (req.user!.uid !== id) {
+        return res.status(403).json({ error: "You can only update your own account." });
+      }
+      const blocked = Object.keys(updates).filter(key => !SELF_EDITABLE_USER_FIELDS.has(key));
+      if (blocked.length > 0) {
+        return res.status(403).json({ error: `These fields can't be changed: ${blocked.join(", ")}` });
+      }
+    }
+
     const docRef = db.collection("users").doc(id);
     await docRef.set(updates, { merge: true });
     const updated = await docRef.get();

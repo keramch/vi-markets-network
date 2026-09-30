@@ -1,15 +1,20 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { getFoundingMemberUids } from "../utils/foundingMembers";
 
 const router = Router();
 
 // GET /markets → returns all markets from Firestore
 router.get("/", async (_req, res) => {
   try {
-    const snapshot = await db.collection("markets").get();
+    const [snapshot, foundingUids] = await Promise.all([
+      db.collection("markets").get(),
+      getFoundingMemberUids(),
+    ]);
     const markets = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      ownerFoundingMember: foundingUids.has(doc.data().ownerId),
     }));
     res.json(markets);
   } catch (err) {

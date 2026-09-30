@@ -154,7 +154,8 @@ export const login = async (email: string, password: string): Promise<User> => {
   return fetchMe(authedEmail);
 };
 
-// FETCH ME — retrieves the Firestore user doc by email (used after login / on page reload)
+// FETCH ME — retrieves the signed-in user's own Firestore doc (used after login / on page reload).
+// The backend identifies the user from the auth token; the email param is ignored.
 
 export const fetchMe = (email: string): Promise<User> => {
   return request<User>(`/auth/me?email=${encodeURIComponent(email)}`).then(normalizeUser);

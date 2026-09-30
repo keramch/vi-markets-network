@@ -1,94 +1,48 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { requireAuth } from "../middleware/auth";
 
 const router = Router();
 
-// POST /auth/login → behaves like your mock login:
-// find user by email, or auto-create a "free" user if not found.
-router.post("/login", async (req, res) => {
-  const { email, postalCode } = req.body as { email: string; postalCode: string };
+// (The old POST /auth/login — email + postal code, no password — was removed.
+// Login happens in Firebase Auth on the frontend, then calls GET /auth/me.)
 
-  if (!email || !postalCode) {
-    return res.status(400).json({ error: "Email and postalCode are required" });
-  }
-
-  try {
-    const emailLower = email.toLowerCase();
-
-    // Try emailLower first (new documents), fall back to email field (seeded/legacy docs)
-    let snapshot = await db
-      .collection("users")
-      .where("emailLower", "==", emailLower)
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) {
-      snapshot = await db
-        .collection("users")
-        .where("email", "==", email)
-        .limit(1)
-        .get();
-    }
-
-    if (snapshot.empty) {
-      // Auto-create like your mock api.ts does
-      const newUser = {
-        email,
-        emailLower,
-        postalCode,
-        membership: "free",
-        isAdmin: false,
-        autoRenew: false,
-        isFoundingMember: false,
-        notificationSettings: {
-          favoriteMarket: true,
-          favoriteVendor: true,
-          nearbyMarket: false
-        },
-        createdAt: Date.now()
-      };
-
-      const docRef = await db.collection("users").add(newUser);
-      return res.json({ id: docRef.id, ...newUser });
-    } else {
-      const doc = snapshot.docs[0];
-      const user = { id: doc.id, ...doc.data() };
-      return res.json(user);
-    }
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "Login failed" });
-  }
-});
-
-// GET /auth/me?email=xxx → fetch the Firestore user document by email (used by client-side auth state listener)
-router.get("/me", async (req, res) => {
-  const { email } = req.query as { email?: string };
-  if (!email) return res.status(400).json({ error: "email query param required" });
+// GET /auth/me → the signed-in member's own Firestore user document.
+// Identity comes from the verified Firebase ID token only; the legacy
+// ?email= query param is ignored so nobody can look up another member.
+router.get("/me", requireAuth, async (req, res) => {
+  const { uid, email } = req.user!;
 
   try {
-    const emailLower = email.toLowerCase();
+    // Normal case: users doc ID == Firebase Auth UID
+    const byUid = await db.collection("users").doc(uid).get();
+    if (byUid.exists) {
+      return res.json({ id: byUid.id, ...byUid.data() });
+    }
 
-    let snapshot = await db
-      .collection("users")
-      .where("emailLower", "==", emailLower)
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) {
-      snapshot = await db
+    // Fallback for older docs not keyed by UID — match on the token's own email
+    if (email) {
+      let snapshot = await db
         .collection("users")
-        .where("email", "==", email)
+        .where("emailLower", "==", email.toLowerCase())
         .limit(1)
         .get();
+
+      if (snapshot.empty) {
+        snapshot = await db
+          .collection("users")
+          .where("email", "==", email)
+          .limit(1)
+          .get();
+      }
+
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        return res.json({ id: doc.id, ...doc.data() });
+      }
     }
 
-    if (snapshot.empty) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const doc = snapshot.docs[0];
-    return res.json({ id: doc.id, ...doc.data() });
+    return res.status(404).json({ error: "User not found" });
   } catch (err) {
     console.error("/auth/me error:", err);
     res.status(500).json({ error: "Failed to fetch user" });

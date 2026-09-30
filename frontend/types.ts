@@ -267,6 +267,7 @@ export interface Vendor {
     source: 'self' | 'organizer';
   }[];
   isFeatured?: boolean;
+  ownerFoundingMember?: boolean; // set by GET /vendors — owner is a founding member
   productHighlights?: string[];
   sustainabilityPractices?: string;
   certifications?: string[];
@@ -314,6 +315,7 @@ export interface Market {
   vendorIds: string[];
   reviews: Review[];
   isFeatured?: boolean;
+  ownerFoundingMember?: boolean; // set by GET /markets — owner is a founding member
   amenities?: MarketAmenity[];
   paymentOptions?: PaymentOption[];
   seasonalInfo?: string;

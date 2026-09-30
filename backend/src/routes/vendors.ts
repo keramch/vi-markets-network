@@ -1,15 +1,20 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { getFoundingMemberUids } from "../utils/foundingMembers";
 
 const router = Router();
 
 // GET /vendors → return all vendors
 router.get("/", async (_req, res) => {
   try {
-    const snapshot = await db.collection("vendors").get();
+    const [snapshot, foundingUids] = await Promise.all([
+      db.collection("vendors").get(),
+      getFoundingMemberUids(),
+    ]);
     const vendors = snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      ownerFoundingMember: foundingUids.has(doc.data().ownerId),
     }));
     res.json(vendors);
   } catch (err) {
