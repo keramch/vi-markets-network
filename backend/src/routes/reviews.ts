@@ -85,6 +85,10 @@ router.patch("/:id", requireAdmin, async (req, res) => {
 
   try {
     const docRef = db.collection("reviews").doc(id);
+    // Never create a record by editing one that doesn't exist
+    if (!(await docRef.get()).exists) {
+      return res.status(404).json({ error: "Review not found" });
+    }
     await docRef.set({ status }, { merge: true });
     const updated = await docRef.get();
     res.json({ id: updated.id, ...updated.data() });

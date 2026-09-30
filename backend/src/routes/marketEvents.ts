@@ -12,9 +12,9 @@ async function canManageMarketEvents(uid: string | undefined, marketPageId: stri
 
 // Can the caller edit/archive this specific event?
 async function checkEventAccess(uid: string, eventId: string): Promise<"admin" | "owner" | "forbidden" | "not-found"> {
-  if (await isAdminUser(uid)) return "admin";
   const doc = await db.collection("marketEvents").doc(eventId).get();
-  if (!doc.exists) return "not-found";
+  if (!doc.exists) return "not-found"; // never create an event by editing a missing one
+  if (await isAdminUser(uid)) return "admin";
   const data = doc.data()!;
   if (data.organizerUid === uid) return "owner";
   if (data.marketPageId && (await ownsListing(uid, "markets", data.marketPageId))) return "owner";
