@@ -163,21 +163,26 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Change Password</h3>
             <div className="space-y-3 max-w-sm">
+              {/* Tells password managers which account these passwords belong to */}
+              <input type="email" name="username" autoComplete="username" value={currentUser.email} readOnly hidden />
               <PasswordInput
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
                 placeholder="Current password"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
               <PasswordInput
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
                 placeholder="New password (min 8 characters)"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
               <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
                 placeholder="Confirm new password"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />

@@ -459,7 +459,33 @@ const App: React.FC = () => {
           // follows failed — non-fatal
         }
       } catch (error) {
-          showNotification(error instanceof Error ? error.message : 'Login failed.');
+          showNotification(friendlyLoginError(error));
+      }
+  };
+
+  // Turn Firebase Auth error codes into plain-language messages
+  const friendlyLoginError = (error: unknown): string => {
+      const code = (error as { code?: string })?.code ?? '';
+      switch (code) {
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+          return "That email and password don't match. Check for typos, or use \"Forgot password?\" to reset it.";
+        case 'auth/invalid-email':
+          return "That doesn't look like a valid email address.";
+        case 'auth/too-many-requests':
+          return 'Too many attempts. Please wait a few minutes, or use "Forgot password?" to reset your password.';
+        case 'auth/user-disabled':
+          return 'This account has been disabled. Please contact hello@vimarkets.ca.';
+        case 'auth/network-request-failed':
+          return 'Connection problem. Check your internet connection and try again.';
+        case 'auth/password-does-not-meet-requirements':
+          return 'Our password requirements have changed. Please use "Forgot password?" to set a new password.';
+        default:
+          if (error instanceof api.ApiError && error.status === 404) {
+            return "We couldn't find a profile for this login. Please contact hello@vimarkets.ca.";
+          }
+          return 'Login failed. Please try again.';
       }
   };
   

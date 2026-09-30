@@ -43,6 +43,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, onSubmit }
       <p className="text-sm text-gray-600">
         Resetting password for <span className="font-medium text-gray-800">{email}</span>
       </p>
+      {/* Tells browser password managers which account this new password belongs to,
+          so it isn't saved over a different saved login for this site */}
+      <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
+
       <div>
         <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">New Password</label>
         <PasswordInput
