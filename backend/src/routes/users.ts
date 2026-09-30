@@ -45,11 +45,35 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /users/register → create a new user account from the signup wizard
-router.post("/register", async (req, res) => {
+// ── Shared member creation ────────────────────────────────────────────────────
+// Used by both email/password signup (/register) and social sign-in signup
+// (/register-oauth). Writes the users doc, the vendor or market profile, and
+// syncs the contact to Brevo. The Firebase Auth user must already exist.
+
+type AccountType = "vendor" | "market" | "community";
+
+interface MemberProfileInput {
+  firstName: string;
+  lastName: string;
+  accountType: AccountType;
+  businessName?: string;
+  city?: string;
+  description?: string;
+  plan?: string;
+  vendorTypes?: string[];
+  categories?: string[];
+  tags?: string[];
+  marketCategories?: string[];
+  newsletterOptIn?: boolean;
+}
+
+async function createMemberRecords(
+  userId: string,
+  email: string,
+  input: MemberProfileInput,
+  authProvider: string,
+): Promise<{ status: number; body: Record<string, unknown> }> {
   const {
-    email,
-    password,
     firstName,
     lastName,
     accountType,
@@ -62,22 +86,180 @@ router.post("/register", async (req, res) => {
     tags,
     marketCategories,
     newsletterOptIn,
-  } = req.body as {
+  } = input;
+  const emailLower = email.toLowerCase();
+
+  const newUser = {
+    email,
+    emailLower,
+    postalCode: "",
+    firstName,
+    lastName,
+    displayName: `${firstName} ${lastName}`,
+    subscription: {
+      tier: "free",
+      billingCycle: null,
+      foundingMember: false,
+      termEnds: null,
+      introRate: false,
+      stripeCustomerId: null,
+      stripePaymentId: null,
+    },
+    ownedMarketId: "",
+    ownedVendorId: "",
+    isAdmin: false,
+    autoRenew: false,
+    accountType,
+    businessName: businessName ?? '',
+    city: city ?? '',
+    description: description || "",
+    notificationSettings: {
+      favoriteMarket: true,
+      favoriteVendor: true,
+      nearbyMarket: false,
+    },
+    authProvider,
+    createdAt: Date.now(),
+  };
+
+  await db.collection("users").doc(userId).set(newUser);
+
+  // Create the vendor or market profile document
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  let ownedMarketId = "";
+  let ownedVendorId = "";
+
+  if (accountType !== "community") {
+    if (accountType === "market") {
+      const existingMarket = await db.collection("markets").where("ownerId", "==", userId).limit(1).get();
+      if (!existingMarket.empty) {
+        const userDoc = await db.collection("users").doc(userId).get();
+        return { status: 200, body: { id: userId, ...userDoc.data(), ownedMarketId: existingMarket.docs[0].id } };
+      }
+      const slug = await generateUniqueSlug(businessName!, "markets");
+      const marketDoc = {
+        ownerId: userId,
+        name: businessName,
+        slug,
+        description: description || "",
+        marketTypes: marketCategories || [],
+        photos: [],
+        contact: { email },
+        location: {
+          address: city ?? '',
+          coordinates: { lat: 0, lng: 0 },
+        },
+        schedule: { rules: [] },
+        vendorIds: [],
+        reviews: [],
+        isFeatured: false,
+        joinDate: today,
+        status: "active",
+      };
+      const marketRef = await db.collection("markets").add(marketDoc);
+      ownedMarketId = marketRef.id;
+    } else {
+      const existingVendor = await db.collection("vendors").where("ownerId", "==", userId).limit(1).get();
+      if (!existingVendor.empty) {
+        const userDoc = await db.collection("users").doc(userId).get();
+        return { status: 200, body: { id: userId, ...userDoc.data(), ownedVendorId: existingVendor.docs[0].id } };
+      }
+      const slug = await generateUniqueSlug(businessName!, "vendors");
+      const vendorDoc = {
+        ownerId: userId,
+        name: businessName,
+        slug,
+        description: description || "",
+        category: "Artisan & Crafts",
+        photos: [],
+        contact: { email },
+        vendorTypes: vendorTypes || [],
+        categories: categories || [],
+        tags: tags || [],
+        priceRange: "moderate",
+        attendingMarkets: [],
+        reviews: [],
+        isFeatured: false,
+        joinDate: today,
+        status: "active",
+      };
+      const vendorRef = await db.collection("vendors").add(vendorDoc);
+      ownedVendorId = vendorRef.id;
+    }
+  }
+
+  // Update the user document with the new profile ID
+  await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
+
+  // ── Brevo contact sync ──────────────────────────────────────────────────────
+  if (newsletterOptIn !== false) {
+    try {
+      const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
+      if (!isNaN(brevoListId)) {
+        const brevoAttributes: Record<string, string | boolean> = {
+          FIRSTNAME: firstName,
+          LASTNAME: lastName,
+          CITY: city ?? '',
+          MEMBERTYPE: accountType === "vendor" ? "Vendor" : accountType === "market" ? "Market" : "Community",
+          IS_MEMBER: true,
+          SUBSCRIPTION_TIER: plan ?? "free",
+          FOUNDING_MEMBER: false,
+        };
+
+        if (businessName) brevoAttributes.BUSINESSNAME = businessName;
+
+        if (accountType === "vendor" && vendorTypes && vendorTypes.length > 0) {
+          brevoAttributes.VENDOR_TYPES = vendorTypes.join("|");
+        }
+        if (accountType === "market" && marketCategories && marketCategories.length > 0) {
+          brevoAttributes.MARKET_TYPES = marketCategories.join("|");
+        }
+
+        const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": process.env.BREVO_API_KEY ?? "",
+          },
+          body: JSON.stringify({
+            email,
+            attributes: brevoAttributes,
+            listIds: [brevoListId],
+            updateEnabled: true,
+          }),
+        });
+
+        if (!brevoResponse.ok) {
+          const errorBody = await brevoResponse.text();
+          console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
+        }
+      } else {
+        console.warn("BREVO_LIST_ID not set -- skipping Brevo sync");
+      }
+    } catch (brevoErr) {
+      console.error("Brevo sync failed (non-fatal):", brevoErr);
+    }
+  }
+  // ── End Brevo sync ──────────────────────────────────────────────────────────
+
+  return {
+    status: 201,
+    body: {
+      id: userId,
+      ...newUser,
+      ownedMarketId,
+      ownedVendorId,
+    },
+  };
+}
+
+// POST /users/register → create a new user account from the signup wizard
+router.post("/register", async (req, res) => {
+  const { email, password, ...profile } = req.body as MemberProfileInput & {
     email: string;
     password: string;
-    firstName: string;
-    lastName: string;
-    accountType: "vendor" | "market" | "community";
-    businessName?: string;
-    city?: string;
-    description?: string;
-    plan?: string;
-    vendorTypes?: string[];
-    categories?: string[];
-    tags?: string[];
-    marketCategories?: string[];
-    newsletterOptIn?: boolean;
   };
+  const { firstName, lastName, accountType } = profile;
 
   if (!email || !password || !firstName || !lastName || !accountType) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -97,171 +279,15 @@ router.post("/register", async (req, res) => {
       return res.status(200).json({ id: existingDoc.id, ...existingDoc.data() });
     }
 
-    const newUser = {
-      email,
-      emailLower,
-      postalCode: "",
-      firstName,
-      lastName,
-      displayName: `${firstName} ${lastName}`,
-      subscription: {
-        tier: "free",
-        billingCycle: null,
-        foundingMember: false,
-        termEnds: null,
-        introRate: false,
-        stripeCustomerId: null,
-        stripePaymentId: null,
-      },
-      ownedMarketId: "",
-      ownedVendorId: "",
-      isAdmin: false,
-      autoRenew: false,
-      accountType,
-      businessName: businessName ?? '',
-      city: city ?? '',
-      description: description || "",
-      notificationSettings: {
-        favoriteMarket: true,
-        favoriteVendor: true,
-        nearbyMarket: false,
-      },
-      createdAt: Date.now(),
-    };
-
     // Create Firebase Auth user and use its UID as the Firestore document ID
     const firebaseUser = await auth.createUser({
       email,
       password,
       displayName: `${firstName} ${lastName}`,
     });
-    const userId = firebaseUser.uid;
-    await db.collection("users").doc(userId).set(newUser);
 
-    // Create the vendor or market profile document
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    let ownedMarketId = "";
-    let ownedVendorId = "";
-
-    if (accountType !== "community") {
-      if (accountType === "market") {
-        const existingMarket = await db.collection("markets").where("ownerId", "==", userId).limit(1).get();
-        if (!existingMarket.empty) {
-          const userDoc = await db.collection("users").doc(userId).get();
-          return res.status(200).json({ id: userId, ...userDoc.data(), ownedMarketId: existingMarket.docs[0].id });
-        }
-        const slug = await generateUniqueSlug(businessName!, "markets");
-        const marketDoc = {
-          ownerId: userId,
-          name: businessName,
-          slug,
-          description: description || "",
-          marketTypes: marketCategories || [],
-          photos: [],
-          contact: { email },
-          location: {
-            address: city ?? '',
-            coordinates: { lat: 0, lng: 0 },
-          },
-          schedule: { rules: [] },
-          vendorIds: [],
-          reviews: [],
-          isFeatured: false,
-          joinDate: today,
-          status: "active",
-        };
-        const marketRef = await db.collection("markets").add(marketDoc);
-        ownedMarketId = marketRef.id;
-      } else {
-        const existingVendor = await db.collection("vendors").where("ownerId", "==", userId).limit(1).get();
-        if (!existingVendor.empty) {
-          const userDoc = await db.collection("users").doc(userId).get();
-          return res.status(200).json({ id: userId, ...userDoc.data(), ownedVendorId: existingVendor.docs[0].id });
-        }
-        const slug = await generateUniqueSlug(businessName!, "vendors");
-        const vendorDoc = {
-          ownerId: userId,
-          name: businessName,
-          slug,
-          description: description || "",
-          category: "Artisan & Crafts",
-          photos: [],
-          contact: { email },
-          vendorTypes: vendorTypes || [],
-          categories: categories || [],
-          tags: tags || [],
-          priceRange: "moderate",
-          attendingMarkets: [],
-          reviews: [],
-          isFeatured: false,
-          joinDate: today,
-          status: "active",
-        };
-        const vendorRef = await db.collection("vendors").add(vendorDoc);
-        ownedVendorId = vendorRef.id;
-      }
-    }
-
-    // Update the user document with the new profile ID
-    await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
-
-    // ── Brevo contact sync ────────────────────────────────────────────────────
-    if (newsletterOptIn !== false) {
-      try {
-        const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
-        if (!isNaN(brevoListId)) {
-          const brevoAttributes: Record<string, string | boolean> = {
-            FIRSTNAME: firstName,
-            LASTNAME: lastName,
-            CITY: city ?? '',
-            MEMBERTYPE: accountType === "vendor" ? "Vendor" : accountType === "market" ? "Market" : "Community",
-            IS_MEMBER: true,
-            SUBSCRIPTION_TIER: plan ?? "free",
-            FOUNDING_MEMBER: false,
-          };
-
-          if (businessName) brevoAttributes.BUSINESSNAME = businessName;
-
-          if (accountType === "vendor" && vendorTypes && vendorTypes.length > 0) {
-            brevoAttributes.VENDOR_TYPES = vendorTypes.join("|");
-          }
-          if (accountType === "market" && marketCategories && marketCategories.length > 0) {
-            brevoAttributes.MARKET_TYPES = marketCategories.join("|");
-          }
-
-          const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "api-key": process.env.BREVO_API_KEY ?? "",
-            },
-            body: JSON.stringify({
-              email,
-              attributes: brevoAttributes,
-              listIds: [brevoListId],
-              updateEnabled: true,
-            }),
-          });
-
-          if (!brevoResponse.ok) {
-            const errorBody = await brevoResponse.text();
-            console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
-          }
-        } else {
-          console.warn("BREVO_LIST_ID not set -- skipping Brevo sync");
-        }
-      } catch (brevoErr) {
-        console.error("Brevo sync failed (non-fatal):", brevoErr);
-      }
-    }
-    // ── End Brevo sync ────────────────────────────────────────────────────────
-
-    return res.status(201).json({
-      id: userId,
-      ...newUser,
-      ownedMarketId,
-      ownedVendorId,
-    });
+    const result = await createMemberRecords(firebaseUser.uid, email, profile, "password");
+    return res.status(result.status).json(result.body);
   } catch (err) {
     const code = (err as { code?: string })?.code;
     const message = err instanceof Error ? err.message : String(err);
@@ -281,6 +307,92 @@ router.post("/register", async (req, res) => {
     }
 
     console.error("Register error:", err);
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+// POST /users/register-oauth → create the member profile for someone who has
+// already signed in with a social provider (Google). Identity (uid + email)
+// comes ONLY from the verified Firebase ID token, never from the request body.
+// If the member already has a profile, it is returned unchanged (status 200).
+router.post("/register-oauth", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Please sign in again and retry." });
+  }
+
+  let decoded: Awaited<ReturnType<typeof auth.verifyIdToken>>;
+  try {
+    decoded = await auth.verifyIdToken(authHeader.split("Bearer ")[1]);
+  } catch {
+    return res.status(401).json({ error: "Please sign in again and retry." });
+  }
+
+  const provider = decoded.firebase?.sign_in_provider ?? "";
+  const email = decoded.email;
+  if (provider === "password") {
+    return res.status(400).json({ error: "Use the email signup form for email and password accounts." });
+  }
+  if (!email || decoded.email_verified !== true) {
+    return res.status(400).json({
+      error: "We couldn't get a verified email address from that sign-in. Please sign up with your email instead.",
+      field: "email",
+    });
+  }
+
+  const body = (req.body ?? {}) as Partial<MemberProfileInput>;
+  const accountType = body.accountType;
+  if (accountType !== "vendor" && accountType !== "market" && accountType !== "community") {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+  if (accountType !== "community" && !body.businessName?.trim()) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  // Names: prefer what the member typed, fall back to their provider profile name
+  const [tokenFirst = "", ...tokenRest] = (decoded.name ?? "").trim().split(/\s+/);
+  const firstName = body.firstName?.trim() || tokenFirst || "Member";
+  const lastName = body.lastName?.trim() || tokenRest.join(" ");
+
+  try {
+    // Already has a profile → return it (they're an existing member)
+    const byUid = await db.collection("users").doc(decoded.uid).get();
+    if (byUid.exists) {
+      return res.status(200).json({ id: byUid.id, ...byUid.data() });
+    }
+
+    // A different account already uses this email
+    const byEmail = await db
+      .collection("users")
+      .where("emailLower", "==", email.toLowerCase())
+      .limit(1)
+      .get();
+    if (!byEmail.empty) {
+      return res.status(409).json({
+        error: "An account with this email already exists. Try logging in with your email and password instead.",
+        field: "email",
+      });
+    }
+
+    const result = await createMemberRecords(
+      decoded.uid,
+      email,
+      {
+        firstName,
+        lastName,
+        accountType,
+        businessName: body.businessName?.trim(),
+        city: body.city,
+        description: body.description,
+        vendorTypes: body.vendorTypes,
+        marketCategories: body.marketCategories,
+        newsletterOptIn: body.newsletterOptIn,
+      },
+      provider,
+    );
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("Register (oauth) error:", err);
     res.status(500).json({ error: "Registration failed" });
   }
 });
