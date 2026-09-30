@@ -10,6 +10,7 @@ import ImageUploader from './ImageUploader';
 import HelpTip from './HelpTip';
 import { CheckIcon } from './Icons';
 import PasswordInput from './PasswordInput';
+import { PASSWORD_RULES, passwordMeetsPolicy } from '../utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -144,7 +145,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
       if (!firstName.trim()) e.firstName = 'First name is required';
       if (!lastName.trim()) e.lastName = 'Last name is required';
       if (!/\S+@\S+\.\S+/.test(email.trim())) e.email = 'Enter a valid email address';
-      if (password.length < 8) e.password = 'Password must be at least 8 characters';
+      if (!passwordMeetsPolicy(password))
+        e.password = 'Your password needs at least 8 characters, including at least one special character.';
       setErrors3(e);
       return Object.keys(e).length === 0;
     }
@@ -517,16 +519,33 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   </div>
 
                   <div>
-                    <label className={labelCls}>Password</label>
+                    <label htmlFor="password" className={labelCls}>Password</label>
                     <PasswordInput
                       id="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyDown={handleStepEnter}
                       className={inputCls}
-                      placeholder="At least 8 characters"
                       autoComplete="new-password"
+                      ariaDescribedBy="password-rules"
                     />
+                    <ul id="password-rules" className="mt-2 space-y-1">
+                      {PASSWORD_RULES.map((rule) => {
+                        const met = rule.test(password);
+                        return (
+                          <li
+                            key={rule.id}
+                            className={`flex items-center gap-2 text-sm ${met ? 'text-brand-light-blue' : 'text-gray-600'}`}
+                          >
+                            <span aria-hidden="true" className="w-4 flex-shrink-0 text-center">
+                              {met ? <CheckIcon className="w-4 h-4" /> : '•'}
+                            </span>
+                            {rule.label}
+                            <span className="sr-only">{met ? ' — done' : ' — not yet'}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
                     {errors3.password && <p className={errCls}>{errors3.password}</p>}
                   </div>
 

@@ -12,6 +12,7 @@ interface PasswordInputProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  ariaDescribedBy?: string;
 }
 
 const PasswordInput: React.FC<PasswordInputProps> = ({
@@ -25,6 +26,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
   required,
   disabled,
   className = '',
+  ariaDescribedBy,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,6 +43,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
         autoComplete={autoComplete}
         required={required}
         disabled={disabled}
+        aria-describedby={ariaDescribedBy}
         className={`${className} pr-10`}
       />
       <button

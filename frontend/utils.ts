@@ -225,3 +225,17 @@ export function buildGoogleCalendarUrl(
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
+
+// ── Password policy ──────────────────────────────────────────────────────────
+// Must match the Firebase Auth password policy (Firebase Console → Authentication
+// → Settings → Password policy). If the policy changes there, update it here too.
+// Special characters are the set Firebase accepts for "require special character".
+const PASSWORD_SPECIAL_CHARS = /[\^$*.[\]{}()?"!@#%&/\,><':;|_~`=+-]/;
+
+export const PASSWORD_RULES = [
+  { id: 'length', label: 'At least 8 characters', test: (pw: string) => pw.length >= 8 },
+  { id: 'special', label: 'At least one special character, like ! @ # $ or ?', test: (pw: string) => PASSWORD_SPECIAL_CHARS.test(pw) },
+] as const;
+
+export const passwordMeetsPolicy = (pw: string): boolean =>
+  PASSWORD_RULES.every((rule) => rule.test(pw));
