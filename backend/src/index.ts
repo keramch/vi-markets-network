@@ -16,9 +16,14 @@ import followsRouter from "./routes/follows";
 import brevoRouter from "./routes/brevo";
 import stripeRouter from "./routes/stripe";
 import contactRouter from "./routes/contact";
+import { attachUser } from "./middleware/auth";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Render runs behind one proxy — trust it so req.ip is the visitor's real IP
+// (otherwise rate limits are shared by every visitor)
+app.set("trust proxy", 1);
 
 app.use(cors());
 
@@ -26,6 +31,9 @@ app.use(cors());
 app.use("/stripe", stripeRouter);
 
 app.use(express.json());
+
+// Identify the caller (if signed in) on every route below. Does not block anything.
+app.use(attachUser);
 
 app.get("/", (_req, res) => {
   res.json({ ok: true, message: "VI Markets backend is running 🎉" });

@@ -27,13 +27,26 @@ export class ApiError extends Error {
   }
 }
 
+// Returns an Authorization header for the signed-in user, or {} if signed out.
+// The backend uses this to check who is making each request.
+export async function authHeader(): Promise<Record<string, string>> {
+  const user = firebaseAuth.currentUser;
+  if (!user) return {};
+  try {
+    return { Authorization: `Bearer ${await user.getIdToken()}` };
+  } catch {
+    return {};
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(await authHeader()),
       ...(options.headers || {})
-    },
-    ...options
+    }
   });
 
   if (!res.ok) {
@@ -284,10 +297,8 @@ export const sendAdminMessage = async (
   subject: string,
   body: string
 ): Promise<void> => {
-  const token = await firebaseAuth.currentUser?.getIdToken();
   return request<void>("/admin/message", {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: JSON.stringify({ to, subject, body }),
   });
 };
@@ -354,10 +365,8 @@ export const hardDeleteMember = async (
   memberId: string,
   type: "market" | "vendor"
 ): Promise<void> => {
-  const token = await firebaseAuth.currentUser?.getIdToken();
   return request<void>(`/admin/members/${type}/${memberId}`, {
     method: "DELETE",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 };
 
