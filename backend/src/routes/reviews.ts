@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { requireAuth, requireAdmin } from "../middleware/auth";
 
 const router = Router();
 
-// (Optional) GET /reviews → list all reviews
-// Not used by your UI yet, but handy for testing.
-router.get("/", async (_req, res) => {
+// GET /reviews → list all reviews, including pending/declined (admin only)
+router.get("/", requireAdmin, async (_req, res) => {
   try {
     const snapshot = await db.collection("reviews").get();
     const reviews = snapshot.docs.map(doc => ({
@@ -19,32 +19,47 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /reviews → create a new review
-// expected body: { entityType: 'market' | 'vendor', entityId, rating, comment, author }
-router.post("/", async (req, res) => {
-  const { entityType, entityId, rating, comment, author, userId, reviewerAccountType } = req.body as {
+// POST /reviews → create a new review (signed-in members only)
+// expected body: { entityType: 'market' | 'vendor', entityId, rating, comment }
+// The author name, userId and account type come from the reviewer's own
+// account, so nobody can post a review under someone else's name.
+router.post("/", requireAuth, async (req, res) => {
+  const { entityType, entityId, comment } = req.body as {
     entityType: "market" | "vendor";
     entityId: string;
-    rating: number;
     comment: string;
-    author: string;
-    userId?: string;
-    reviewerAccountType?: string;
   };
+  const rating = Number(req.body?.rating);
 
-  if (!entityType || !entityId || !rating || !comment || !author) {
+  if (!entityType || !entityId || !comment) {
     return res.status(400).json({ error: "Missing required review fields" });
+  }
+  if (entityType !== "market" && entityType !== "vendor") {
+    return res.status(400).json({ error: "entityType must be 'market' or 'vendor'" });
+  }
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: "Rating must be a whole number from 1 to 5" });
+  }
+  if (String(comment).length > 2000) {
+    return res.status(400).json({ error: "Reviews can be at most 2000 characters" });
   }
 
   try {
+    const userId = req.user!.uid;
+    const reviewer = (await db.collection("users").doc(userId).get()).data() ?? {};
+    const author = reviewer.firstName && reviewer.lastName
+      ? `${reviewer.firstName} ${String(reviewer.lastName).charAt(0)}.`
+      : (req.user!.email ?? "Member").split("@")[0];
+    const reviewerAccountType = reviewer.accountType as string | undefined;
+
     const now = new Date();
     const newReview = {
       entityType,
       entityId,
       rating,
-      comment,
+      comment: String(comment),
       author,
-      ...(userId ? { userId } : {}),
+      userId,
       ...(reviewerAccountType ? { reviewerAccountType } : {}),
       status: "pending",
       date: now.toISOString().split("T")[0], // YYYY-MM-DD like your mock
@@ -59,8 +74,8 @@ router.post("/", async (req, res) => {
   }
 });
 
-// PATCH /reviews/:id → update review status (approved / declined)
-router.patch("/:id", async (req, res) => {
+// PATCH /reviews/:id → update review status (approved / declined) — admin only
+router.patch("/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body as { status: "approved" | "declined" };
 

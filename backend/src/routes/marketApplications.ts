@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { requireAdmin } from "../middleware/auth";
 
 const router = Router();
+
+// Phase 2 feature with no UI yet — admin-only until the real permissions
+// (organizer / vendor access) are designed alongside the UI.
+router.use(requireAdmin);
 
 // GET /market-applications?marketEventId=xxx&status=open
 router.get("/", async (req, res) => {

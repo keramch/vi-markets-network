@@ -25,7 +25,25 @@ const PORT = process.env.PORT || 4000;
 // (otherwise rate limits are shared by every visitor)
 app.set("trust proxy", 1);
 
-app.use(cors());
+// Only our own sites may call the API from a browser. (Requests with no Origin
+// header — Stripe webhooks, server-to-server calls — are not affected by CORS.)
+const ALLOWED_ORIGINS = [
+  "https://www.vimarkets.ca",
+  "https://vimarkets.ca",
+  "https://vi-markets-network.vercel.app",
+  "http://localhost:3000",
+];
+// Vercel preview deployments of this project (branch alias and per-build URLs)
+const VERCEL_PREVIEW_ORIGIN = /^https:\/\/vi-markets-network-[a-z0-9-]+-keramchs-projects\.vercel\.app$/;
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin) || VERCEL_PREVIEW_ORIGIN.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+}));
 
 // Stripe webhook MUST be registered before express.json() — raw body required for signature verification
 app.use("/stripe", stripeRouter);

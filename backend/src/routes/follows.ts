@@ -1,19 +1,18 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { requireAuth, isAdminUser } from "../middleware/auth";
 
 const router = Router();
 
-// GET /follows?followerUid=xxx&targetType=market
-// Returns all follows for a user, optionally filtered by targetType.
-router.get("/", async (req, res) => {
-  const { followerUid, targetType } = req.query as {
-    followerUid?: string;
-    targetType?: "market" | "vendor";
-  };
+// All follow routes act on the signed-in member's own follows. Any
+// followerUid sent by the client is ignored in favour of the auth token.
+router.use(requireAuth);
 
-  if (!followerUid) {
-    return res.status(400).json({ error: "followerUid is required" });
-  }
+// GET /follows?targetType=market
+// Returns all of the caller's follows, optionally filtered by targetType.
+router.get("/", async (req, res) => {
+  const { targetType } = req.query as { targetType?: "market" | "vendor" };
+  const followerUid = req.user!.uid;
 
   try {
     let query: FirebaseFirestore.Query = db
@@ -34,16 +33,16 @@ router.get("/", async (req, res) => {
 });
 
 // POST /follows → follow a market or vendor
-// body: { followerUid, targetId, targetType }
+// body: { targetId, targetType }
 router.post("/", async (req, res) => {
-  const { followerUid, targetId, targetType } = req.body as {
-    followerUid: string;
+  const { targetId, targetType } = req.body as {
     targetId: string;
     targetType: "market" | "vendor";
   };
+  const followerUid = req.user!.uid;
 
-  if (!followerUid || !targetId || !targetType) {
-    return res.status(400).json({ error: "followerUid, targetId, and targetType are required" });
+  if (!targetId || !targetType) {
+    return res.status(400).json({ error: "targetId and targetType are required" });
   }
   if (targetType !== "market" && targetType !== "vendor") {
     return res.status(400).json({ error: "targetType must be 'market' or 'vendor'" });
@@ -77,11 +76,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-// DELETE /follows/:id → unfollow
+// DELETE /follows/:id → unfollow (own follows only, or admin)
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    await db.collection("follows").doc(id).delete();
+    const docRef = db.collection("follows").doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Follow not found" });
+    }
+    if (doc.data()?.followerUid !== req.user!.uid && !(await isAdminUser(req.user!.uid))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    await docRef.delete();
     return res.json({ ok: true });
   } catch (err) {
     console.error("Error deleting follow:", err);
@@ -89,12 +96,13 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// DELETE /follows?followerUid=xxx&targetId=yyy → unfollow by lookup (no doc ID needed)
+// DELETE /follows?targetId=yyy → unfollow by lookup (no doc ID needed)
 router.delete("/", async (req, res) => {
-  const { followerUid, targetId } = req.query as { followerUid?: string; targetId?: string };
+  const { targetId } = req.query as { targetId?: string };
+  const followerUid = req.user!.uid;
 
-  if (!followerUid || !targetId) {
-    return res.status(400).json({ error: "followerUid and targetId are required" });
+  if (!targetId) {
+    return res.status(400).json({ error: "targetId is required" });
   }
 
   try {

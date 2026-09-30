@@ -1,8 +1,13 @@
 import { Router } from "express";
 import { db } from "../firebase";
+import { requireAdmin } from "../middleware/auth";
 import { TIER_MAX_LISTINGS, SubscriptionTier } from "../types/models";
 
 const router = Router();
+
+// Phase 2 feature with no UI yet — admin-only until the real permissions
+// (organizer / vendor access) are designed alongside the UI.
+router.use(requireAdmin);
 
 // GET /organizer-accounts/:uid → get an organizer account by uid
 router.get("/:uid", async (req, res) => {

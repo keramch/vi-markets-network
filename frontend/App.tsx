@@ -375,18 +375,20 @@ const App: React.FC = () => {
       }
     };
 
-    // Wave 2: app data — fetch in background, no loading gate
-    const fetchAppData = async () => {
-      try {
-        setApplications(await api.getApplications());
-      } catch (error) {
-        console.error("Failed to fetch applications:", error);
-      }
-    };
-
     fetchPublicData();
-    fetchAppData();
   }, []);
+
+  // Applications are private — the backend returns only the ones this member
+  // is involved in (none when signed out), so reload whenever the user changes
+  useEffect(() => {
+    if (!currentUser) {
+      setApplications([]);
+      return;
+    }
+    api.getApplications()
+      .then(setApplications)
+      .catch((error) => console.error("Failed to fetch applications:", error));
+  }, [currentUser?.id]);
 
   // Full member list is admin-only (backend enforces this too)
   useEffect(() => {
