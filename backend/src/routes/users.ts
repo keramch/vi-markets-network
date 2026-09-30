@@ -263,6 +263,23 @@ router.post("/register", async (req, res) => {
       ownedVendorId,
     });
   } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const message = err instanceof Error ? err.message : String(err);
+
+    // Firebase password policy (set in Firebase Console): min 8 chars + 1 special character
+    if (message.includes("PASSWORD_DOES_NOT_MEET_REQUIREMENTS")) {
+      return res.status(400).json({
+        error: "Your password needs at least 8 characters, including at least one special character (like ! @ # $). Please choose a different password and try again.",
+        field: "password",
+      });
+    }
+    if (code === "auth/email-already-exists") {
+      return res.status(409).json({
+        error: "An account with this email already exists. Try logging in instead.",
+        field: "email",
+      });
+    }
+
     console.error("Register error:", err);
     res.status(500).json({ error: "Registration failed" });
   }
