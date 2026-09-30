@@ -14,6 +14,19 @@ import type {
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+// Error thrown for non-2xx responses. `field` is set when the backend says which
+// form field caused the problem (e.g. "password" or "email" on signup).
+export class ApiError extends Error {
+  status: number;
+  field?: string;
+  constructor(message: string, status: number, field?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.field = field;
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: {
@@ -25,15 +38,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     let message = `Request failed with ${res.status}`;
+    let field: string | undefined;
     try {
       const data = await res.json();
       if (data && typeof (data as any).error === "string") {
         message = (data as any).error;
       }
+      if (data && typeof (data as any).field === "string") {
+        field = (data as any).field;
+      }
     } catch {
       // ignore JSON parse errors
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status, field);
   }
 
   try {

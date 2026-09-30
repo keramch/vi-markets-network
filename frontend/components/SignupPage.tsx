@@ -168,6 +168,19 @@ const SignupPage: React.FC<SignupPageProps> = ({
     }
   };
 
+  // If the backend flagged a specific account field, send the user back to step 3
+  // and show the message under that field. Otherwise show it at the bottom.
+  const handleSubmitError = (err: unknown) => {
+    if (err instanceof api.ApiError && (err.field === 'password' || err.field === 'email')) {
+      const field = err.field;
+      setWizardStep(3);
+      setErrors3((prev) => ({ ...prev, [field]: err.message }));
+      setSubmitError('');
+      return;
+    }
+    setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+  };
+
   const goNext = async () => {
     if (isSubmittingRef.current) return;
     if (!validate()) return;
@@ -194,7 +207,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         setIsSuccess(true);
         window.scrollTo(0, 0);
       } catch (err) {
-        setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+        handleSubmitError(err);
       } finally {
         setIsSubmitting(false);
         isSubmittingRef.current = false;
@@ -248,7 +261,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           }
         }
       } catch (err) {
-        setSubmitError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+        handleSubmitError(err);
       } finally {
         setIsSubmitting(false);
         isSubmittingRef.current = false;
@@ -274,7 +287,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const inputCls =
     'w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors';
   const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
-  const errCls = 'text-red-500 text-xs mt-1';
+  const errCls = 'text-red-600 text-sm mt-1';
 
   // ── Render ────────────────────────────────────────────────────────────────
 
