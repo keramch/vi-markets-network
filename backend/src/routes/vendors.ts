@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { db } from "../firebase";
 import { getFoundingMemberUids } from "../utils/foundingMembers";
+import { requireAuth, isAdminUser } from "../middleware/auth";
+import { ownsListing, sanitizeListingUpdate } from "../utils/listingAccess";
 
 const router = Router();
 
@@ -24,11 +26,17 @@ router.get("/", async (_req, res) => {
 });
 
 // PATCH /vendors/:id → update vendor
-router.patch("/:id", async (req, res) => {
+// Owner or admin only. Non-admins can't change ownerId, status, isFeatured, etc.
+router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
 
   try {
+    const callerIsAdmin = await isAdminUser(req.user!.uid);
+    if (!callerIsAdmin && !(await ownsListing(req.user!.uid, "vendors", id))) {
+      return res.status(403).json({ error: "You can only edit your own vendor profile." });
+    }
+    const updates = sanitizeListingUpdate((req.body ?? {}) as Record<string, unknown>, callerIsAdmin) as Record<string, any>;
+
     const docRef = db.collection("vendors").doc(id);
     await docRef.set(updates, { merge: true });
     const updated = await docRef.get();

@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { db } from "../firebase";
 import { getFoundingMemberUids } from "../utils/foundingMembers";
+import { requireAuth, isAdminUser } from "../middleware/auth";
+import { ownsListing, sanitizeListingUpdate } from "../utils/listingAccess";
 
 const router = Router();
 
@@ -23,12 +25,18 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /markets → create a placeholder (unclaimed) market record
-router.post("/", async (req, res) => {
+// POST /markets → create a placeholder (unclaimed) market record.
+// Only a vendor adding a market to their own profile (or an admin) may do this.
+router.post("/", requireAuth, async (req, res) => {
   const { name, vendorId, city, address } = req.body;
 
   if (!name || !vendorId) {
     res.status(400).json({ error: "name and vendorId are required" });
+    return;
+  }
+
+  if (!(await ownsListing(req.user!.uid, "vendors", vendorId)) && !(await isAdminUser(req.user!.uid))) {
+    res.status(403).json({ error: "You can only add markets to your own vendor profile." });
     return;
   }
 
@@ -60,11 +68,17 @@ router.post("/", async (req, res) => {
 });
 
 // PATCH /markets/:id → api.updateMarket(id, updates)
-router.patch("/:id", async (req, res) => {
+// Owner or admin only. Non-admins can't change ownerId, status, isFeatured, etc.
+router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
 
   try {
+    const callerIsAdmin = await isAdminUser(req.user!.uid);
+    if (!callerIsAdmin && !(await ownsListing(req.user!.uid, "markets", id))) {
+      return res.status(403).json({ error: "You can only edit your own market." });
+    }
+    const updates = sanitizeListingUpdate((req.body ?? {}) as Record<string, unknown>, callerIsAdmin) as Record<string, any>;
+
     const docRef = db.collection("markets").doc(id);
     await docRef.set(updates, { merge: true });
     const updated = await docRef.get();
