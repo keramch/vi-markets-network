@@ -1,7 +1,7 @@
 # CLAUDE.md — VI Markets Network
 
 This file is read automatically by Claude Code at session start.
-Last updated: July 7, 2026
+Last updated: September 29, 2026
 
 ---
 
@@ -83,11 +83,29 @@ ignore it.)*
 - **Frontend does NOT touch Firestore directly.** All Firestore reads
   and writes go through the Express backend via Admin SDK.
 - **Firebase Storage IS accessed directly from the frontend.**
-- Firebase Admin SDK bypasses Firestore security rules — security
-  gaps are only exploitable via direct Firebase access, not the backend.
+- **Firebase Admin SDK bypasses Firestore AND Storage security rules** —
+  so the rules files only protect direct browser access. **Every backend
+  route must do its own access check.** (Until Sept 29, 2026 most routes
+  didn't — see "Security lockdown" below.)
+- **Backend auth pattern (Sept 29, 2026):** the frontend `request()` in
+  `api.live.ts` attaches the signed-in user's Firebase ID token to every
+  call. `backend/src/middleware/auth.ts` runs `attachUser` on every route
+  (sets `req.user` from the token, never blocks) and provides
+  `requireAuth` / `requireAdmin` / `isAdminUser`. Identity always comes
+  from `req.user` — **never trust a uid, email or ownerId sent in the
+  request body or query string.** New routes must use these helpers.
+- **Never create records by editing them:** Firestore `set(..., {merge:true})`
+  creates the doc if it doesn't exist. PATCH routes check the doc exists
+  first and return 404 otherwise.
 - **Testing workflow:** `dev` branch → Vercel preview deployment
   (stable URL) → merge to `main` once confirmed working on preview.
   No localhost testing — Kera tests on the live preview/production site.
+  Stable `dev` preview: https://vi-markets-network-git-dev-keramchs-projects.vercel.app/
+  (not the per-build hash URLs, which are frozen snapshots). The preview
+  frontend calls the **live** backend, so backend changes can only be
+  tested after merging to `main` (see Render note in Known Issues).
+- **Never test against the live backend with requests that could write
+  data**, even to fake IDs — old code has created junk records this way.
 
 ---
 
@@ -99,11 +117,18 @@ vi-markets-network/                   ← repo root
 ├── backend/
 │   ├── scripts/                      ← One-off migration/utility scripts
 │   └── src/
+│       ├── middleware/
+│       │   └── auth.ts               ← attachUser / requireAuth / requireAdmin
+│       ├── utils/
+│       │   ├── escapeHtml.ts         ← Escape user text in HTML emails
+│       │   ├── foundingMembers.ts    ← Founding-member UIDs for public badge
+│       │   └── listingAccess.ts      ← ownsListing + protected listing fields
 │       ├── routes/                   ← Express route handlers
 │       │   ├── admin.ts
-│       │   ├── applications.ts
-│       │   ├── auth.ts
+│       │   ├── applications.ts       ← Legacy vendor→market applications (live UI)
+│       │   ├── auth.ts               ← GET /auth/me only (token-based)
 │       │   ├── brevo.ts
+│       │   ├── contact.ts            ← Profile contact form → Brevo
 │       │   ├── follows.ts
 │       │   ├── marketApplications.ts
 │       │   ├── marketEvents.ts
@@ -312,7 +337,44 @@ Payment Accepted
 
 ---
 
-## Current State — July 7, 2026
+## Current State — September 29, 2026
+
+### 🔒 Security lockdown — completed Sept 29, 2026
+A full audit found that almost every backend route accepted requests from
+anyone (the Admin SDK skips the rules files, and only `/admin` and Stripe
+checkout checked the caller). Anyone could have made themselves admin via
+`PATCH /users/:id`, downloaded every member's record (the site even loaded
+the full list into every visitor's browser), sent phishing email from
+hello@vimarkets.ca via `/brevo/send-verification`, or edited any listing.
+No sign any of it was used. Fixed in 5 steps, all live and verified with
+both outside checks and a logged-in "second member" console test:
+- **Users:** members edit only their own doc and only safe fields
+  (`SELF_EDITABLE_USER_FIELDS` in users.ts); `GET /users` admin-only and
+  only fetched by the frontend for admins; `GET /auth/me` uses the token
+  (the `?email=` param is ignored); `/register` returns 409 (not the
+  existing record) for a duplicate email; legacy `POST /auth/login` removed.
+- **Public founding-member badge:** `GET /markets` and `GET /vendors`
+  include `ownerFoundingMember` (computed, never stored) instead of the
+  profile pages needing the member list.
+- **Markets/vendors:** owner or admin only. For non-admins the profile
+  editor's full-object save has `ownerId`, `status`, `isFeatured`,
+  `featuredUntil`, `impressionCount`, `joinDate`, `slug`, `reviews`
+  silently dropped (`sanitizeListingUpdate` in utils/listingAccess.ts).
+  **Featured build must set `isFeatured`/`featuredUntil` server-side**
+  (Stripe webhook or admin) — members can't set them.
+- **Events:** create/edit/archive by the market owner, the event's
+  organizer, or admin; drafts/cancelled/archived only visible to them.
+- **Email:** verification email only to the signed-in caller, link built
+  server-side; contact form only sends to a listed market/vendor's
+  contact email; `/brevo/subscribe` and verification rate limited
+  (5/hr/IP); `trust proxy` set so limits are per visitor.
+- **Reviews/follows/applications:** review author/userId come from the
+  account, rating 1–5, approve/decline admin-only; follows are self-only;
+  applications visible only to the vendor and receiving market.
+- **Phase 2 routes** (marketApplications, vendorApplications,
+  organizerAccounts) are admin-only until their UI + permissions are built.
+- **CORS** limited to vimarkets.ca, this project's Vercel previews, localhost.
+- **Stripe checkout** upgrades the token's uid, not a uid from the body.
 
 ### ✅ Working (confirmed via full codebase audit)
 - User auth: signup, login, forgot-password, and **full password
@@ -321,6 +383,25 @@ Payment Accepted
   Firebase oobCode via `verifyPasswordResetCode`, confirms the new
   password via `confirmPasswordReset`, opens the Login modal on
   success), plus email verification page
+- **Password policy** lives in Firebase Console (Authentication →
+  Settings): min 8 chars + 1 special character, enforced. Mirrored by
+  hand in `PASSWORD_RULES` (frontend/utils.ts) and the backend message in
+  `/users/register` — **update both if the policy changes.** A mismatch
+  here caused the Sept 29 "Registration failed" signups. Signup shows a
+  live checklist; password/email errors show under the right field.
+  (ResetPasswordForm + NotificationSettings still only check length.)
+- **Email verification actually works as of Sept 29.** Before that, the
+  link used the user's ID token as the oobCode and the site never called
+  `applyActionCode`, so nobody was ever verified in Firebase. Members
+  who signed up before Sept 29 are still unverified; nothing currently
+  depends on verification status.
+- Login shows plain-language errors (`friendlyLoginError` in App.tsx);
+  reset/change-password forms tell password managers which account the
+  password is for (hidden `autocomplete="username"` field).
+- Admin "message a member" sends via Brevo (July 7); an old header bug in
+  `request()` that likely broke it was fixed Sept 29.
+- `/users/register-oauth` backend endpoint built for Google sign-in (see
+  Phase 1.3) — not yet called by the frontend.
 - Show/hide password toggle (`PasswordInput.tsx`) on every password
   field app-wide: Login, Signup, Reset Password, NotificationSettings
 - Market and vendor directory — browse, search, filter
@@ -339,8 +420,8 @@ Payment Accepted
 - `storage.rules` — admin-assisted uploads now allowed: market/vendor
   image writes succeed if either `ownerId` matches the uploader or the
   uploader's own `users/{uid}.isAdmin === true`
-- Admin panel (HQ): member list/search/pagination, review moderation,
-  hard-delete member, direct profile editing
+- Admin panel (HQ): member list/search/pagination, hard-delete member,
+  direct profile editing (review moderation UI exists but see reviews bug)
 - Organizer Hub — full Event Manager (add/edit/delete/archive,
   recurring series), ICS/Google Calendar export
 - **Stripe payments — live and confirmed** (see Tech Stack)
@@ -364,10 +445,12 @@ Payment Accepted
   notifications ship, not dead code to delete.
 
 ### ⚠️ Discovered but not built (confirm before relying on these)
-- **Admin "message a member"** — does not send anything, only logs to
-  server console. Comment in code says "real email service wired later."
-  **Deliberately deprioritized** — admin-only, low visibility, Kera has
-  chosen to leave this as-is for now rather than build it out.
+- **Reviews never appear (found Sept 29).** `POST /reviews` saves to the
+  `reviews` collection, but nothing attaches them to markets/vendors —
+  profiles and the admin moderation screen read `listing.reviews`, which
+  is always empty (0 reviews across all listings). Submitted reviews
+  vanish on refresh and never reach moderation. Needs a real fix
+  (e.g. GET listings/reviews joining approved reviews).
 - **Promotions (paid add-on) page** — confirm button does a `console.log`,
   no purchase is processed. Modal says "Payment flow — coming in Phase 2."
 - **Map on market profile** — literal placeholder, renders the text
@@ -392,11 +475,38 @@ Payment Accepted
   instance, worth including in that same pass.
 
 ### 🟡 Phase 1.3 / Near Term
+- **Google sign-in — in progress (Sept 29).** Done: Firebase Console
+  provider enabled, authorized domains (vimarkets.ca, www, dev preview),
+  Google consent-screen branding (support email is Kera's Gmail — a
+  hello@ Google account wasn't possible), and the backend endpoint
+  `POST /users/register-oauth`. Remaining: signup wizard button (replace
+  the fake "Continue with Google" on step 3), login button, iPhone/in-app
+  browser handling (vercel.json `/__/auth` rewrite + redirect sign-in;
+  Google blocks sign-in inside Instagram/Facebook in-app browsers), and
+  linking existing email/password members. Decided: **Facebook maybe
+  later, Apple no** ($99/yr + relay emails), **Instagram login impossible**.
+- **Email deliverability:** all 3 email templates (verification, contact,
+  admin message) load the logo from a Gmail image-proxy URL
+  (`ci3.googleusercontent.com/meips/...`) — replace with a logo hosted on
+  www.vimarkets.ca (Kera to choose which image) and add plain-text parts.
+  SPF/DKIM/DMARC for Brevo are correct. Mail to hello@vimarkets.ca goes
+  through GreenGeeks, whose SpamAssassin tags `***SPAM***` (which then
+  breaks DKIM when forwarded to Gmail) — whitelist Brevo in cPanel.
+- **Signup polish (agreed Sept 29):** remove fake Google button until
+  real; remove placeholders from all fields and link every `<label>` to
+  its input (most signup labels have no `htmlFor`); raise 12px helper
+  text to 14px; "Select all that apply" contradicts the 3-type max;
+  replace the iOS-microphone HelpTip on description; add "we'll send a
+  confirmation link" hint under email. Kera to decide: newsletter opt-in
+  checkbox for vendors/markets (they're currently synced to Brevo with no
+  checkbox — CASL consideration). Agreements step says paid plans
+  auto-renew (untrue) — Kera: low priority while nobody is paying.
+- Apply `PASSWORD_RULES` to ResetPasswordForm and NotificationSettings.
 - Vendor contact form vs. market Message-button disclosure pattern —
-  open question, deliberately parked pending Kera's own feedback-gathering
+  open question, deliberately parked pending Kera's own feedback-gathering.
+  Note: contact emails are public in `GET /markets`/`/vendors` anyway.
 - "Featured" paid placement — **fully spec'd July 2, 2026, ready to build.**
   See dedicated section below.
-- Wire Brevo mailing list signup form in the footer
 - Add `id="hero"` to homepage hero div for scroll-to-top/anchor targeting
 - Fix remaining teal-on-dark text to `brand-teal-light` — Farmers Market
   category pill and any others
@@ -405,7 +515,8 @@ Payment Accepted
 - Delete account feature — immediate public removal, 30-day soft delete
   then automated permanent purge (status unconfirmed)
 - Light/dark mode toggle (status unconfirmed)
-- Accessibility pass — form field labels vs. placeholders (status unconfirmed)
+- Accessibility pass — form field labels vs. placeholders (Kera wants
+  placeholders removed everywhere, labels on everything — see Signup polish)
 - `useNavigate()` migration — replace remaining `onNavigate`/`onBack`
   props; three navigation patterns currently coexist
 
@@ -503,16 +614,26 @@ build starting from prompt #1 next session.
 - **Dead code, safe to delete:** `LoginPage.tsx`, `AIConcierge.tsx`
   (orphaned — its activation button was already removed from the live
   site; recommended for deletion given the API key exposure risk if
-  ever wired back up carelessly), `frontend/utils/slugify.ts`
-- **CORS wide open on backend; no rate limiting or request logging** —
-  deferred through the closed-beta period; now that signup is public
-  (even if not actively promoted yet), this is worth prioritizing
-  before any wider promotion push
+  ever wired back up carelessly), `frontend/utils/slugify.ts`,
+  `handleUpgradeMembership` in App.tsx (old pre-Stripe upgrade flow,
+  never called — it's also the source of the pre-existing
+  `setSelectedPlanForPayment` TypeScript error)
+- **4 pre-existing TypeScript errors** in the frontend (App.tsx dead
+  code above, BrowsePage `category`, 2× ProfileManager vendor-type
+  typing). Vercel builds anyway; when type-checking, compare the count
+  against 4 rather than expecting zero.
+- **CORS locked down and email endpoints rate limited (Sept 29).** Still
+  no general rate limiting on other routes or request logging.
 - **Backend endpoints never called from frontend:** single-event fetch,
-  `GET /reviews`, old `/auth/login`, `DELETE /follows/:id`
+  `GET /reviews` (now admin-only), `DELETE /follows/:id`. Old
+  `/auth/login` was removed Sept 29.
 - **`marketApplications`/`vendorApplications`/`organizerAccounts` routes**
-  are fully built and working but have zero frontend callers — built
-  ahead of the UI, intentional for Phase 2
+  have zero frontend callers — built ahead of the UI for Phase 2, and
+  **admin-only since Sept 29**. Design real organizer/vendor permissions
+  when the UI is built (they still use create-on-edit `set(merge)`).
+- **Legacy `applications` collection IS live:** vendors apply from market
+  profiles; market owners approve/reject in ProfileManager. Locked to the
+  involved vendor/market since Sept 29.
 - **`seed.ts`** produces test data in a shape that no longer matches
   what live registration writes — low-stakes now, but would need
   re-syncing if ever reused
@@ -592,7 +713,9 @@ build starting from prompt #1 next session.
 | `backend/src/index.ts` | Express app entry point |
 | `backend/src/firebase.ts` | Firebase Admin SDK init |
 | `backend/src/routes/stripe.ts` | Live Stripe checkout + webhook |
-| `backend/src/routes/users.ts` | User creation, Brevo sync |
+| `backend/src/routes/users.ts` | Signup (`/register`, `/register-oauth`) via shared `createMemberRecords`, Brevo sync, user edits |
+| `backend/src/middleware/auth.ts` | `attachUser` / `requireAuth` / `requireAdmin` — use on every new route |
+| `backend/src/utils/listingAccess.ts` | Listing ownership check + admin-only listing fields |
 | `backend/src/routes/markets.ts` | Market CRUD |
 | `backend/src/routes/vendors.ts` | Vendor CRUD (no unclaimed-creation equivalent yet) |
 | `backend/src/routes/marketEvents.ts` | Market event CRUD |
