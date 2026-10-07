@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { EMAIL_LOGO_IMG } from "../utils/emailBranding";
 import { db, auth } from "../firebase";
 
 const router = Router();
@@ -59,7 +60,7 @@ router.post("/message", async (req, res) => {
             <div style="background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
 
               <div style="text-align: center; margin-bottom: 40px;">
-                <img src="https://ci3.googleusercontent.com/meips/ADKq_NZl092yuhOixZXKVilPlSQApen9VhuohgXcyHJL7jW2KPDvYncamo_lIyyehxiRG1OrjHWXuT1vGh29GGYgSlT9oxh9DswhP7qhrxBsIFGoDjZcWIAuRs5uFvozB-0HdHQQL4tTLh51jRpRcotbaC1gb-3gT-e27rFTULlgZkCkUQSjhoLPOaV0VUg01Fh2akm9J1tu0JotQHCvkOmG1yx2xVobCtCrahQKWmMPGE7btSIR_rYvwR-ch1oyz_BHeOcKqejx9tPKd-AzwqaGatvGC9GLsDrcucM-BRac6MDSNsWHk_yUMTgDJz9tYg2NcfKB1epL8Txoa4RtK4Du3z_6ys_tq1EULDepgs-VvFvQBF70Aq-O5Zj9c0lyep_pbubRHBLYlTf9GKTGTGOFK4i8a2lLvWT6QlGDW_UreTdkqwwQcFnFtTI8WbsaCqWvEFbSyRMSqKVSpjXfWQawU_haGGkoZ7QV1S6AWbpTz02_A4OwvWyZY_DXHAnyv0N78Z8jeOrWIk9fGHD5cMawXI_fUwOLhtqNj4wjiOSsxwzEkO4WY_iNDhJb4mdJwwgddPDNRAbfmEE2ScjrOQ9CsCqaTqQZ2MfF3l4-PTanhi1WJLMt9x9107yvL2SGRaw=s0-d-e1-ft" alt="VI Markets Network" style="max-width: 200px; height: auto; margin-bottom: 20px;">
+                ${EMAIL_LOGO_IMG}
                 <p style="color: #4A4243; margin: 0; font-size: 14px;">Vancouver Island's Local Market Directory</p>
               </div>
 
@@ -79,6 +80,13 @@ router.post("/message", async (req, res) => {
             </div>
           </div>
         `,
+        textContent: [
+          subject,
+          "",
+          body,
+          "",
+          "Questions? We're here to help! Reply to this email or visit us at https://www.vimarkets.ca",
+        ].join("\n"),
       }),
     });
 

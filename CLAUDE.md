@@ -487,13 +487,15 @@ both outside checks and a logged-in "second member" console test:
   Google blocks sign-in inside Instagram/Facebook in-app browsers), and
   linking existing email/password members. Decided: **Facebook maybe
   later, Apple no** ($99/yr + relay emails), **Instagram login impossible**.
-- **Email deliverability:** all 3 email templates (verification, contact,
-  admin message) load the logo from a Gmail image-proxy URL
-  (`ci3.googleusercontent.com/meips/...`) — replace with a logo hosted on
-  www.vimarkets.ca (Kera to choose which image) and add plain-text parts.
-  SPF/DKIM/DMARC for Brevo are correct. Mail to hello@vimarkets.ca goes
-  through GreenGeeks, whose SpamAssassin tags `***SPAM***` (which then
-  breaks DKIM when forwarded to Gmail) — whitelist Brevo in cPanel.
+- **Email deliverability:** done Oct 6, 2026 — all 3 email templates
+  (verification, contact, admin message) now use the self-hosted
+  wordmark `frontend/public/email-logo.png` via `EMAIL_LOGO_IMG`
+  (backend/src/utils/emailBranding.ts) instead of a borrowed Gmail
+  image-proxy URL, and send a plain-text `textContent` part. SPF/DKIM/DMARC
+  for Brevo are correct. Still to do (Kera, no code): mail to
+  hello@vimarkets.ca goes through GreenGeeks, whose SpamAssassin tags
+  `***SPAM***` (which then breaks DKIM when forwarded to Gmail) —
+  whitelist Brevo in cPanel.
 - **Signup polish (agreed Sept 29):** remove fake Google button until
   real; remove placeholders from all fields and link every `<label>` to
   its input (most signup labels have no `htmlFor`); raise 12px helper
