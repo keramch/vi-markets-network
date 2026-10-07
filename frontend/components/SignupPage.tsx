@@ -592,7 +592,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       }
                     />
                     {accountType === 'market' && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-sm text-gray-500 mt-1">
                         This is your organizing entity's name — you'll create individual market events within your profile.
                       </p>
                     )}
@@ -602,13 +602,13 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   {accountType === 'market' && (
                     <div>
                       <label className={labelCls}>Market Type</label>
-                      <p className="text-xs text-gray-400 mb-2">Select the types that describe the markets you organize.</p>
+                      <p className="text-sm text-gray-500 mb-2">Choose up to 3 types that describe the markets you organize.</p>
                       {marketTypes.length >= 3 && (
-                        <p className="text-xs text-amber-600 mb-2">Maximum 3 types selected.</p>
+                        <p className="text-sm text-amber-700 mb-2">Maximum 3 types selected.</p>
                       )}
-                      <div className="grid grid-cols-1 gap-2">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                         {Object.values(MarketCategories).map(cat => (
-                          <label key={cat} className="flex items-center min-h-[2.75rem]">
+                          <label key={cat} className="flex items-center min-h-[2rem] cursor-pointer">
                             <input
                               type="checkbox"
                               value={cat}
