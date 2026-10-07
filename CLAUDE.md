@@ -289,9 +289,10 @@ never `brand-light-blue` or `brand-blue` for text.
 
 Two-level structure. Max 3 types per vendor.
 
-**17 Vendor Types** (broad — used for Brevo segmentation):
+**18 Vendor Types** (broad — used for Brevo segmentation):
 Agriculture & Produce, Meat & Seafood, Dairy & Eggs, Baked Goods,
-Prepared Foods & Preserves, Beverages, Fine Art & Artisan,
+Prepared Foods & Preserves, Food Trucks & Street Food (added Oct 6, 2026),
+Beverages, Fine Art & Artisan,
 Craft & Homemade, Clothing & Accessories, Wellness & Beauty,
 Home & Garden, Children's Products, Pet Products,
 Vintage & Collectibles, Books & Music, Experiences & Services,

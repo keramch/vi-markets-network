@@ -103,6 +103,7 @@ export const VendorTypes = [
   "Dairy & Eggs",
   "Baked Goods",
   "Prepared Foods & Preserves",
+  "Food Trucks & Street Food",
   "Beverages",
   "Fine Art & Artisan",
   "Craft & Homemade",
