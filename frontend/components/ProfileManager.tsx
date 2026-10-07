@@ -16,8 +16,7 @@ interface ProfileManagerProps {
   allMarkets: Market[];
   applications?: Application[];
   vendors?: Vendor[];
-  reviewsToModerate: Review[];
-  onModerateReview: (reviewId: string, newStatus: 'approved' | 'declined') => void;
+  listingReviews: Review[]; // pending + approved reviews of this listing (read-only)
   onUpdateApplicationStatus?: (applicationId: string, status: 'approved' | 'rejected') => void;
   onSaveChanges: (updatedData: Market | Vendor) => void;
   onBack: () => void;
@@ -47,8 +46,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     vendors = [],
     onSaveChanges, 
     onBack, 
-    reviewsToModerate, 
-    onModerateReview,
+    listingReviews,
     onUpdateApplicationStatus,
     isAdmin,
     onToggleAutoRenew,
@@ -450,7 +448,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                     </>
                  )}
                 {!isAdmin && (
-                     <TabButton tab="reviews" label="Review Moderation" />
+                     <TabButton tab="reviews" label="Reviews" />
                 )}
                 {isProMember && !isAdmin && (
                     <TabButton tab="billing" label="Billing & Membership" />
@@ -1124,22 +1122,26 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
 
             {activeTab === 'reviews' && (
                  <div>
-                    <h2 className="text-2xl font-serif text-brand-blue mb-4">Review Moderation</h2>
-                    {reviewsToModerate.length > 0 ? (
+                    <h2 className="text-2xl font-serif text-brand-blue mb-2">Your Reviews</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Every review is checked by the VI Markets team before it appears on your profile.
+                    </p>
+                    {listingReviews.length > 0 ? (
                         <div className="space-y-4">
-                            {reviewsToModerate.map(review => (
+                            {listingReviews.map(review => (
                                 <div key={review.id} className="p-3 border rounded-md bg-brand-cream/60">
-                                    <p className="font-semibold">{review.author} <span className="font-normal text-gray-600">rated {review.rating}/5</span></p>
-                                    <p className="text-sm text-gray-800 my-1">"{review.comment}"</p>
-                                    <div className="flex justify-end space-x-2 mt-2">
-                                        <button type="button" onClick={() => onModerateReview(review.id, 'approved')} className="text-xs font-semibold bg-green-200 text-green-800 px-2 py-1 rounded hover:bg-green-300">Approve</button>
-                                        <button type="button" onClick={() => onModerateReview(review.id, 'declined')} className="text-xs font-semibold bg-red-200 text-red-800 px-2 py-1 rounded hover:bg-red-300">Decline</button>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <p className="font-semibold">{review.author} <span className="font-normal text-gray-600">rated {review.rating}/5 · {review.date}</span></p>
+                                        <span className={`text-sm font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${review.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                                            {review.status === 'approved' ? 'Published' : 'Awaiting approval'}
+                                        </span>
                                     </div>
+                                    <p className="text-sm text-gray-800 my-1">"{review.comment}"</p>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-gray-500">You have no pending reviews to moderate.</p>
+                        <p className="text-sm text-gray-600">You don't have any reviews yet.</p>
                     )}
                 </div>
             )}

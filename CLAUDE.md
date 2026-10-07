@@ -431,7 +431,17 @@ both outside checks and a logged-in "second member" console test:
   image writes succeed if either `ownerId` matches the uploader or the
   uploader's own `users/{uid}.isAdmin === true`
 - Admin panel (HQ): member list/search/pagination, hard-delete member,
-  direct profile editing (review moderation UI exists but see reviews bug)
+  direct profile editing, review moderation
+- **Reviews (fixed Oct 6, 2026):** the `reviews` collection is the single
+  source of truth. `GET /markets` / `GET /vendors` attach each listing's
+  **approved** reviews (computed in `utils/reviews.ts`, never stored on the
+  listing — `reviews` is a computed field in `sanitizeListingUpdate`).
+  Admin HQ loads every review via admin-only `GET /reviews`; only admins
+  approve/decline. Owners see pending + approved reviews of their own
+  listing read-only via `GET /reviews/mine` (profile editor "Reviews"
+  tab). One review per member per listing (a declined one doesn't count).
+  Owners CAN review their own listing (Kera's choice). Before this fix,
+  reviews were saved but never displayed anywhere.
 - Organizer Hub — full Event Manager (add/edit/delete/archive,
   recurring series), ICS/Google Calendar export
 - **Stripe payments — live and confirmed** (see Tech Stack)
@@ -455,12 +465,6 @@ both outside checks and a logged-in "second member" console test:
   notifications ship, not dead code to delete.
 
 ### ⚠️ Discovered but not built (confirm before relying on these)
-- **Reviews never appear (found Sept 29).** `POST /reviews` saves to the
-  `reviews` collection, but nothing attaches them to markets/vendors —
-  profiles and the admin moderation screen read `listing.reviews`, which
-  is always empty (0 reviews across all listings). Submitted reviews
-  vanish on refresh and never reach moderation. Needs a real fix
-  (e.g. GET listings/reviews joining approved reviews).
 - **Promotions (paid add-on) page** — confirm button does a `console.log`,
   no purchase is processed. Modal says "Payment flow — coming in Phase 2."
 - **Map on market profile** — literal placeholder, renders the text

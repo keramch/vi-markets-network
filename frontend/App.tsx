@@ -228,8 +228,7 @@ const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
       onSaveChanges={onSaveChanges}
       onBack={() => navigate('/hq')}
       isAdmin={true}
-      reviewsToModerate={[]}
-      onModerateReview={() => {}}
+      listingReviews={[]}
       onToggleAutoRenew={() => {}}
     />
   );
@@ -403,6 +402,30 @@ const App: React.FC = () => {
       .then(setUsers)
       .catch((error) => console.error("Failed to fetch users:", error));
   }, [currentUser?.isAdmin]);
+
+  // All reviews (pending/approved/declined) for Admin HQ moderation
+  const [adminReviews, setAdminReviews] = useState<Review[]>([]);
+  useEffect(() => {
+    if (!currentUser?.isAdmin) {
+      setAdminReviews([]);
+      return;
+    }
+    api.getAllReviews()
+      .then(setAdminReviews)
+      .catch((error) => console.error("Failed to fetch reviews:", error));
+  }, [currentUser?.isAdmin]);
+
+  // Reviews about the member's own listing, for the profile editor's reviews tab
+  const [ownListingReviews, setOwnListingReviews] = useState<Review[]>([]);
+  useEffect(() => {
+    if (!currentUser?.ownedMarketId && !currentUser?.ownedVendorId) {
+      setOwnListingReviews([]);
+      return;
+    }
+    api.getMyListingReviews()
+      .then(setOwnListingReviews)
+      .catch((error) => console.error("Failed to fetch own listing reviews:", error));
+  }, [currentUser?.id, currentUser?.ownedMarketId, currentUser?.ownedVendorId]);
 
   const handleCookieConsent = () => {
     localStorage.setItem('cookie_consent', 'true');
@@ -606,26 +629,29 @@ const App: React.FC = () => {
           );
           showNotification("Thank you! Your review is pending approval.");
       } catch (error) {
-          showNotification("Failed to submit review.");
+          // e.g. "You've already reviewed this listing."
+          showNotification(error instanceof api.ApiError ? error.message : "Failed to submit review.");
       }
   };
-  
+
   const handleModerateReview = async (entityType: 'market' | 'vendor', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => {
       try {
           await api.moderateReview(entityId, reviewId, newStatus);
+          const moderated = adminReviews.find(r => r.id === reviewId);
+          setAdminReviews(prev => prev.map(r => r.id === reviewId ? { ...r, status: newStatus } : r));
+
+          // Public listings only ever hold approved reviews: add it when approved,
+          // remove it when declined
           const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
-          
           collectionSetter(prev => prev.map(item => {
-              if (item.id === entityId) {
-                  const updatedReviews = item.reviews.map(review => {
-                      if (review.id === reviewId) {
-                          return { ...review, status: newStatus };
-                      }
-                      return review;
-                  });
-                  return { ...item, reviews: updatedReviews };
-              }
-              return item;
+              if (item.id !== entityId) return item;
+              const others = item.reviews.filter(review => review.id !== reviewId);
+              return {
+                  ...item,
+                  reviews: newStatus === 'approved' && moderated
+                      ? [{ ...moderated, status: 'approved' as const }, ...others]
+                      : others,
+              };
           }));
           showNotification(`Review status updated to ${newStatus}.`);
       } catch (error) {
@@ -1130,7 +1156,6 @@ const App: React.FC = () => {
             <Route path="/dashboard/profile" element={(() => {
               const profileData = ownedMarket || ownedVendor;
               if (!currentUser || !profileData) return <Navigate to="/" replace />;
-              const reviewsToModerate = (profileData.reviews || []).filter(r => r.status === 'pending');
               const marketApplications = isMarket(profileData) ? applications.filter(app => app.marketId === profileData.id) : [];
               return (
                 <ProfileManager
@@ -1139,8 +1164,7 @@ const App: React.FC = () => {
                   allMarkets={markets}
                   applications={marketApplications}
                   vendors={vendors}
-                  reviewsToModerate={reviewsToModerate}
-                  onModerateReview={(reviewId, newStatus) => handleModerateReview(ownedMarket ? 'market' : 'vendor', profileData.id, reviewId, newStatus)}
+                  listingReviews={ownListingReviews}
                   onUpdateApplicationStatus={handleUpdateApplicationStatus}
                   onSaveChanges={handleUpdateProfile}
                   onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
@@ -1195,6 +1219,7 @@ const App: React.FC = () => {
                   markets={markets}
                   vendors={vendors}
                   users={users}
+                  reviews={adminReviews}
                   onModerateReview={handleModerateReview}
                   onEditProfile={(profileId, profileType) => navigate(`/hq/edit/${profileType}/${profileId}`)}
                   onUpdateMemberStatus={handleUpdateMemberStatus}

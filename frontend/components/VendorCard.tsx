@@ -19,9 +19,10 @@ const VendorCard: React.FC<VendorCardProps> = ({
 }) => {
   const imageSrc = vendor.headerPhotoUrl || vendor.photos?.[0] || vendor.logoUrl || "/placeholder.jpg";
 
+  const approvedReviews = (vendor.reviews || []).filter(r => r.status === 'approved');
   const avgRating =
-    vendor.reviews?.length > 0
-      ? vendor.reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / vendor.reviews.length
+    approvedReviews.length > 0
+      ? approvedReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / approvedReviews.length
       : null;
 
   const city = vendor.city;
@@ -76,7 +77,7 @@ const VendorCard: React.FC<VendorCardProps> = ({
           <div className="flex items-center">
             <StarIcon className="w-3.5 h-3.5 mr-1 text-brand-gold" filled />
             <span className="text-xs font-semibold text-brand-text">{avgRating.toFixed(1)}</span>
-            <span className="text-xs text-gray-400 ml-1">({vendor.reviews.length})</span>
+            <span className="text-xs text-gray-400 ml-1">({approvedReviews.length})</span>
           </div>
         )}
       </div>

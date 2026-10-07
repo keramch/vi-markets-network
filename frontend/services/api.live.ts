@@ -258,6 +258,16 @@ export const addReview = (
   });
 };
 
+// All reviews, any status (admin only)
+export const getAllReviews = (): Promise<Review[]> => {
+  return request<Review[]>("/reviews");
+};
+
+// Pending + approved reviews about the signed-in member's own listing
+export const getMyListingReviews = (): Promise<Review[]> => {
+  return request<Review[]>("/reviews/mine");
+};
+
 export const moderateReview = (
   entityId: string, // kept for signature compatibility
   reviewId: string,

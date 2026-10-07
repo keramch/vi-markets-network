@@ -38,9 +38,10 @@ const MarketCard: React.FC<MarketCardProps> = ({ market, onSelect, featured = fa
   const imageSrc = market.headerPhotoUrl || market.photos?.[0] || market.logoUrl || '/placeholder.jpg';
   const city = market.location?.city;
   const scheduleText = formatScheduleToString(market.schedule);
+  const approvedReviews = (market.reviews || []).filter(r => r.status === 'approved');
   const avgRating =
-    market.reviews?.length > 0
-      ? market.reviews.reduce((acc, r) => acc + r.rating, 0) / market.reviews.length
+    approvedReviews.length > 0
+      ? approvedReviews.reduce((acc, r) => acc + r.rating, 0) / approvedReviews.length
       : null;
   const nextDateLabel = nextEventDate ? formatNextDate(nextEventDate) : null;
 
@@ -75,7 +76,7 @@ const MarketCard: React.FC<MarketCardProps> = ({ market, onSelect, featured = fa
           <div className="flex items-center mb-1">
             <StarIcon className="w-3.5 h-3.5 mr-1 text-brand-gold" filled />
             <span className="text-xs font-semibold text-brand-text">{avgRating.toFixed(1)}</span>
-            <span className="text-xs text-gray-400 ml-1">({market.reviews.length})</span>
+            <span className="text-xs text-gray-400 ml-1">({approvedReviews.length})</span>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../firebase";
 import { requireAuth, requireAdmin } from "../middleware/auth";
+import { toPublicReview } from "../utils/reviews";
 
 const router = Router();
 
@@ -15,6 +16,28 @@ router.get("/", requireAdmin, async (_req, res) => {
     res.json(reviews);
   } catch (err) {
     console.error("Error fetching reviews:", err);
+    res.status(500).json({ error: "Failed to fetch reviews" });
+  }
+});
+
+// GET /reviews/mine → reviews about the caller's own market/vendor listing,
+// pending and approved (declined ones are hidden). Read-only for owners —
+// only admins approve/decline.
+router.get("/mine", requireAuth, async (req, res) => {
+  try {
+    const user = (await db.collection("users").doc(req.user!.uid).get()).data() ?? {};
+    const listingIds = [user.ownedMarketId, user.ownedVendorId].filter(Boolean) as string[];
+    const snaps = await Promise.all(
+      listingIds.map(id => db.collection("reviews").where("entityId", "==", id).get())
+    );
+    const reviews = snaps
+      .flatMap(snap => snap.docs)
+      .filter(doc => doc.data().status !== "declined")
+      .sort((a, b) => (b.data().createdAt ?? 0) - (a.data().createdAt ?? 0))
+      .map(doc => ({ ...toPublicReview(doc.id, doc.data()), entityType: doc.data().entityType, entityId: doc.data().entityId }));
+    res.json(reviews);
+  } catch (err) {
+    console.error("Error fetching own listing reviews:", err);
     res.status(500).json({ error: "Failed to fetch reviews" });
   }
 });
@@ -46,6 +69,23 @@ router.post("/", requireAuth, async (req, res) => {
 
   try {
     const userId = req.user!.uid;
+
+    // The listing must exist and be public
+    const listing = await db.collection(entityType === "market" ? "markets" : "vendors").doc(entityId).get();
+    if (!listing.exists || (listing.data()?.status && listing.data()?.status !== "active")) {
+      return res.status(404).json({ error: "This listing can't be reviewed right now." });
+    }
+
+    // One review per member per listing (a declined review doesn't count)
+    const previous = await db
+      .collection("reviews")
+      .where("userId", "==", userId)
+      .where("entityId", "==", entityId)
+      .get();
+    if (previous.docs.some(doc => doc.data().status !== "declined")) {
+      return res.status(409).json({ error: "You've already reviewed this listing." });
+    }
+
     const reviewer = (await db.collection("users").doc(userId).get()).data() ?? {};
     const author = reviewer.firstName && reviewer.lastName
       ? `${reviewer.firstName} ${String(reviewer.lastName).charAt(0)}.`

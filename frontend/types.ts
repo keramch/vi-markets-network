@@ -54,6 +54,8 @@ export interface Review {
   status: 'pending' | 'approved' | 'declined';
   userId?: string;
   reviewerAccountType?: string;
+  entityType?: 'market' | 'vendor'; // which listing it's about (admin/owner views)
+  entityId?: string;
 }
 
 // ── Market taxonomy ───────────────────────────────────────────────────────────

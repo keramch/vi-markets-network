@@ -11,9 +11,9 @@ export async function ownsListing(uid: string, collection: ListingCollection, id
   return doc.exists && doc.data()?.ownerId === uid;
 }
 
-// Never stored — computed on read (id is the doc ID, ownerFoundingMember is
-// added by GET /markets and GET /vendors)
-const COMPUTED_LISTING_FIELDS = ["id", "ownerFoundingMember"];
+// Never stored — computed on read (id is the doc ID; ownerFoundingMember and
+// reviews are added by GET /markets and GET /vendors from other collections)
+const COMPUTED_LISTING_FIELDS = ["id", "ownerFoundingMember", "reviews"];
 
 // Only admins (or trusted server code like the Stripe webhook) may set these.
 // The profile editor sends the whole listing back on save, so for non-admins
@@ -26,7 +26,6 @@ const ADMIN_ONLY_LISTING_FIELDS = [
   "impressionCount",
   "joinDate",
   "slug",
-  "reviews",
 ];
 
 export function sanitizeListingUpdate(

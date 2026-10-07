@@ -7,6 +7,7 @@ interface AdminPanelProps {
   markets: Market[];
   vendors: Vendor[];
   users: User[];
+  reviews: Review[]; // every review, any status (loaded for admins only)
   onModerateReview: (entityType: 'market' | 'vendor', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => void;
   onEditProfile: (profileId: string, profileType: 'market' | 'vendor') => void;
   onUpdateMemberStatus: (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => void;
@@ -22,6 +23,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   markets,
   vendors,
   users,
+  reviews,
   onModerateReview,
   onEditProfile,
   onUpdateMemberStatus,
@@ -96,8 +98,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   // ── Data ─────────────────────────────────────────────────────────────────
 
   const allReviews: { entityType: 'market' | 'vendor'; entity: Market | Vendor; review: Review }[] = [];
-  markets.forEach(m => m.reviews.forEach(r => allReviews.push({ entityType: 'market', entity: m, review: r })));
-  vendors.forEach(v => v.reviews.forEach(r => allReviews.push({ entityType: 'vendor', entity: v, review: r })));
+  reviews.forEach(r => {
+    const entity = r.entityType === 'vendor'
+      ? vendors.find(v => v.id === r.entityId)
+      : markets.find(m => m.id === r.entityId);
+    if (entity) allReviews.push({ entityType: r.entityType === 'vendor' ? 'vendor' : 'market', entity, review: r });
+  });
 
   const filteredReviews = allReviews
     .filter(item => item.review.status === activeReviewTab)

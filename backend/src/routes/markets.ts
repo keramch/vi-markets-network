@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../firebase";
 import { getFoundingMemberUids } from "../utils/foundingMembers";
+import { getApprovedReviewsByEntity } from "../utils/reviews";
 import { requireAuth, isAdminUser } from "../middleware/auth";
 import { ownsListing, sanitizeListingUpdate } from "../utils/listingAccess";
 
@@ -9,14 +10,17 @@ const router = Router();
 // GET /markets → returns all markets from Firestore
 router.get("/", async (_req, res) => {
   try {
-    const [snapshot, foundingUids] = await Promise.all([
+    const [snapshot, foundingUids, reviewsByEntity] = await Promise.all([
       db.collection("markets").get(),
       getFoundingMemberUids(),
+      getApprovedReviewsByEntity(),
     ]);
     const markets = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       ownerFoundingMember: foundingUids.has(doc.data().ownerId),
+      // Approved reviews from the reviews collection (computed, never stored)
+      reviews: reviewsByEntity.get(doc.id) ?? [],
     }));
     res.json(markets);
   } catch (err) {
