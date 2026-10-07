@@ -1,6 +1,7 @@
 
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSpamGuard, type SpamGuardFields } from './components/SpamGuard';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
@@ -80,7 +81,7 @@ interface MarketProfileRouteProps {
   onToggleFavorite: (id: string) => void;
   onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureMarket: (marketId: string) => void;
-  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onApply: (marketId: string) => void;
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
@@ -158,7 +159,7 @@ interface VendorProfileRouteProps {
   onToggleFavorite: (id: string) => void;
   onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureVendor: (vendorId: string) => void;
-  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
 }
@@ -294,6 +295,7 @@ const App: React.FC = () => {
   const [footerFirstName, setFooterFirstName] = useState('');
   const [footerEmail, setFooterEmail] = useState('');
   const [footerCity, setFooterCity] = useState('');
+  const footerSpamGuard = useSpamGuard();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -677,7 +679,7 @@ const App: React.FC = () => {
     senderEmail: string;
     subject: string;
     message: string;
-  }): Promise<void> => {
+  } & SpamGuardFields): Promise<void> => {
     await api.sendContactMessage(params);
     showNotification(`Message sent to ${params.recipientName} regarding "${params.subject}"`);
   };
@@ -1233,7 +1235,7 @@ const App: React.FC = () => {
                     const res = await fetch(`${BASE_URL}/brevo/subscribe`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ email: footerEmail, firstName: footerFirstName, city: footerCity }),
+                      body: JSON.stringify({ email: footerEmail, firstName: footerFirstName, city: footerCity, ...footerSpamGuard.guardFields() }),
                     });
                     if (!res.ok) throw new Error();
                     showNotification("You're in! Thanks for joining, " + footerFirstName + "!");
@@ -1246,6 +1248,7 @@ const App: React.FC = () => {
                 }}
                 className="flex flex-col md:flex-row gap-2"
               >
+                {footerSpamGuard.honeypotField}
                 <input
                   type="text"
                   placeholder="First Name"

@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { EMAIL_LOGO_IMG } from "../utils/emailBranding";
 import rateLimit from "express-rate-limit";
 import { db } from "../firebase";
+import { spamGuard } from "../middleware/spamGuard";
 import { escapeHtml } from "../utils/escapeHtml";
 
 const router = Router();
@@ -29,7 +30,7 @@ async function findListingNameByContactEmail(email: string): Promise<string | nu
 }
 
 // Send a profile contact-form message via Brevo transactional email
-router.post("/send", contactRateLimiter, async (req: Request, res: Response) => {
+router.post("/send", contactRateLimiter, spamGuard({ status: 200, body: { success: true } }), async (req: Request, res: Response) => {
   const { recipientEmail, senderName, senderEmail, subject, message } = req.body;
 
   if (!recipientEmail || !senderName || !senderEmail || !subject || !message) {

@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import HelpTip from './HelpTip';
 import type { User } from '../types';
 import { SendIcon } from './Icons';
+import { useSpamGuard, type SpamGuardFields } from './SpamGuard';
 
 interface ContactFormProps {
     recipientEmail: string;
     currentUser: User | null;
-    onSend: (params: { recipientEmail: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
+    onSend: (params: { recipientEmail: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
 }
 
 const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, onSend }) => {
@@ -18,13 +19,14 @@ const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, 
     const [isSent, setIsSent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
+    const { honeypotField, guardFields } = useSpamGuard();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSendError(null);
         setIsSubmitting(true);
         try {
-            await onSend({ recipientEmail, senderName, senderEmail, subject, message });
+            await onSend({ recipientEmail, senderName, senderEmail, subject, message, ...guardFields() });
             setIsSent(true);
         } catch {
             setSendError('Something went wrong sending your message — please try again or email us directly.');
@@ -44,6 +46,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ recipientEmail, currentUser, 
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {honeypotField}
             <div>
                 <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700">Your Name</label>
                 <input type="text" id="contact-name" value={senderName} onChange={e => setSenderName(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-gold focus:border-brand-gold"/>

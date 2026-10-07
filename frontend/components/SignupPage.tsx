@@ -12,6 +12,7 @@ import { CheckIcon } from './Icons';
 import PasswordInput from './PasswordInput';
 import { passwordMeetsPolicy, PASSWORD_POLICY_MESSAGE } from '../utils';
 import PasswordRulesList from './PasswordRulesList';
+import { useSpamGuard } from './SpamGuard';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -113,6 +114,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [resendSent, setResendSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const { honeypotField, guardFields } = useSpamGuard();
 
   // ── Email verification ────────────────────────────────────────────────────
 
@@ -187,6 +189,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           accountType: 'community',
           city: communityCity,
           newsletterOptIn,
+          ...guardFields(),
         });
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
         const firebaseUser = firebaseAuth.currentUser;
@@ -217,6 +220,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           description: description.trim() || undefined,
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
           marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,
+          ...guardFields(),
         });
         await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
         // Send verification email
@@ -298,6 +302,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         <div className="bg-white rounded-2xl shadow-lg">
           {!isSuccess ? (
             <div className="p-6 md:p-10">
+              {honeypotField}
               {/* Step counter + dots */}
               <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
                 Step {wizardStep} of {totalSteps}

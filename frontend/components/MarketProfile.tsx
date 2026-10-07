@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import type { SpamGuardFields } from './SpamGuard';
 import type { Market, Vendor, User, Review, Application, MarketEvent } from '../types';
 import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, TikTokIcon, RibbonIcon } from './Icons';
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
@@ -21,7 +22,7 @@ interface MarketProfileProps {
   currentUser: User | null;
   onAddReview: (reviewData: { rating: number, comment: string }) => void;
   onFeatureMarket: (marketId: string) => void;
-  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onApply: (marketId: string) => void;
   upcomingEvents?: MarketEvent[];
   onOpenLoginModal: () => void;

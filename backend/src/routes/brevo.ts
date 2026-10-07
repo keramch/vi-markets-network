@@ -3,6 +3,7 @@ import { EMAIL_LOGO_IMG } from "../utils/emailBranding";
 import rateLimit from "express-rate-limit";
 import { db, auth } from "../firebase";
 import { requireAuth } from "../middleware/auth";
+import { spamGuard } from "../middleware/spamGuard";
 import { escapeHtml } from "../utils/escapeHtml";
 
 const router = Router();
@@ -26,7 +27,7 @@ const verificationRateLimiter = rateLimit({
 // Where members land after clicking the verification link
 const VERIFY_CONTINUE_URL = "https://www.vimarkets.ca/verified";
 
-router.post("/subscribe", subscribeRateLimiter, async (req: Request, res: Response) => {
+router.post("/subscribe", subscribeRateLimiter, spamGuard({ status: 200, body: { success: true } }), async (req: Request, res: Response) => {
   const { email, firstName, city } = req.body;
 
   if (!email || !firstName) {

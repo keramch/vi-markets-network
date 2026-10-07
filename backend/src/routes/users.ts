@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db, auth } from "../firebase";
+import { spamGuard } from "../middleware/spamGuard";
 import { requireAuth, requireAdmin, isAdminUser } from "../middleware/auth";
 
 const router = Router();
@@ -267,7 +268,9 @@ async function createMemberRecords(
 }
 
 // POST /users/register → create a new user account from the signup wizard
-router.post("/register", async (req, res) => {
+// Bots get a generic error (not fake success) so a real person who somehow
+// trips the guard sees something sensible and can retry.
+router.post("/register", spamGuard({ status: 400, body: { error: "Something went wrong. Please try again." } }), async (req, res) => {
   const { email, password, ...profile } = req.body as MemberProfileInput & {
     email: string;
     password: string;

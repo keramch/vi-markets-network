@@ -375,6 +375,14 @@ both outside checks and a logged-in "second member" console test:
 - **Phase 2 routes** (marketApplications, vendorApplications,
   organizerAccounts) are admin-only until their UI + permissions are built.
 - **CORS** limited to vimarkets.ca, this project's Vercel previews, localhost.
+- **Spam guard (Oct 6, 2026):** contact form, footer newsletter signup and
+  account signup carry a hidden honeypot field + time-to-submit check
+  (`frontend/components/SpamGuard.tsx` → `backend/src/middleware/spamGuard.ts`).
+  Bots get a fake success (contact/subscribe) or a generic error (register)
+  and nothing is sent or saved; each block is logged in Render as
+  "Spam guard blocked …". Kera chose this over reCAPTCHA (friction,
+  accessibility, Google tracking); if spam still gets through, add
+  Cloudflare Turnstile, not reCAPTCHA.
 - **Stripe checkout** upgrades the token's uid, not a uid from the body.
 
 ### ✅ Working (confirmed via full codebase audit)

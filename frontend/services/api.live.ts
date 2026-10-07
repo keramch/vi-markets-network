@@ -1,5 +1,6 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { firebaseAuth } from "./firebase";
+import type { SpamGuardFields } from "../components/SpamGuard";
 import type {
   Market,
   Vendor,
@@ -178,7 +179,7 @@ export const register = (data: {
   tags?: string[];
   marketCategories?: string[];
   newsletterOptIn?: boolean;
-}): Promise<User> => {
+} & SpamGuardFields): Promise<User> => {
   return request<User>("/users/register", {
     method: "POST",
     body: JSON.stringify(data),
@@ -319,7 +320,7 @@ export const sendContactMessage = (params: {
   senderEmail: string;
   subject: string;
   message: string;
-}): Promise<void> => {
+} & SpamGuardFields): Promise<void> => {
   return request<void>("/contact/send", {
     method: "POST",
     body: JSON.stringify(params),

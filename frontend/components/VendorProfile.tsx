@@ -1,6 +1,7 @@
 
 
 import React, { useState } from 'react';
+import type { SpamGuardFields } from './SpamGuard';
 import type { Vendor, Market, User } from '../types';
 import { InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, TikTokIcon, RibbonIcon } from './Icons';
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
@@ -20,7 +21,7 @@ interface VendorProfileProps {
   currentUser: User | null;
   onAddReview: (reviewData: { rating: number, comment: string }) => void;
   onFeatureVendor: (vendorId: string) => void;
-  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string }) => Promise<void>;
+  onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onOpenLoginModal: () => void;
 }
 
