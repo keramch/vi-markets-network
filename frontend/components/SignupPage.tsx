@@ -630,13 +630,13 @@ const SignupPage: React.FC<SignupPageProps> = ({
                   {accountType === 'vendor' && (
                     <div>
                       <label className={labelCls}>Vendor Type</label>
-                      <p className="text-xs text-gray-400 mb-2">Select all that apply — you can update this later.</p>
+                      <p className="text-sm text-gray-500 mb-2">Choose up to 3 — you can change these later.</p>
                       {vendorTypes.length >= 3 && (
-                        <p className="text-xs text-amber-600 mb-2">Maximum 3 types selected.</p>
+                        <p className="text-sm text-amber-700 mb-2">Maximum 3 types selected.</p>
                       )}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                         {(VendorTypes as readonly string[]).map(vt => (
-                          <label key={vt} className="flex items-center min-h-[2.75rem]">
+                          <label key={vt} className="flex items-center min-h-[2rem] cursor-pointer">
                             <input
                               type="checkbox"
                               value={vt}
@@ -655,7 +655,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     </div>
                   )}
                   {accountType === 'vendor' && (
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-sm text-gray-500 mt-2">
                       You'll be able to add detailed tags to your profile after you're registered.
                     </p>
                   )}
