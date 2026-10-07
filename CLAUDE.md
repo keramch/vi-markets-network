@@ -386,11 +386,12 @@ both outside checks and a logged-in "second member" console test:
   success), plus email verification page
 - **Password policy** lives in Firebase Console (Authentication →
   Settings): min 8 chars + 1 special character, enforced. Mirrored by
-  hand in `PASSWORD_RULES` (frontend/utils.ts) and the backend message in
-  `/users/register` — **update both if the policy changes.** A mismatch
-  here caused the Sept 29 "Registration failed" signups. Signup shows a
-  live checklist; password/email errors show under the right field.
-  (ResetPasswordForm + NotificationSettings still only check length.)
+  hand in `PASSWORD_RULES` + `PASSWORD_POLICY_MESSAGE` (frontend/utils.ts)
+  and the backend message in `/users/register` — **update both if the
+  policy changes.** A mismatch here caused the Sept 29 "Registration
+  failed" signups. Signup, Reset Password and Change Password (in
+  NotificationSettings) all use the shared `PasswordRulesList` live
+  checklist and `passwordMeetsPolicy` check (Oct 6, 2026).
 - **Email verification actually works as of Sept 29.** Before that, the
   link used the user's ID token as the oobCode and the site never called
   `applyActionCode`, so nobody was ever verified in Firebase. Members
@@ -502,7 +503,6 @@ both outside checks and a logged-in "second member" console test:
   checkbox for vendors/markets (they're currently synced to Brevo with no
   checkbox — CASL consideration). Agreements step says paid plans
   auto-renew (untrue) — Kera: low priority while nobody is paying.
-- Apply `PASSWORD_RULES` to ResetPasswordForm and NotificationSettings.
 - Vendor contact form vs. market Message-button disclosure pattern —
   open question, deliberately parked pending Kera's own feedback-gathering.
   Note: contact emails are public in `GET /markets`/`/vendors` anyway.

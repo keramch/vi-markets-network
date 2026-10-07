@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { KeyIcon } from './Icons';
 import PasswordInput from './PasswordInput';
+import PasswordRulesList from './PasswordRulesList';
+import { passwordMeetsPolicy, PASSWORD_POLICY_MESSAGE } from '../utils';
 
 interface ResetPasswordFormProps {
   email: string;
@@ -18,8 +20,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, onSubmit }
     e.preventDefault();
     setSubmitError(null);
 
-    if (password.length < 8) {
-      setValidationError('Password must be at least 8 characters.');
+    if (!passwordMeetsPolicy(password)) {
+      setValidationError(PASSWORD_POLICY_MESSAGE);
       return;
     }
     if (password !== confirmPassword) {
@@ -54,9 +56,11 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, onSubmit }
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
+          ariaDescribedBy="reset-password-rules"
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
           required
         />
+        <PasswordRulesList id="reset-password-rules" password={password} />
       </div>
       <div>
         <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700">Confirm New Password</label>
@@ -70,7 +74,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({ email, onSubmit }
         />
       </div>
       {validationError && (
-        <p className="text-red-500 text-xs mt-1">{validationError}</p>
+        <p className="text-red-600 text-sm mt-1">{validationError}</p>
       )}
       {submitError && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-center">

@@ -239,3 +239,7 @@ export const PASSWORD_RULES = [
 
 export const passwordMeetsPolicy = (pw: string): boolean =>
   PASSWORD_RULES.every((rule) => rule.test(pw));
+
+// Shown when a new password fails the policy (signup, reset, change password)
+export const PASSWORD_POLICY_MESSAGE =
+  'Your password needs at least 8 characters, including at least one special character.';

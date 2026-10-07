@@ -6,6 +6,7 @@ import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 're
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
+import { PASSWORD_POLICY_MESSAGE } from './utils';
 
 import Header from './components/Header';
 import { CheckCircleIcon } from './components/Icons';
@@ -1340,8 +1341,8 @@ const App: React.FC = () => {
               if (code === 'auth/expired-action-code' || code === 'auth/invalid-action-code') {
                 throw new Error('This link has expired. Please request a new password reset email.');
               }
-              if (code === 'auth/weak-password') {
-                throw new Error('Please choose a stronger password.');
+              if (code === 'auth/weak-password' || code === 'auth/password-does-not-meet-requirements') {
+                throw new Error(PASSWORD_POLICY_MESSAGE);
               }
               throw new Error('Something went wrong. Please try again.');
             }

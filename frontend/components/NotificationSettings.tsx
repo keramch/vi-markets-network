@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import type { NotificationSettings, User } from '../types';
 import { SettingsIcon } from './Icons';
 import PasswordInput from './PasswordInput';
+import PasswordRulesList from './PasswordRulesList';
+import { passwordMeetsPolicy, PASSWORD_POLICY_MESSAGE } from '../utils';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
 
@@ -86,8 +88,8 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
   const handleChangePassword = async () => {
     setPasswordError('');
     setPasswordSuccess('');
-    if (newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters');
+    if (!passwordMeetsPolicy(newPassword)) {
+      setPasswordError(PASSWORD_POLICY_MESSAGE);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -111,6 +113,8 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
     } catch (err: any) {
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setPasswordError('Current password is incorrect');
+      } else if (err.code === 'auth/weak-password' || err.code === 'auth/password-does-not-meet-requirements') {
+        setPasswordError(PASSWORD_POLICY_MESSAGE);
       } else {
         setPasswordError('Password change failed. Please try again.');
       }
@@ -176,9 +180,11 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
-                placeholder="New password (min 8 characters)"
+                ariaDescribedBy="change-password-rules"
+                placeholder="New password"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
+              <PasswordRulesList id="change-password-rules" password={newPassword} />
               <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -186,8 +192,8 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 placeholder="Confirm new password"
                 className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
               />
-              {passwordError && <p className="text-red-500 text-xs">{passwordError}</p>}
-              {passwordSuccess && <p className="text-green-600 text-xs">{passwordSuccess}</p>}
+              {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
+              {passwordSuccess && <p className="text-green-700 text-sm">{passwordSuccess}</p>}
               <button
                 type="button"
                 onClick={handleChangePassword}
