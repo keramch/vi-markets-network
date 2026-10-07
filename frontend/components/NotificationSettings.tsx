@@ -166,32 +166,41 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
           {/* Change Password */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Change Password</h3>
-            <div className="space-y-3 max-w-sm">
+            <div className="space-y-5 max-w-sm">
               {/* Tells password managers which account these passwords belong to */}
               <input type="email" name="username" autoComplete="username" value={currentUser.email} readOnly hidden />
-              <PasswordInput
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-                placeholder="Current password"
-                className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
-              />
-              <PasswordInput
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-                ariaDescribedBy="change-password-rules"
-                placeholder="New password"
-                className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
-              />
-              <PasswordRulesList id="change-password-rules" password={newPassword} />
-              <PasswordInput
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                placeholder="Confirm new password"
-                className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
-              />
+              <div>
+                <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 mb-1">Current password</label>
+                <PasswordInput
+                  id="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                  className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
+                />
+              </div>
+              <div>
+                <label htmlFor="change-new-password" className="block text-sm font-medium text-gray-700 mb-1">New password</label>
+                <PasswordInput
+                  id="change-new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  ariaDescribedBy="change-password-rules"
+                  className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
+                />
+                <PasswordRulesList id="change-password-rules" password={newPassword} />
+              </div>
+              <div>
+                <label htmlFor="change-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
+                <PasswordInput
+                  id="change-confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className="w-full border border-gray-300 rounded-lg py-3 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue transition-colors"
+                />
+              </div>
               {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
               {passwordSuccess && <p className="text-green-700 text-sm">{passwordSuccess}</p>}
               <button
