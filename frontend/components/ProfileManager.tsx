@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import ReviewRemovalRequest from './ReviewRemovalRequest';
 import type { Market, Vendor, Review, Application, User, ScheduleRule } from '../types';
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
 import ImageUploader from './ImageUploader';
@@ -17,6 +18,7 @@ interface ProfileManagerProps {
   applications?: Application[];
   vendors?: Vendor[];
   listingReviews: Review[]; // pending + approved reviews of this listing (read-only)
+  onRequestReviewRemoval: (reviewId: string, reason: string) => Promise<void>;
   onUpdateApplicationStatus?: (applicationId: string, status: 'approved' | 'rejected') => void;
   onSaveChanges: (updatedData: Market | Vendor) => void;
   onBack: () => void;
@@ -47,6 +49,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     onSaveChanges, 
     onBack, 
     listingReviews,
+    onRequestReviewRemoval,
     onUpdateApplicationStatus,
     isAdmin,
     onToggleAutoRenew,
@@ -1137,6 +1140,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-800 my-1">"{review.comment}"</p>
+                                    <ReviewRemovalRequest review={review} onSubmit={onRequestReviewRemoval} />
                                 </div>
                             ))}
                         </div>

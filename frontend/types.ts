@@ -56,6 +56,12 @@ export interface Review {
   reviewerAccountType?: string;
   entityType?: 'market' | 'vendor'; // which listing it's about (admin/owner views)
   entityId?: string;
+  // Listing owner's request for the admin to remove this review (admin/owner views)
+  removalRequest?: {
+    reason: string;
+    requestedAt: string;
+    status: 'open' | 'accepted' | 'dismissed';
+  };
 }
 
 // ── Market taxonomy ───────────────────────────────────────────────────────────

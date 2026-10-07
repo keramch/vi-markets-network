@@ -268,6 +268,25 @@ export const getMyListingReviews = (): Promise<Review[]> => {
   return request<Review[]>("/reviews/mine");
 };
 
+// Listing owner asks the admin to remove a review of their listing
+export const requestReviewRemoval = (
+  reviewId: string,
+  reason: string
+): Promise<{ ok: true; removalRequest: NonNullable<Review["removalRequest"]> }> => {
+  return request(`/reviews/${reviewId}/removal-request`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+};
+
+// Admin decides on a removal request: remove (decline the review) or keep it
+export const resolveReviewRemoval = (reviewId: string, action: "remove" | "keep"): Promise<Review> => {
+  return request<Review>(`/reviews/${reviewId}/removal-request/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ action }),
+  });
+};
+
 export const moderateReview = (
   entityId: string, // kept for signature compatibility
   reviewId: string,

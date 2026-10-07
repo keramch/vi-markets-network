@@ -229,6 +229,7 @@ const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
       onBack={() => navigate('/hq')}
       isAdmin={true}
       listingReviews={[]}
+      onRequestReviewRemoval={async () => {}}
       onToggleAutoRenew={() => {}}
     />
   );
@@ -631,6 +632,31 @@ const App: React.FC = () => {
       } catch (error) {
           // e.g. "You've already reviewed this listing."
           showNotification(error instanceof api.ApiError ? error.message : "Failed to submit review.");
+      }
+  };
+
+  // Owner asks for a review of their listing to be removed. Throws on failure
+  // so the reviews tab can show the error next to the review.
+  const handleRequestReviewRemoval = async (reviewId: string, reason: string): Promise<void> => {
+      const { removalRequest } = await api.requestReviewRemoval(reviewId, reason);
+      setOwnListingReviews(prev => prev.map(r => r.id === reviewId ? { ...r, removalRequest } : r));
+      showNotification("Thanks — we'll review your request and let you know.");
+  };
+
+  // Admin decides on an owner's removal request
+  const handleResolveReviewRemoval = async (entityType: 'market' | 'vendor', entityId: string, reviewId: string, action: 'remove' | 'keep') => {
+      try {
+          const updated = await api.resolveReviewRemoval(reviewId, action);
+          setAdminReviews(prev => prev.map(r => r.id === reviewId ? { ...r, ...updated } : r));
+          if (action === 'remove') {
+              const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
+              collectionSetter(prev => prev.map(item =>
+                  item.id === entityId ? { ...item, reviews: item.reviews.filter(r => r.id !== reviewId) } : item
+              ));
+          }
+          showNotification(action === 'remove' ? 'Review removed.' : 'Review kept.');
+      } catch (error) {
+          showNotification("Failed to update the removal request.");
       }
   };
 
@@ -1165,6 +1191,7 @@ const App: React.FC = () => {
                   applications={marketApplications}
                   vendors={vendors}
                   listingReviews={ownListingReviews}
+                  onRequestReviewRemoval={handleRequestReviewRemoval}
                   onUpdateApplicationStatus={handleUpdateApplicationStatus}
                   onSaveChanges={handleUpdateProfile}
                   onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
@@ -1221,6 +1248,7 @@ const App: React.FC = () => {
                   users={users}
                   reviews={adminReviews}
                   onModerateReview={handleModerateReview}
+                  onResolveReviewRemoval={handleResolveReviewRemoval}
                   onEditProfile={(profileId, profileType) => navigate(`/hq/edit/${profileType}/${profileId}`)}
                   onUpdateMemberStatus={handleUpdateMemberStatus}
                   onHardDeleteMember={handleHardDeleteMember}

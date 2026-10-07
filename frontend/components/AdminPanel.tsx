@@ -9,6 +9,7 @@ interface AdminPanelProps {
   users: User[];
   reviews: Review[]; // every review, any status (loaded for admins only)
   onModerateReview: (entityType: 'market' | 'vendor', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => void;
+  onResolveReviewRemoval: (entityType: 'market' | 'vendor', entityId: string, reviewId: string, action: 'remove' | 'keep') => void;
   onEditProfile: (profileId: string, profileType: 'market' | 'vendor') => void;
   onUpdateMemberStatus: (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => void;
   onHardDeleteMember: (memberId: string, type: 'market' | 'vendor') => void;
@@ -25,6 +26,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   users,
   reviews,
   onModerateReview,
+  onResolveReviewRemoval,
   onEditProfile,
   onUpdateMemberStatus,
   onHardDeleteMember,
@@ -40,7 +42,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     setActiveMainTab(tab);
     onTabChange?.(tab);
   };
-  const [activeReviewTab, setActiveReviewTab] = useState<'pending' | 'approved'>('pending');
+  const [activeReviewTab, setActiveReviewTab] = useState<'pending' | 'approved' | 'removal'>('pending');
 
   // Member search / pagination
   const [memberSearch, setMemberSearch] = useState('');
@@ -106,7 +108,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   });
 
   const filteredReviews = allReviews
-    .filter(item => item.review.status === activeReviewTab)
+    .filter(item => activeReviewTab === 'removal'
+      ? item.review.removalRequest?.status === 'open'
+      : item.review.status === activeReviewTab)
     .sort((a, b) => new Date(b.review.date).getTime() - new Date(a.review.date).getTime());
 
   const allMembers: ({ type: 'market'; data: Market } | { type: 'vendor'; data: Vendor })[] = [
@@ -185,7 +189,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="mb-6 border-b border-gray-300">
             <nav className="-mb-px flex space-x-8">
-              {(['pending', 'approved'] as const).map(tab => (
+              {(['pending', 'approved', 'removal'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveReviewTab(tab)}
@@ -195,7 +199,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm capitalize`}
                 >
-                  {tab === 'pending' ? 'Pending Reviews' : 'Approved Reviews'}
+                  {tab === 'pending' ? 'Pending Reviews' : tab === 'approved' ? 'Approved Reviews' : 'Removal Requests'}
                 </button>
               ))}
             </nav>
@@ -211,7 +215,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       </p>
                       <p className="text-sm text-gray-500">Rating: {review.rating}/5 | Date: {review.date}</p>
                       <p className="mt-2 text-gray-700">{review.comment}</p>
+                      {activeReviewTab === 'removal' && review.removalRequest && (
+                        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                          <p className="text-sm font-semibold text-amber-900">
+                            {entity.name} asked for this to be removed{review.removalRequest.requestedAt ? ` on ${review.removalRequest.requestedAt.split('T')[0]}` : ''}:
+                          </p>
+                          <p className="text-sm text-amber-900 mt-1">"{review.removalRequest.reason}"</p>
+                        </div>
+                      )}
                     </div>
+                    {activeReviewTab === 'removal' ? (
+                      <div className="flex flex-col gap-2 flex-shrink-0 ml-4">
+                        <button
+                          onClick={() => onResolveReviewRemoval(entityType, entity.id, review.id, 'remove')}
+                          className="text-sm font-semibold bg-red-100 text-red-800 hover:bg-red-200 px-3 py-2 rounded-md"
+                        >
+                          Remove review
+                        </button>
+                        <button
+                          onClick={() => onResolveReviewRemoval(entityType, entity.id, review.id, 'keep')}
+                          className="text-sm font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 px-3 py-2 rounded-md"
+                        >
+                          Keep review
+                        </button>
+                      </div>
+                    ) : (
                     <div className="flex space-x-2 flex-shrink-0 ml-4">
                       {review.status === 'pending' && (
                         <button
@@ -230,6 +258,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <TrashIcon className="w-5 h-5" />
                       </button>
                     </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -237,7 +266,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           ) : (
             <div className="text-center py-12">
               <AlertCircleIcon className="w-12 h-12 mx-auto text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No {activeReviewTab} reviews</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">{activeReviewTab === 'removal' ? 'No removal requests' : `No ${activeReviewTab} reviews`}</h3>
               <p className="mt-1 text-sm text-gray-500">There are currently no reviews with this status.</p>
             </div>
           )}

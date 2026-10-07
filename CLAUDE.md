@@ -442,6 +442,13 @@ both outside checks and a logged-in "second member" console test:
   tab). One review per member per listing (a declined one doesn't count).
   Owners CAN review their own listing (Kera's choice). Before this fix,
   reviews were saved but never displayed anywhere.
+- **Review removal requests (Oct 6, 2026):** owners can "Request removal"
+  of a review of their listing with a reason
+  (`POST /reviews/:id/removal-request`, stored as `removalRequest` on the
+  review, emails hello@vimarkets.ca). Admin HQ → Reviews → Removal
+  Requests: "Remove review" declines it, "Keep review" dismisses the
+  request (`POST /reviews/:id/removal-request/resolve`, admin-only).
+  Owners never remove reviews themselves — keeps reviews trustworthy.
 - Organizer Hub — full Event Manager (add/edit/delete/archive,
   recurring series), ICS/Google Calendar export
 - **Stripe payments — live and confirmed** (see Tech Stack)

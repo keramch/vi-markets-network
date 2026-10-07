@@ -2,6 +2,8 @@ import { Router } from "express";
 import { db } from "../firebase";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 import { toPublicReview } from "../utils/reviews";
+import { ownsListing } from "../utils/listingAccess";
+import { escapeHtml } from "../utils/escapeHtml";
 
 const router = Router();
 
@@ -34,7 +36,18 @@ router.get("/mine", requireAuth, async (req, res) => {
       .flatMap(snap => snap.docs)
       .filter(doc => doc.data().status !== "declined")
       .sort((a, b) => (b.data().createdAt ?? 0) - (a.data().createdAt ?? 0))
-      .map(doc => ({ ...toPublicReview(doc.id, doc.data()), entityType: doc.data().entityType, entityId: doc.data().entityId }));
+      .map(doc => {
+        const data = doc.data();
+        return {
+          ...toPublicReview(doc.id, data),
+          entityType: data.entityType,
+          entityId: data.entityId,
+          // The owner sees the state of their own request (not who/when internals)
+          ...(data.removalRequest
+            ? { removalRequest: { reason: data.removalRequest.reason, requestedAt: data.removalRequest.requestedAt, status: data.removalRequest.status } }
+            : {}),
+        };
+      });
     res.json(reviews);
   } catch (err) {
     console.error("Error fetching own listing reviews:", err);
@@ -111,6 +124,105 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Error creating review:", err);
     res.status(500).json({ error: "Failed to create review" });
+  }
+});
+
+// POST /reviews/:id/removal-request → the reviewed listing's owner asks the
+// admin to remove a review (e.g. abusive, not constructive). Only an admin
+// can actually remove it. Emails hello@vimarkets.ca so requests aren't missed.
+router.post("/:id/removal-request", requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const reason = String(req.body?.reason ?? "").trim();
+  if (!reason) {
+    return res.status(400).json({ error: "Please tell us why this review should be removed." });
+  }
+  if (reason.length > 1000) {
+    return res.status(400).json({ error: "Please keep the reason under 1000 characters." });
+  }
+
+  try {
+    const docRef = db.collection("reviews").doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    const review = doc.data()!;
+    const collection = review.entityType === "vendor" ? "vendors" : "markets";
+    if (!(await ownsListing(req.user!.uid, collection, review.entityId))) {
+      return res.status(403).json({ error: "You can only request removal of reviews of your own listing." });
+    }
+    if (review.removalRequest?.status === "open") {
+      return res.status(409).json({ error: "You've already requested removal of this review." });
+    }
+
+    const removalRequest = {
+      reason,
+      requestedBy: req.user!.uid,
+      requestedAt: new Date().toISOString(),
+      status: "open",
+    };
+    await docRef.set({ removalRequest }, { merge: true });
+
+    // Let the admin know (non-fatal)
+    try {
+      const listingName = (await db.collection(collection).doc(review.entityId).get()).data()?.name ?? "a listing";
+      const lines = [
+        `${listingName} has asked for a review to be removed.`,
+        "",
+        `Review by ${review.author} (${review.rating}/5): "${review.comment}"`,
+        "",
+        `Reason given: ${reason}`,
+        "",
+        "Decide in Admin HQ → Reviews → Removal requests: https://www.vimarkets.ca/hq",
+      ];
+      await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "api-key": process.env.BREVO_API_KEY ?? "" },
+        body: JSON.stringify({
+          sender: { name: "VI Markets Network", email: "hello@vimarkets.ca" },
+          to: [{ email: "hello@vimarkets.ca", name: "VI Markets Admin" }],
+          subject: `Review removal requested: ${listingName}`,
+          htmlContent: `<div style="font-family: sans-serif; font-size: 16px; color: #2C2828;">${lines.map(l => escapeHtml(l)).join("<br>")}</div>`,
+          textContent: lines.join("\n"),
+        }),
+      });
+    } catch (emailErr) {
+      console.error("Removal request notification email failed (non-fatal):", emailErr);
+    }
+
+    res.json({ ok: true, removalRequest: { reason, requestedAt: removalRequest.requestedAt, status: "open" } });
+  } catch (err) {
+    console.error("Error creating removal request:", err);
+    res.status(500).json({ error: "Failed to send removal request" });
+  }
+});
+
+// POST /reviews/:id/removal-request/resolve → admin decides: "remove" declines
+// the review (hidden everywhere), "keep" leaves it published.
+router.post("/:id/removal-request/resolve", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const action = req.body?.action;
+  if (action !== "remove" && action !== "keep") {
+    return res.status(400).json({ error: "action must be 'remove' or 'keep'" });
+  }
+
+  try {
+    const docRef = db.collection("reviews").doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+    const resolution = {
+      "removalRequest.status": action === "remove" ? "accepted" : "dismissed",
+      "removalRequest.resolvedAt": new Date().toISOString(),
+      ...(action === "remove" ? { status: "declined" } : {}),
+    };
+    await docRef.update(resolution);
+    const updated = await docRef.get();
+    res.json({ id: updated.id, ...updated.data() });
+  } catch (err) {
+    console.error("Error resolving removal request:", err);
+    res.status(500).json({ error: "Failed to resolve removal request" });
   }
 });
 
