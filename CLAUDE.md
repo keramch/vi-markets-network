@@ -462,6 +462,10 @@ both outside checks and a logged-in "second member" console test:
   with `BREVO_DOI_TEMPLATE_ID`). Contacts join `BREVO_LIST_ID` only after
   clicking the link, which lands on `/?subscribed=true`. Account-signup
   newsletter opt-ins are NOT double opt-in (they verify email anyway).
+  **Brevo gotcha:** a DOI template used via the API must be Active,
+  contain the `{{ doubleoptin }}` link, AND have the tag `optin`
+  (template → Show advanced settings → Tag). Without the tag Brevo returns
+  400 "An active DOI template does not exist". Confirmed working Oct 10.
 - **Privacy check pending:** index.html loads the Brevo website tracker
   and Google Analytics (gtag) — confirm the Privacy Policy mentions both.
 - OG/Twitter Card meta tags + `og-image.png`
