@@ -7,6 +7,7 @@ import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 're
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
+import { signInWithGoogle, isInAppBrowser } from './services/googleAuth';
 import { PASSWORD_POLICY_MESSAGE } from './utils';
 
 import Header from './components/Header';
@@ -505,6 +506,38 @@ const App: React.FC = () => {
       }
   };
 
+  // "Continue with Google" in the login window
+  const handleGoogleLogin = async () => {
+      try {
+          const firebaseUser = await signInWithGoogle();
+          if (!firebaseUser?.email) return; // closed the popup
+          try {
+              const user = await api.fetchMe(firebaseUser.email);
+              setCurrentUser(user);
+              setLoginModalOpen(false);
+              showNotification(`Welcome, ${user.firstName || user.email}!`);
+              try {
+                  const follows = await api.fetchFollows(user.id);
+                  setFavoritedMarketIds(follows.marketIds);
+                  setFavoritedVendorIds(follows.vendorIds);
+              } catch {
+                  // follows failed — non-fatal
+              }
+          } catch (error) {
+              if (error instanceof api.ApiError && error.status === 404) {
+                  // Signed in with Google but never finished signing up
+                  setLoginModalOpen(false);
+                  navigate('/signup');
+                  showNotification("Let's finish setting up your account.");
+                  return;
+              }
+              throw error;
+          }
+      } catch (error) {
+          showNotification(error instanceof Error ? error.message : 'Login failed. Please try again.');
+      }
+  };
+
   // Turn Firebase Auth error codes into plain-language messages
   const friendlyLoginError = (error: unknown): string => {
       const code = (error as { code?: string })?.code ?? '';
@@ -963,7 +996,7 @@ const App: React.FC = () => {
     );
   };
   
-  const LoginForm: React.FC<{ onLogin: (creds: { email: string, password: string }) => void; onForgotPassword: () => void; }> = ({ onLogin, onForgotPassword }) => {
+  const LoginForm: React.FC<{ onLogin: (creds: { email: string, password: string }) => void; onGoogleLogin: () => void; onForgotPassword: () => void; }> = ({ onLogin, onGoogleLogin, onForgotPassword }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -976,6 +1009,30 @@ const App: React.FC = () => {
 
     return (
         <form className="space-y-4" onSubmit={handleSubmit}>
+            {isInAppBrowser() ? (
+                <p className="text-sm text-gray-700 bg-brand-cream border border-gray-200 rounded-lg px-4 py-3 text-center">
+                    To sign in with Google, open this page in Safari or Chrome.
+                </p>
+            ) : (
+                <button
+                    type="button"
+                    onClick={onGoogleLogin}
+                    className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" aria-hidden="true">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    Continue with Google
+                </button>
+            )}
+            <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-sm text-gray-500">or sign in with email</span>
+                <div className="flex-1 h-px bg-gray-200" />
+            </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700">Email Address</label>
                 <input
@@ -1366,7 +1423,7 @@ const App: React.FC = () => {
         <VendorSignUpForm />
       </Modal>
       <Modal isOpen={isLoginModalOpen} onClose={() => setLoginModalOpen(false)} title="Login or Sign Up">
-        <LoginForm onLogin={handleLogin} onForgotPassword={() => { setLoginModalOpen(false); setForgotPasswordOpen(true); }}/>
+        <LoginForm onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} onForgotPassword={() => { setLoginModalOpen(false); setForgotPasswordOpen(true); }}/>
       </Modal>
       <Modal
           isOpen={isForgotPasswordOpen}

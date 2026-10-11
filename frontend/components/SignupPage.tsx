@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
 import type { View, User } from '../types';
 import { VendorTypes, MarketCategories } from '../types';
@@ -13,6 +13,7 @@ import PasswordInput from './PasswordInput';
 import { passwordMeetsPolicy, PASSWORD_POLICY_MESSAGE } from '../utils';
 import PasswordRulesList from './PasswordRulesList';
 import { useSpamGuard } from './SpamGuard';
+import { signInWithGoogle, isGoogleUser, isInAppBrowser, splitDisplayName } from '../services/googleAuth';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,7 +91,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [googleMsg, setGoogleMsg] = useState('');
+  // Set when the person signed up with Google instead of email + password
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const inAppBrowser = isInAppBrowser();
   const [errors3, setErrors3] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
 
   // Step 2
@@ -116,6 +120,51 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [submitError, setSubmitError] = useState('');
   const { honeypotField, guardFields } = useSpamGuard();
 
+  // ── Google sign-up ────────────────────────────────────────────────────────
+
+  // Resume a Google sign-up that wasn't finished (signed in with Google but
+  // no profile yet — e.g. sent here from the login button)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+      if (isGoogleUser(user) && user?.email) {
+        const signedInEmail = user.email;
+        setGoogleEmail((current) => current ?? signedInEmail);
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    setSubmitError('');
+    setIsGoogleLoading(true);
+    try {
+      const user = await signInWithGoogle();
+      if (!user?.email) return; // closed the popup
+      // Already a member? Then this is really a login — the app signs them in.
+      try {
+        await api.fetchMe(user.email);
+        navigate('/');
+        return;
+      } catch {
+        // No profile yet — carry on with signup
+      }
+      setGoogleEmail(user.email);
+      const names = splitDisplayName(user.displayName);
+      setFirstName((current) => current.trim() ? current : names.firstName);
+      setLastName((current) => current.trim() ? current : names.lastName);
+      setErrors3({});
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Google sign-in failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleUseDifferentAccount = async () => {
+    await signOut(firebaseAuth).catch(() => {});
+    setGoogleEmail(null);
+  };
+
   // ── Email verification ────────────────────────────────────────────────────
 
   // The backend builds the real Firebase verification link and emails it to
@@ -137,8 +186,11 @@ const SignupPage: React.FC<SignupPageProps> = ({
       const e: typeof errors3 = {};
       if (!firstName.trim()) e.firstName = 'First name is required';
       if (!lastName.trim()) e.lastName = 'Last name is required';
-      if (!/\S+@\S+\.\S+/.test(email.trim())) e.email = 'Enter a valid email address';
-      if (!passwordMeetsPolicy(password)) e.password = PASSWORD_POLICY_MESSAGE;
+      // Google sign-ups have no email/password to check
+      if (!googleEmail) {
+        if (!/\S+@\S+\.\S+/.test(email.trim())) e.email = 'Enter a valid email address';
+        if (!passwordMeetsPolicy(password)) e.password = PASSWORD_POLICY_MESSAGE;
+      }
       setErrors3(e);
       return Object.keys(e).length === 0;
     }
@@ -163,7 +215,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
   // If the backend flagged a specific account field, send the user back to step 3
   // and show the message under that field. Otherwise show it at the bottom.
   const handleSubmitError = (err: unknown) => {
-    if (err instanceof api.ApiError && (err.field === 'password' || err.field === 'email')) {
+    // (Google sign-ups have no email/password fields to point at)
+    if (!googleEmail && err instanceof api.ApiError && (err.field === 'password' || err.field === 'email')) {
       const field = err.field;
       setWizardStep(3);
       setErrors3((prev) => ({ ...prev, [field]: err.message }));
@@ -181,20 +234,32 @@ const SignupPage: React.FC<SignupPageProps> = ({
       isSubmittingRef.current = true;
       setSubmitError('');
       try {
-        const user = await api.register({
-          email: email.trim(),
-          password,
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          accountType: 'community',
-          city: communityCity,
-          newsletterOptIn,
-          ...guardFields(),
-        });
-        await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-        const firebaseUser = firebaseAuth.currentUser;
-        if (firebaseUser) {
-          await sendCustomVerificationEmail(firebaseUser);
+        let user: User;
+        if (googleEmail) {
+          // Google has already verified the email — no verification email needed
+          user = await api.registerOAuth({
+            accountType: 'community',
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            city: communityCity,
+            newsletterOptIn,
+          });
+        } else {
+          user = await api.register({
+            email: email.trim(),
+            password,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            accountType: 'community',
+            city: communityCity,
+            newsletterOptIn,
+            ...guardFields(),
+          });
+          await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+          const firebaseUser = firebaseAuth.currentUser;
+          if (firebaseUser) {
+            await sendCustomVerificationEmail(firebaseUser);
+          }
         }
         onSignupSuccess(user);
         setIsSuccess(true);
@@ -210,9 +275,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
       isSubmittingRef.current = true;
       setSubmitError('');
       try {
-        const user = await api.register({
-          email: email.trim(),
-          password,
+        const profileFields = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           accountType: accountType!,
@@ -220,13 +283,24 @@ const SignupPage: React.FC<SignupPageProps> = ({
           description: description.trim() || undefined,
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
           marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,
-          ...guardFields(),
-        });
-        await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-        // Send verification email
-        const firebaseUser = firebaseAuth.currentUser;
-        if (firebaseUser) {
-          await sendCustomVerificationEmail(firebaseUser);
+        };
+        let user: User;
+        if (googleEmail) {
+          // Google has already verified the email — no verification email needed
+          user = await api.registerOAuth(profileFields);
+        } else {
+          user = await api.register({
+            ...profileFields,
+            email: email.trim(),
+            password,
+            ...guardFields(),
+          });
+          await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+          // Send verification email
+          const firebaseUser = firebaseAuth.currentUser;
+          if (firebaseUser) {
+            await sendCustomVerificationEmail(firebaseUser);
+          }
         }
         onSignupSuccess(user);
         setIsSuccess(true);
@@ -447,14 +521,30 @@ const SignupPage: React.FC<SignupPageProps> = ({
               {wizardStep === 3 && (
                 <div className="space-y-4">
                   {/* Google sign-in */}
+                  {googleEmail ? (
+                    <div className="flex items-center justify-between gap-3 bg-brand-cream border border-brand-light-blue rounded-lg px-4 py-3">
+                      <p className="text-sm text-brand-text">
+                        <CheckIcon className="w-4 h-4 inline mr-1 text-brand-light-blue" />
+                        Signed in with Google as <strong>{googleEmail}</strong>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleUseDifferentAccount}
+                        className="text-sm text-brand-light-blue underline hover:no-underline flex-shrink-0"
+                      >
+                        Use a different account
+                      </button>
+                    </div>
+                  ) : inAppBrowser ? (
+                    <p className="text-sm text-gray-700 bg-brand-cream border border-gray-200 rounded-lg px-4 py-3 text-center">
+                      To sign up with Google, open this page in Safari or Chrome. (Google doesn't allow sign-in inside apps like Instagram or Facebook.)
+                    </p>
+                  ) : (
                   <button
                     type="button"
-                    onClick={() =>
-                      setGoogleMsg(
-                        'Google sign-in requires Firebase Auth — coming soon! Please use email & password below.'
-                      )
-                    }
-                    className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-3 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={handleGoogleSignIn}
+                    disabled={isGoogleLoading}
+                    className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-3 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0">
                       <path
@@ -474,20 +564,17 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         fill="#EA4335"
                       />
                     </svg>
-                    Continue with Google
+                    {isGoogleLoading ? 'Opening Google…' : 'Continue with Google'}
                   </button>
-
-                  {googleMsg && (
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center">
-                      {googleMsg}
-                    </p>
                   )}
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-xs text-gray-400">or continue with email</span>
-                    <div className="flex-1 h-px bg-gray-200" />
-                  </div>
+                  {!googleEmail && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      <span className="text-sm text-gray-500">or sign up with email</span>
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -518,6 +605,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     </div>
                   </div>
 
+                  {!googleEmail && (<>
                   <div>
                     <label className={labelCls}>Email Address</label>
                     <input
@@ -546,6 +634,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     <PasswordRulesList id="password-rules" password={password} />
                     {errors3.password && <p className={errCls}>{errors3.password}</p>}
                   </div>
+                  </>)}
 
                   {accountType === 'community' && (
                     <div>
@@ -733,16 +822,20 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 Welcome to VI Markets!
               </h2>
               <p className="text-gray-600 text-lg mb-2">You're all set, {firstName}.</p>
+              {googleEmail ? (
+                <div className="mb-8" /> /* Google already verified the email */
+              ) : (<>
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-sm text-amber-800 text-left max-w-sm mx-auto">
                 <p className="font-semibold mb-1">Please verify your email</p>
                 <p>We've sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.</p>
               </div>
               <div className="mb-8">
                 {!resendSent
-                  ? <button type="button" onClick={handleResendVerification} className="text-xs text-amber-700 underline hover:no-underline">Resend verification email</button>
-                  : <p className="text-xs text-amber-700">Verification email resent.</p>
+                  ? <button type="button" onClick={handleResendVerification} className="text-sm text-amber-700 underline hover:no-underline">Resend verification email</button>
+                  : <p className="text-sm text-amber-700">Verification email resent.</p>
                 }
               </div>
+              </>)}
               <button
                 type="button"
                 onClick={() => accountType === 'community' ? navigate('/') : navigate('/dashboard/profile')}

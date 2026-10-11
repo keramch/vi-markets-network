@@ -521,16 +521,23 @@ both outside checks and a logged-in "second member" console test:
   instance, worth including in that same pass.
 
 ### 🟡 Phase 1.3 / Near Term
-- **Google sign-in — in progress (Sept 29).** Done: Firebase Console
-  provider enabled, authorized domains (vimarkets.ca, www, dev preview),
-  Google consent-screen branding (support email is Kera's Gmail — a
-  hello@ Google account wasn't possible), and the backend endpoint
-  `POST /users/register-oauth`. Remaining: signup wizard button (replace
-  the fake "Continue with Google" on step 3), login button, iPhone/in-app
-  browser handling (vercel.json `/__/auth` rewrite + redirect sign-in;
-  Google blocks sign-in inside Instagram/Facebook in-app browsers), and
-  linking existing email/password members. Decided: **Facebook maybe
-  later, Apple no** ($99/yr + relay emails), **Instagram login impossible**.
+- **Google sign-in — built Oct 10, 2026 (needs live testing).** Firebase
+  provider + authorized domains (vimarkets.ca, www, dev preview) + consent
+  branding (support email is Kera's Gmail). `services/googleAuth.ts` uses
+  **popup** sign-in (works on iPhone without the `/__/auth` vercel rewrite
+  the redirect flow would need). Signup step 3 "Continue with Google":
+  existing members are just logged in; new shoppers are created at once;
+  vendors/organizers continue to step 4. `POST /users/register-oauth`
+  creates the profile from the verified token (no verification email;
+  synced to Brevo immediately). Login window has a Google button too — a
+  Google user with no profile is sent to /signup to finish (SignupPage
+  resumes via onAuthStateChanged). In-app browsers (Instagram, Facebook…)
+  get an "open in Safari or Chrome" note instead of the button, since
+  Google blocks sign-in there. Same-email members end up in one account
+  (Firebase "link accounts" setting); otherwise a friendly "log in with
+  your password" error. **Privacy Policy should mention Google sign-in.**
+  Decided: **Facebook maybe later, Apple no** ($99/yr + relay emails),
+  **Instagram login impossible**.
 - **Email deliverability:** done Oct 6, 2026 — all 3 email templates
   (verification, contact, admin message) now use the self-hosted
   wordmark `frontend/public/email-logo.png` via `EMAIL_LOGO_IMG`
@@ -540,8 +547,7 @@ both outside checks and a logged-in "second member" console test:
   hello@vimarkets.ca goes through GreenGeeks, whose SpamAssassin tags
   `***SPAM***` (which then breaks DKIM when forwarded to Gmail) —
   whitelist Brevo in cPanel.
-- **Signup polish (agreed Sept 29):** remove fake Google button until
-  real; remove placeholders from all fields and link every `<label>` to
+- **Signup polish (agreed Sept 29):** remove placeholders from all fields and link every `<label>` to
   its input (most signup labels have no `htmlFor`); raise 12px helper
   text to 14px; "Select all that apply" contradicts the 3-type max;
   replace the iOS-microphone HelpTip on description; add "we'll send a

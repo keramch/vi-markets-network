@@ -186,6 +186,25 @@ export const register = (data: {
   }).then(normalizeUser);
 };
 
+// REGISTER WITH GOOGLE — the person is already signed in to Firebase with
+// Google; the backend creates their profile from the verified token
+export const registerOAuth = (data: {
+  accountType: "vendor" | "market" | "community";
+  firstName?: string;
+  lastName?: string;
+  businessName?: string;
+  city?: string;
+  description?: string;
+  vendorTypes?: string[];
+  marketCategories?: string[];
+  newsletterOptIn?: boolean;
+}): Promise<User> => {
+  return request<User>("/users/register-oauth", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }).then(normalizeUser);
+};
+
 // USERS
 
 export const updateUser = (
