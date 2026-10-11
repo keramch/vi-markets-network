@@ -411,6 +411,16 @@ const HomePage: React.FC<HomePageProps> = ({
     }
   };
 
+  const resultCount = filteredMarkets.length + filteredVendors.length;
+
+  // Search button / phone keyboard "Search" key: close the keyboard and jump
+  // to the results
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    (document.activeElement as HTMLElement | null)?.blur();
+    scrollToResults();
+  };
+
   const clearAllFilters = () => {
     setSearchTerm("");
     setSelectedMarketCategory("all");
@@ -421,46 +431,68 @@ const HomePage: React.FC<HomePageProps> = ({
   return (
     <main>
       {/* Hero section */}
-      <div id="pagetop-header" className="relative bg-brand-blue text-white py-16 px-4 text-center">
+      <div id="pagetop-header" className={`relative bg-brand-blue text-white px-4 text-center transition-all ${showSearchResults ? "py-6 md:py-16" : "py-16"}`}>
         <div className="relative z-10">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 font-serif">
             Your Guide to Island Markets
           </h1>
-          <p className="max-w-2xl mx-auto mb-8 text-lg text-brand-teal-light">
+          <p className={`max-w-2xl mx-auto mb-8 text-lg text-brand-teal-light ${showSearchResults ? "hidden md:block" : ""}`}>
             Find all things handmade, homemade, and locally grown or created on Vancouver
             Island.
           </p>
 
           {/* Search inputs */}
           <div className="max-w-3xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 bg-white/20 p-2 rounded-full">
+            <form
+              role="search"
+              aria-label="Search markets and vendors"
+              onSubmit={handleSearchSubmit}
+              className="grid grid-cols-1 md:grid-cols-6 gap-2 bg-white/20 p-2 rounded-3xl md:rounded-full"
+            >
               <div className="relative md:col-span-3">
                 <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="text"
+                  type="search"
+                  enterKeyHint="search"
+                  aria-label="What are you looking for?"
                   placeholder="Search for sourdough, pottery, etc..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") scrollToResults();
-                  }}
                   className="w-full p-3 pl-12 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-brand-gold border-0"
                 />
               </div>
               <div className="relative md:col-span-2">
                 <MapPinIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="text"
+                  type="search"
+                  enterKeyHint="search"
+                  aria-label="City or postal code"
                   placeholder="City or postal code"
                   value={locationTerm}
                   onChange={handleLocationTermChange}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") scrollToResults();
-                  }}
                   className="w-full p-3 pl-12 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-brand-gold border-0"
                 />
               </div>
-            </div>
+              <button
+                type="submit"
+                className="md:col-span-1 bg-brand-gold text-white font-semibold rounded-full py-3 px-5 hover:bg-brand-gold/90 focus:outline-none focus:ring-4 focus:ring-white/60 transition-colors"
+              >
+                Search
+              </button>
+            </form>
+            {showSearchResults && (
+              <p className="mt-3 text-base" aria-live="polite">
+                <button
+                  type="button"
+                  onClick={scrollToResults}
+                  className="text-white font-semibold underline underline-offset-4 hover:no-underline"
+                >
+                  {resultCount === 0
+                    ? "No matches yet — try another word"
+                    : `${resultCount} ${resultCount === 1 ? "match" : "matches"} · See results ↓`}
+                </button>
+              </p>
+            )}
             <div className="flex items-center justify-center mt-3 text-sm text-brand-teal-light">
               {locationStatus === "Use my location" ? (
                 <button
@@ -601,10 +633,20 @@ const HomePage: React.FC<HomePageProps> = ({
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {showSearchResults ? (
           <>
-            <div id="results" />
-            <h2 className="text-3xl font-bold font-sans font-semibold text-brand-blue mb-6">
-              Results
-            </h2>
+            <div id="results" className="scroll-mt-4" />
+            <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+              <h2 className="text-3xl font-sans font-semibold text-brand-blue">
+                {resultCount} {resultCount === 1 ? "result" : "results"}
+                {searchTerm.trim() && <> for &ldquo;{searchTerm.trim()}&rdquo;</>}
+              </h2>
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-base text-brand-light-blue font-semibold underline underline-offset-4 hover:no-underline"
+              >
+                Clear search
+              </button>
+            </div>
             {filteredMarkets.length === 0 && filteredVendors.length === 0 ? (
               <div className="text-center text-gray-600 py-8">
                 <p className="text-lg font-medium mb-2">{randomNoResults}</p>
