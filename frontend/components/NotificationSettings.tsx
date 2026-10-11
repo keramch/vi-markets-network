@@ -24,9 +24,10 @@ const ToggleSwitch: React.FC<{
   enabled: boolean;
   onChange: (enabled: boolean) => void;
   disabled?: boolean;
-}> = ({ label, description, enabled, onChange, disabled }) => (
+  showDivider?: boolean; // line under the switch (off when the section draws its own)
+}> = ({ label, description, enabled, onChange, disabled, showDivider = true }) => (
   <div
-    className={`flex items-center justify-between py-4 border-b ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+    className={`flex items-center justify-between py-4 ${showDivider ? 'border-b' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     onClick={() => { if (!disabled) onChange(!enabled); }}
   >
     <div>
@@ -198,8 +199,8 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
             </div>
           </div>
 
-          {/* Newsletter (the switch draws its own divider) */}
-          <div className="mb-6">
+          {/* Newsletter — divider goes below the note, not under the switch */}
+          <div className="pb-6 border-b mb-6">
             {newsletter ? (
               <ToggleSwitch
                 label="Email newsletter"
@@ -207,6 +208,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
                 enabled={newsletter.subscribed || newsletter.pendingVerification}
                 onChange={handleNewsletterChange}
                 disabled={isSavingNewsletter}
+                showDivider={false}
               />
             ) : !newsletterError && (
               <p className="text-sm text-gray-600">Loading newsletter setting…</p>
