@@ -455,7 +455,15 @@ both outside checks and a logged-in "second member" console test:
 - Brevo contact sync on registration, including all attributes
 - React Router v6 — slug-based URLs for all profiles
 - Follow/favorite markets & vendors, shown on Dashboard
-- Legal pages, About page, footer newsletter → Brevo
+- Legal pages, About page, footer newsletter → Brevo. **Double opt-in
+  since Oct 10, 2026:** `/brevo/subscribe` calls Brevo's
+  `contacts/doubleOptinConfirmation` with template **6** (the confirm
+  email originally made for the vanislemarkets.com beta form; override
+  with `BREVO_DOI_TEMPLATE_ID`). Contacts join `BREVO_LIST_ID` only after
+  clicking the link, which lands on `/?subscribed=true`. Account-signup
+  newsletter opt-ins are NOT double opt-in (they verify email anyway).
+- **Privacy check pending:** index.html loads the Brevo website tracker
+  and Google Analytics (gtag) — confirm the Privacy Policy mentions both.
 - OG/Twitter Card meta tags + `og-image.png`
 - `dev` branch + Vercel preview workflow in place
 - Market Event Pages — individual public pages per event

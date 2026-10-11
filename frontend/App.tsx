@@ -316,6 +316,10 @@ const App: React.FC = () => {
         });
     } else if (params.get('verified') === 'true') {
       navigate('/verified');
+    } else if (params.get('subscribed') === 'true') {
+      // Arrived from the newsletter double opt-in confirmation link
+      showNotification("You're subscribed! Thanks for joining the VI Markets newsletter.");
+      navigate('/', { replace: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1291,7 +1295,7 @@ const App: React.FC = () => {
                       body: JSON.stringify({ email: footerEmail, firstName: footerFirstName, city: footerCity, ...footerSpamGuard.guardFields() }),
                     });
                     if (!res.ok) throw new Error();
-                    showNotification("You're in! Thanks for joining, " + footerFirstName + "!");
+                    showNotification("Almost there, " + footerFirstName + "! Check your email and click the link to confirm your subscription.");
                     setFooterFirstName('');
                     setFooterEmail('');
                     setFooterCity('');

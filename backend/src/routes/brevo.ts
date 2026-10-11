@@ -24,6 +24,13 @@ const verificationRateLimiter = rateLimit({
   message: { error: "Too many verification emails requested — please try again later" },
 });
 
+// Newsletter double opt-in: Brevo template 6 is the "confirm your subscription"
+// email (set up originally for the beta signup form). Override with the
+// BREVO_DOI_TEMPLATE_ID env var if the template changes.
+const NEWSLETTER_DOI_TEMPLATE_ID = parseInt(process.env.BREVO_DOI_TEMPLATE_ID ?? "6");
+// Where subscribers land after clicking the confirm link
+const NEWSLETTER_CONFIRMED_URL = "https://www.vimarkets.ca/?subscribed=true";
+
 // Where members land after clicking the verification link
 const VERIFY_CONTINUE_URL = "https://www.vimarkets.ca/verified";
 
@@ -43,7 +50,10 @@ router.post("/subscribe", subscribeRateLimiter, spamGuard({ status: 200, body: {
   }
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/contacts", {
+    // Double opt-in: Brevo emails a "confirm your subscription" link (template
+    // NEWSLETTER_DOI_TEMPLATE_ID) and only adds the contact to the list after
+    // they click it — keeps the list clean and gives provable consent (CASL).
+    const response = await fetch("https://api.brevo.com/v3/contacts/doubleOptinConfirmation", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -52,8 +62,9 @@ router.post("/subscribe", subscribeRateLimiter, spamGuard({ status: 200, body: {
       body: JSON.stringify({
         email,
         attributes: { FIRSTNAME: firstName, CITY: city ?? "" },
-        listIds: [listId],
-        updateEnabled: true,
+        includeListIds: [listId],
+        templateId: NEWSLETTER_DOI_TEMPLATE_ID,
+        redirectionUrl: NEWSLETTER_CONFIRMED_URL,
       }),
     });
 
