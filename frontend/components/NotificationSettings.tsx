@@ -211,6 +211,13 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
             ) : !newsletterError && (
               <p className="text-sm text-gray-600">Loading newsletter setting…</p>
             )}
+            {newsletter && (
+              <p className="text-sm text-gray-600 mt-2">
+                {currentUser.accountType === 'vendor' || currentUser.accountType === 'market'
+                  ? "This is just the newsletter. You'll still get account emails — like password resets and messages from shoppers — and membership notices such as renewal reminders."
+                  : "This is just the newsletter. You'll still get account emails like password resets."}
+              </p>
+            )}
             {newsletter?.pendingVerification && (
               <p className="text-sm text-amber-800 mt-2">
                 You'll start receiving it once you've verified your email address — check your inbox for the verification link.

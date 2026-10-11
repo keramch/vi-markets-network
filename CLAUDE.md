@@ -353,6 +353,17 @@ Payment Accepted
   (`emailBlacklisted: false`) — automatic syncs must never re-subscribe
   someone. Switching on before verifying is remembered until verification.
   Google-only accounts see a note instead of Change Password.
+  **Email categories (CASL, Kera's intent):** (1) account/service emails
+  (verification, password reset, contact messages, review updates,
+  receipts) — no consent/opt-out needed, always sent; (2) membership
+  notices (renewal reminders, account changes) — consent-exempt, keep
+  strictly factual with no promotion mixed in; opt-out requirement is a
+  grey area (CRTC suggests an unsubscribe mechanism) — Kera prefers no
+  opt-out; (3) newsletter — consent + unsubscribe, controlled by the
+  Settings switch. **Risk to check:** the Pro renewal reminder is a Brevo
+  marketing automation, which Brevo won't send to contacts who
+  unsubscribed via an email link — consider making it a Brevo
+  transactional email or sending it from the backend.
   Side effect: until a member is synced, the Stripe webhook's and the
   type-sync's Brevo PUTs fail (logged, non-fatal); the later sync sends
   current tier and types anyway.
