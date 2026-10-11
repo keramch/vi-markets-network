@@ -33,11 +33,15 @@ const ToggleSwitch: React.FC<{
       <h3 className="text-lg font-semibold text-brand-blue">{label}</h3>
       <p className="text-sm text-gray-500">{description}</p>
     </div>
+    <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+    <span aria-hidden="true" className={`text-sm font-semibold w-7 text-right ${enabled ? 'text-green-700' : 'text-gray-500'}`}>
+      {enabled ? 'On' : 'Off'}
+    </span>
     <button
       type="button"
       disabled={disabled}
       className={`${
-        enabled ? 'bg-brand-blue' : 'bg-gray-200'
+        enabled ? 'bg-green-600' : 'bg-gray-300'
       } relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       role="switch"
       aria-checked={enabled}
@@ -52,6 +56,7 @@ const ToggleSwitch: React.FC<{
         } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
       />
     </button>
+    </div>
   </div>
 );
 
@@ -193,8 +198,8 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
             </div>
           </div>
 
-          {/* Newsletter */}
-          <div className="pb-6 border-b mb-6">
+          {/* Newsletter (the switch draws its own divider) */}
+          <div className="mb-6">
             {newsletter ? (
               <ToggleSwitch
                 label="Email newsletter"
