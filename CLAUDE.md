@@ -345,6 +345,14 @@ Payment Accepted
   by `POST /users/email-verified` (site calls it after applyActionCode;
   checks Firebase that the email is really verified) with `GET /auth/me`
   as a backup on next login. Google sign-ups sync at signup.
+  **Settings newsletter switch (Oct 10, 2026)** for everyone
+  (`GET/PUT /users/me/newsletter`): status is read from Brevo (so email
+  unsubscribes show as off); off = removed from the list and
+  `newsletterOptIn: false` (vendors/organizers too); on = synced with
+  `explicitOptIn`, the ONLY path that clears a Brevo unsubscribe
+  (`emailBlacklisted: false`) — automatic syncs must never re-subscribe
+  someone. Switching on before verifying is remembered until verification.
+  Google-only accounts see a note instead of Change Password.
   Side effect: until a member is synced, the Stripe webhook's and the
   type-sync's Brevo PUTs fail (logged, non-fatal); the later sync sends
   current tier and types anyway.

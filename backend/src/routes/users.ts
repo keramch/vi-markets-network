@@ -2,7 +2,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { db, auth } from "../firebase";
 import { spamGuard } from "../middleware/spamGuard";
-import { syncMemberToBrevo, syncMemberIfVerified } from "../utils/brevoSync";
+import { syncMemberToBrevo, syncMemberIfVerified, getNewsletterStatus, removeMemberFromNewsletter, wantsNewsletter } from "../utils/brevoSync";
 import { requireAuth, requireAdmin, isAdminUser } from "../middleware/auth";
 
 const router = Router();
@@ -375,6 +375,68 @@ router.post("/register-oauth", async (req, res) => {
   } catch (err) {
     console.error("Register (oauth) error:", err);
     res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+// ── Newsletter switch (Settings) ─────────────────────────────────────────────
+// GET  /users/me/newsletter → { subscribed, pendingVerification }
+// PUT  /users/me/newsletter { subscribed: boolean }
+// "subscribed" comes from Brevo itself, so an unsubscribe via an email link
+// shows as off. Switching on before the email is verified is remembered and
+// takes effect when they verify (keeps the double opt-in rule).
+
+async function newsletterState(uid: string) {
+  const user = (await db.collection("users").doc(uid).get()).data() ?? {};
+  const emailVerified = (await auth.getUser(uid)).emailVerified;
+  let subscribed = false;
+  try {
+    subscribed = user.email ? await getNewsletterStatus(user.email) : false;
+  } catch (err) {
+    console.error("Newsletter status lookup failed:", err);
+    throw err;
+  }
+  return { subscribed, pendingVerification: !subscribed && wantsNewsletter(user) && !emailVerified };
+}
+
+router.get("/me/newsletter", requireAuth, async (req, res) => {
+  try {
+    res.json(await newsletterState(req.user!.uid));
+  } catch {
+    res.status(500).json({ error: "Couldn't check your newsletter status right now." });
+  }
+});
+
+router.put("/me/newsletter", requireAuth, async (req, res) => {
+  const subscribed = req.body?.subscribed;
+  if (typeof subscribed !== "boolean") {
+    return res.status(400).json({ error: "subscribed must be true or false" });
+  }
+
+  try {
+    const uid = req.user!.uid;
+    const userRef = db.collection("users").doc(uid);
+    const user = (await userRef.get()).data();
+    if (!user?.email) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    await userRef.update({ newsletterOptIn: subscribed });
+
+    if (subscribed) {
+      // Only verified addresses join the list; otherwise it happens on verification
+      if ((await auth.getUser(uid)).emailVerified) {
+        const ok = await syncMemberToBrevo(uid, { explicitOptIn: true });
+        if (!ok) return res.status(500).json({ error: "Couldn't subscribe you right now. Please try again." });
+      }
+    } else {
+      const ok = await removeMemberFromNewsletter(user.email);
+      if (!ok) return res.status(500).json({ error: "Couldn't unsubscribe you right now. Please try again." });
+    }
+
+    res.json(await newsletterState(uid));
+  } catch (err) {
+    console.error("Newsletter switch error:", err);
+    res.status(500).json({ error: "Couldn't update your newsletter setting. Please try again." });
   }
 });
 

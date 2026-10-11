@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { NotificationSettings, User } from '../types';
 import { SettingsIcon } from './Icons';
 import PasswordInput from './PasswordInput';
@@ -7,6 +7,8 @@ import PasswordRulesList from './PasswordRulesList';
 import { passwordMeetsPolicy, PASSWORD_POLICY_MESSAGE } from '../utils';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { firebaseAuth } from '../services/firebase';
+import * as api from '../services/api.live';
+import { isGoogleUser } from '../services/googleAuth';
 
 interface NotificationSettingsProps {
   settings: NotificationSettings;
@@ -39,6 +41,7 @@ const ToggleSwitch: React.FC<{
       } relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-gold focus:ring-offset-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       role="switch"
       aria-checked={enabled}
+      aria-label={label}
       onClick={(e) => { e.stopPropagation(); if (!disabled) onChange(!enabled); }}
       tabIndex={0}
     >
@@ -63,6 +66,33 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
   const [citySuccess, setCitySuccess] = useState(false);
   const [isSavingCity, setIsSavingCity] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Google-only accounts have no VI Markets password to change
+  const hasPassword = !!firebaseAuth.currentUser?.providerData.some(p => p.providerId === 'password');
+  const signsInWithGoogle = isGoogleUser(firebaseAuth.currentUser);
+
+  // Newsletter switch — real status comes from Brevo
+  const [newsletter, setNewsletter] = useState<api.NewsletterStatus | null>(null);
+  const [newsletterError, setNewsletterError] = useState('');
+  const [isSavingNewsletter, setIsSavingNewsletter] = useState(false);
+
+  useEffect(() => {
+    api.getNewsletterStatus()
+      .then(setNewsletter)
+      .catch(() => setNewsletterError("Couldn't load your newsletter setting right now."));
+  }, []);
+
+  const handleNewsletterChange = async (subscribed: boolean) => {
+    setNewsletterError('');
+    setIsSavingNewsletter(true);
+    try {
+      setNewsletter(await api.setNewsletterSubscription(subscribed));
+    } catch (err) {
+      setNewsletterError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsSavingNewsletter(false);
+    }
+  };
 
   const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {
     setCurrentSettings(prev => ({ ...prev, [key]: value }));
@@ -163,7 +193,36 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
             </div>
           </div>
 
+          {/* Newsletter */}
+          <div className="pb-6 border-b mb-6">
+            {newsletter ? (
+              <ToggleSwitch
+                label="Email newsletter"
+                description="News about markets and vendors near you. You can switch this off any time."
+                enabled={newsletter.subscribed || newsletter.pendingVerification}
+                onChange={handleNewsletterChange}
+                disabled={isSavingNewsletter}
+              />
+            ) : !newsletterError && (
+              <p className="text-sm text-gray-600">Loading newsletter setting…</p>
+            )}
+            {newsletter?.pendingVerification && (
+              <p className="text-sm text-amber-800 mt-2">
+                You'll start receiving it once you've verified your email address — check your inbox for the verification link.
+              </p>
+            )}
+            {newsletterError && <p className="text-sm text-red-600 mt-2">{newsletterError}</p>}
+          </div>
+
           {/* Change Password */}
+          {!hasPassword && signsInWithGoogle ? (
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Password</h3>
+              <p className="text-sm text-gray-600">
+                You sign in with Google, so there's no separate VI Markets password. Manage your password in your Google account.
+              </p>
+            </div>
+          ) : (
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Change Password</h3>
             <div className="space-y-5 max-w-sm">
@@ -213,6 +272,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
               </button>
             </div>
           </div>
+          )}
         </div>
 
         <div className="bg-white p-8 rounded-lg shadow-xl">

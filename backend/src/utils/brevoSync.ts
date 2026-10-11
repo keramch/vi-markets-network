@@ -11,13 +11,22 @@ import { db, auth } from "../firebase";
 
 type UserDoc = FirebaseFirestore.DocumentData;
 
+// Vendors/organizers are in unless they switched the newsletter off in
+// Settings (older docs have no newsletterOptIn field — treated as in).
+// Shoppers are in only if they opted in.
 export function wantsNewsletter(user: UserDoc): boolean {
-  return user.accountType === "vendor" || user.accountType === "market" || user.newsletterOptIn === true;
+  if (user.accountType === "vendor" || user.accountType === "market") return user.newsletterOptIn !== false;
+  return user.newsletterOptIn === true;
 }
+
+const brevoHeaders = () => ({ "Content-Type": "application/json", "api-key": process.env.BREVO_API_KEY ?? "" });
 
 // Adds/updates the member's Brevo contact on the list. Returns true on success.
 // Non-fatal: logs and returns false on any problem.
-export async function syncMemberToBrevo(userId: string): Promise<boolean> {
+// `explicitOptIn` is only for the person switching the newsletter ON in
+// Settings: it also clears an earlier unsubscribe. Automatic syncs never do
+// that — someone who unsubscribed must never be quietly re-subscribed.
+export async function syncMemberToBrevo(userId: string, options: { explicitOptIn?: boolean } = {}): Promise<boolean> {
   try {
     const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
     if (isNaN(brevoListId)) {
@@ -53,8 +62,14 @@ export async function syncMemberToBrevo(userId: string): Promise<boolean> {
 
     const response = await fetch("https://api.brevo.com/v3/contacts", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "api-key": process.env.BREVO_API_KEY ?? "" },
-      body: JSON.stringify({ email: user.email, attributes, listIds: [brevoListId], updateEnabled: true }),
+      headers: brevoHeaders(),
+      body: JSON.stringify({
+        email: user.email,
+        attributes,
+        listIds: [brevoListId],
+        updateEnabled: true,
+        ...(options.explicitOptIn ? { emailBlacklisted: false } : {}),
+      }),
     });
     if (!response.ok) {
       console.error("Brevo member sync error:", response.status, await response.text());
@@ -82,4 +97,35 @@ export async function syncMemberIfVerified(userId: string): Promise<boolean> {
     console.error("Brevo verified-sync check failed (non-fatal):", err);
     return false;
   }
+}
+
+// Is this email actually receiving the newsletter right now? Asks Brevo, so it
+// reflects unsubscribes made through an email's unsubscribe link too.
+export async function getNewsletterStatus(email: string): Promise<boolean> {
+  const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
+  const response = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
+    headers: brevoHeaders(),
+  });
+  if (response.status === 404) return false;
+  if (!response.ok) throw new Error(`Brevo contact lookup failed: ${response.status}`);
+  const contact = await response.json() as { emailBlacklisted?: boolean; listIds?: number[] };
+  return !contact.emailBlacklisted && (contact.listIds ?? []).includes(brevoListId);
+}
+
+// Takes the member off the newsletter list (they stay a Brevo contact, so
+// account-related details like plan and renewal date are kept).
+export async function removeMemberFromNewsletter(email: string): Promise<boolean> {
+  const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
+  if (isNaN(brevoListId)) return false;
+  const response = await fetch(`https://api.brevo.com/v3/contacts/lists/${brevoListId}/contacts/remove`, {
+    method: "POST",
+    headers: brevoHeaders(),
+    body: JSON.stringify({ emails: [email] }),
+  });
+  // 400 here usually means "not on the list" — already the result we want
+  if (!response.ok && response.status !== 400) {
+    console.error("Brevo list removal error:", response.status, await response.text());
+    return false;
+  }
+  return true;
 }

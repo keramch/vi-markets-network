@@ -353,6 +353,23 @@ export const sendAdminMessage = async (
   });
 };
 
+// NEWSLETTER SWITCH (Settings) — status comes from Brevo itself
+export interface NewsletterStatus {
+  subscribed: boolean;
+  pendingVerification: boolean; // switched on, but waiting for email verification
+}
+
+export const getNewsletterStatus = (): Promise<NewsletterStatus> => {
+  return request<NewsletterStatus>("/users/me/newsletter");
+};
+
+export const setNewsletterSubscription = (subscribed: boolean): Promise<NewsletterStatus> => {
+  return request<NewsletterStatus>("/users/me/newsletter", {
+    method: "PUT",
+    body: JSON.stringify({ subscribed }),
+  });
+};
+
 // After a verification link is clicked: lets the backend add the member to the
 // Brevo list if eligible (it double-checks with Firebase that the email is verified)
 export const notifyEmailVerified = (email: string): Promise<void> => {
