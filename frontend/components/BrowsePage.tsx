@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { vendorTypeLabel } from "../utils";
 import type { Market, Vendor } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
@@ -39,7 +40,7 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
     return items.filter((item) =>
       fuzzyMatch(
         filterTerm,
-        `${item.name} ${item.description} ${item.category}`
+        `${item.name} ${item.description} ${"vendorTypes" in item ? vendorTypeLabel(item) : ""}`
       )
     );
   }, [items, filterTerm]);

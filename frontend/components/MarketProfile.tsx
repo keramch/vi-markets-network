@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import { getVendorTypes } from '../utils';
 import type { SpamGuardFields } from './SpamGuard';
 import type { Market, Vendor, User, Review, Application, MarketEvent } from '../types';
 import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, TikTokIcon, RibbonIcon } from './Icons';
@@ -68,14 +69,12 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   let canApply = true;
   let applicationDisabledReason = '';
   if (market.allowedVendorCategories && market.allowedVendorCategories.length > 0) {
-    const vendorMatchesCategory = currentUserVendor && (
-      currentUserVendor.categories && currentUserVendor.categories.length > 0
-        ? currentUserVendor.categories.some(cat => market.allowedVendorCategories!.includes(cat))
-        : market.allowedVendorCategories.includes(currentUserVendor.category)
-    );
+    // Allowed types are chosen from the vendor types list, so compare with the vendor's real types
+    const vendorMatchesCategory = !!currentUserVendor &&
+      getVendorTypes(currentUserVendor).some(type => market.allowedVendorCategories!.includes(type));
     if (!vendorMatchesCategory) {
       canApply = false;
-      applicationDisabledReason = `This market does not accept applications from the "${currentUserVendor?.category || 'your'}" category.`;
+      applicationDisabledReason = `This market only accepts these vendor types: ${market.allowedVendorCategories.join(', ')}.`;
     }
   }
 

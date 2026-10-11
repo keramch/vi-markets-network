@@ -1,4 +1,5 @@
 import React from "react";
+import { vendorTypeLabel } from '../utils';
 import { AwardIcon, TagIcon, StarIcon, MapPinIcon } from "./Icons";
 import type { Vendor } from "../types";
 
@@ -58,7 +59,7 @@ const VendorCard: React.FC<VendorCardProps> = ({
 
         <div className="flex items-center text-gray-500 mb-1">
           <TagIcon className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
-          <span className="text-xs">{vendor.category}</span>
+          <span className="text-xs line-clamp-1">{vendorTypeLabel(vendor)}</span>
         </div>
 
         {(city || distance !== undefined) && (

@@ -243,3 +243,15 @@ export const passwordMeetsPolicy = (pw: string): boolean =>
 // Shown when a new password fails the policy (signup, reset, change password)
 export const PASSWORD_POLICY_MESSAGE =
   'Your password needs at least 8 characters, including at least one special character.';
+
+// ── Vendor types ─────────────────────────────────────────────────────────────
+// A vendor's real types (chosen at signup / in the profile editor). The old
+// `category` field was filled with "Artisan & Crafts" for everyone, so it's
+// only a fallback for very old records.
+export const getVendorTypes = (vendor: { vendorTypes?: string[]; category?: string }): string[] =>
+  vendor.vendorTypes && vendor.vendorTypes.length > 0
+    ? vendor.vendorTypes
+    : vendor.category ? [vendor.category] : [];
+
+export const vendorTypeLabel = (vendor: { vendorTypes?: string[]; category?: string }): string =>
+  getVendorTypes(vendor).join(' · ');

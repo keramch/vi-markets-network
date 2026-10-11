@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { vendorTypeLabel } from '../utils';
 import ReviewRemovalRequest from './ReviewRemovalRequest';
 import type { Market, Vendor, Review, Application, User, ScheduleRule } from '../types';
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
@@ -296,7 +297,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                              <div key={app.id} className="p-4 border rounded-md bg-white shadow-sm">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <p className="font-bold text-brand-blue">{vendor.name} <span className="text-sm font-normal text-gray-500">({vendor.category})</span></p>
+                                        <p className="font-bold text-brand-blue">{vendor.name} <span className="text-sm font-normal text-gray-500">({vendorTypeLabel(vendor)})</span></p>
                                         <p className="text-sm text-gray-500">Applied on {app.date}</p>
                                         {app.customResponses.map(res => (
                                             <div key={res.question} className="mt-2 text-xs">

@@ -198,7 +198,6 @@ async function createMemberRecords(
         name: businessName,
         slug,
         description: description || "",
-        category: "Artisan & Crafts",
         photos: [],
         contact: { email },
         vendorTypes: vendorTypes || [],

@@ -721,10 +721,15 @@ build starting from prompt #1 next session.
   `handleUpgradeMembership` in App.tsx (old pre-Stripe upgrade flow,
   never called — it's also the source of the pre-existing
   `setSelectedPlanForPayment` TypeScript error)
-- **4 pre-existing TypeScript errors** in the frontend (App.tsx dead
-  code above, BrowsePage `category`, 2× ProfileManager vendor-type
-  typing). Vercel builds anyway; when type-checking, compare the count
-  against 4 rather than expecting zero.
+- **3 pre-existing TypeScript errors** in the frontend (App.tsx dead
+  code above, 2× ProfileManager vendor-type typing). Vercel builds
+  anyway; when type-checking, compare the count against 3 rather than
+  expecting zero. (Was 4 until Oct 10, 2026.)
+- **Vendor `category` field is legacy** — signup used to set it to
+  "Artisan & Crafts" for every vendor (stopped Oct 10, 2026; old docs
+  still have it). Always use `vendorTypes` via `getVendorTypes` /
+  `vendorTypeLabel` in `frontend/utils.ts` (cards, search, market
+  application eligibility vs `allowedVendorCategories`).
 - **CORS locked down and email endpoints rate limited (Sept 29).** Still
   no general rate limiting on other routes or request logging.
 - **Backend endpoints never called from frontend:** single-event fetch,
