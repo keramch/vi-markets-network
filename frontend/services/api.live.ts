@@ -334,6 +334,15 @@ export const sendAdminMessage = async (
   });
 };
 
+// After a verification link is clicked: lets the backend add the member to the
+// Brevo list if eligible (it double-checks with Firebase that the email is verified)
+export const notifyEmailVerified = (email: string): Promise<void> => {
+  return request<void>("/users/email-verified", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+};
+
 // EMAIL VERIFICATION — backend emails the signed-in user their own verification link
 
 export const sendVerificationEmail = (): Promise<void> => {

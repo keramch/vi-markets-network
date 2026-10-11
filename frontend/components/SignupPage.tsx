@@ -94,7 +94,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const [errors3, setErrors3] = useState<Partial<Record<'firstName' | 'lastName' | 'email' | 'password', string>>>({});
 
   // Step 2
-  const [newsletterOptIn, setNewsletterOptIn] = useState(true);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false); // CASL: consent must be actively given, never pre-ticked
 
   // Step 3 (community)
   const [communityCity, setCommunityCity] = useState('');

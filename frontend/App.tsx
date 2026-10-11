@@ -5,7 +5,7 @@ import { useSpamGuard, type SpamGuardFields } from './components/SpamGuard';
 import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
-import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode } from 'firebase/auth';
+import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 import { PASSWORD_POLICY_MESSAGE } from './utils';
 
@@ -307,9 +307,20 @@ const App: React.FC = () => {
     // Firebase (this is what actually marks the email verified), then show /verified
     const oobCode = params.get('oobCode');
     if (params.get('mode') === 'verifyEmail' && oobCode) {
-      applyActionCode(firebaseAuth, oobCode)
+      let verifiedEmail: string | undefined;
+      // Read which email the link is for before the one-time code is used up
+      checkActionCode(firebaseAuth, oobCode)
+        .then((info) => { verifiedEmail = info.data.email ?? undefined; })
+        .catch(() => {})
+        .then(() => applyActionCode(firebaseAuth, oobCode))
         .then(() => firebaseAuth.currentUser?.reload())
-        .then(() => navigate('/verified', { replace: true }))
+        .then(() => {
+          // Verification = newsletter double opt-in: the backend adds them to the
+          // Brevo list if eligible (works even if not logged in on this device)
+          const email = verifiedEmail ?? firebaseAuth.currentUser?.email ?? undefined;
+          if (email) api.notifyEmailVerified(email).catch(() => {});
+          navigate('/verified', { replace: true });
+        })
         .catch(() => {
           showNotification('This verification link has expired or was already used.');
           navigate('/', { replace: true });

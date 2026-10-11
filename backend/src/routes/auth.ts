@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../firebase";
 import { requireAuth } from "../middleware/auth";
+import { syncMemberIfVerified } from "../utils/brevoSync";
 
 const router = Router();
 
@@ -17,6 +18,11 @@ router.get("/me", requireAuth, async (req, res) => {
     // Normal case: users doc ID == Firebase Auth UID
     const byUid = await db.collection("users").doc(uid).get();
     if (byUid.exists) {
+      // Backup for the Brevo list: if they verified their email on another
+      // device, add them now (no-op once done). Runs in the background.
+      if (!byUid.data()?.brevoSyncedAt) {
+        syncMemberIfVerified(uid).catch(() => {});
+      }
       return res.json({ id: byUid.id, ...byUid.data() });
     }
 

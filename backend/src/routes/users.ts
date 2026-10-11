@@ -1,6 +1,8 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { db, auth } from "../firebase";
 import { spamGuard } from "../middleware/spamGuard";
+import { syncMemberToBrevo, syncMemberIfVerified } from "../utils/brevoSync";
 import { requireAuth, requireAdmin, isAdminUser } from "../middleware/auth";
 
 const router = Router();
@@ -132,6 +134,8 @@ async function createMemberRecords(
       favoriteVendor: true,
       nearbyMarket: false,
     },
+    // Vendors/organizers always get the newsletter; shoppers only if they ticked the box
+    newsletterOptIn: accountType === "community" ? newsletterOptIn === true : true,
     authProvider,
     createdAt: Date.now(),
   };
@@ -205,56 +209,14 @@ async function createMemberRecords(
   // Update the user document with the new profile ID
   await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
 
-  // ── Brevo contact sync ──────────────────────────────────────────────────────
-  if (newsletterOptIn !== false) {
-    try {
-      const brevoListId = parseInt(process.env.BREVO_LIST_ID ?? "");
-      if (!isNaN(brevoListId)) {
-        const brevoAttributes: Record<string, string | boolean> = {
-          FIRSTNAME: firstName,
-          LASTNAME: lastName,
-          CITY: city ?? '',
-          MEMBERTYPE: accountType === "vendor" ? "Vendor" : accountType === "market" ? "Market" : "Community",
-          IS_MEMBER: true,
-          SUBSCRIPTION_TIER: plan ?? "free",
-          FOUNDING_MEMBER: false,
-        };
-
-        if (businessName) brevoAttributes.BUSINESSNAME = businessName;
-
-        if (accountType === "vendor" && vendorTypes && vendorTypes.length > 0) {
-          brevoAttributes.VENDOR_TYPES = vendorTypes.join("|");
-        }
-        if (accountType === "market" && marketCategories && marketCategories.length > 0) {
-          brevoAttributes.MARKET_TYPES = marketCategories.join("|");
-        }
-
-        const brevoResponse = await fetch("https://api.brevo.com/v3/contacts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "api-key": process.env.BREVO_API_KEY ?? "",
-          },
-          body: JSON.stringify({
-            email,
-            attributes: brevoAttributes,
-            listIds: [brevoListId],
-            updateEnabled: true,
-          }),
-        });
-
-        if (!brevoResponse.ok) {
-          const errorBody = await brevoResponse.text();
-          console.error("Brevo sync error during registration:", brevoResponse.status, errorBody);
-        }
-      } else {
-        console.warn("BREVO_LIST_ID not set -- skipping Brevo sync");
-      }
-    } catch (brevoErr) {
-      console.error("Brevo sync failed (non-fatal):", brevoErr);
-    }
+  // ── Brevo list ──────────────────────────────────────────────────────────────
+  // Members join the Brevo (newsletter) list only once their email is verified
+  // — the verification click is their double opt-in. Email/password signups are
+  // synced later (POST /users/email-verified, or on next login via /auth/me).
+  // Social sign-ins (Google) are verified already, so sync them now.
+  if (authProvider !== "password") {
+    await syncMemberToBrevo(userId);
   }
-  // ── End Brevo sync ──────────────────────────────────────────────────────────
 
   return {
     status: 201,
@@ -414,6 +376,32 @@ router.post("/register-oauth", async (req, res) => {
     console.error("Register (oauth) error:", err);
     res.status(500).json({ error: "Registration failed" });
   }
+});
+
+// POST /users/email-verified { email } → called by the site right after a
+// verification link is clicked (the person may not be logged in on that
+// device). Firebase is the judge: nothing happens unless that account's email
+// really is verified, so a caller can't add anyone who hasn't confirmed.
+// Always answers { ok: true } so it can't be used to discover accounts.
+const emailVerifiedRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests — please try again later" },
+});
+
+router.post("/email-verified", emailVerifiedRateLimiter, async (req, res) => {
+  const email = String(req.body?.email ?? "").trim();
+  if (email) {
+    try {
+      const authUser = await auth.getUserByEmail(email);
+      await syncMemberIfVerified(authUser.uid);
+    } catch {
+      // Unknown email or Firebase error — same answer either way
+    }
+  }
+  res.json({ ok: true });
 });
 
 // PATCH /users/:id → update user (notifications, city, etc.)

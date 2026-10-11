@@ -334,7 +334,20 @@ Payment Accepted
   `VENDOR_CATEGORIES`, `MARKET_CATEGORIES`
 - `termEnds` dates sync to Brevo for renewal automations —
   format required: `MM/DD/YYYY` with slashes, not ISO 8601
-- Registration sync (new user → Brevo contact) is complete and confirmed working
+- **Brevo list = newsletter audience.** One list (`BREVO_LIST_ID`), sliced
+  with segments by MEMBERTYPE / types — Kera's choice, no separate lists.
+- **Member sync is gated on email verification (Oct 10, 2026)** — the
+  verification click doubles as the newsletter double opt-in
+  (`backend/src/utils/brevoSync.ts`). Vendors/organizers always join once
+  verified; shoppers only if they ticked "Email me updates" (now
+  **unticked by default** — CASL: no pre-ticked consent). Stored as
+  `newsletterOptIn` on the users doc; `brevoSyncedAt` marks done. Triggered
+  by `POST /users/email-verified` (site calls it after applyActionCode;
+  checks Firebase that the email is really verified) with `GET /auth/me`
+  as a backup on next login. Google sign-ups sync at signup.
+  Side effect: until a member is synced, the Stripe webhook's and the
+  type-sync's Brevo PUTs fail (logged, non-fatal); the later sync sends
+  current tier and types anyway.
 
 ---
 
@@ -460,8 +473,8 @@ both outside checks and a logged-in "second member" console test:
   `contacts/doubleOptinConfirmation` with template **6** (the confirm
   email originally made for the vanislemarkets.com beta form; override
   with `BREVO_DOI_TEMPLATE_ID`). Contacts join `BREVO_LIST_ID` only after
-  clicking the link, which lands on `/?subscribed=true`. Account-signup
-  newsletter opt-ins are NOT double opt-in (they verify email anyway).
+  clicking the link, which lands on `/?subscribed=true`. Members get their
+  double opt-in through email verification instead (see Brevo Integration).
   **Brevo gotcha:** a DOI template used via the API must be Active,
   contain the `{{ doubleoptin }}` link, AND have the tag `optin`
   (template → Show advanced settings → Tag). Without the tag Brevo returns
