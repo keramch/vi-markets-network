@@ -4,6 +4,7 @@ import { getFoundingMemberUids } from "../utils/foundingMembers";
 import { getApprovedReviewsByEntity } from "../utils/reviews";
 import { requireAuth, isAdminUser } from "../middleware/auth";
 import { ownsListing, sanitizeListingUpdate } from "../utils/listingAccess";
+import { checkListingUrls } from "../utils/urlSafety";
 
 const router = Router();
 
@@ -86,6 +87,10 @@ router.patch("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "You can only edit your own market." });
     }
     const updates = sanitizeListingUpdate((req.body ?? {}) as Record<string, unknown>, callerIsAdmin) as Record<string, any>;
+    const urlProblem = checkListingUrls(updates);
+    if (urlProblem) {
+      return res.status(400).json({ error: urlProblem });
+    }
 
     const docRef = db.collection("markets").doc(id);
     await docRef.set(updates, { merge: true });

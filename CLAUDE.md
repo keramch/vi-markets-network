@@ -360,10 +360,15 @@ Payment Accepted
   strictly factual with no promotion mixed in; opt-out requirement is a
   grey area (CRTC suggests an unsubscribe mechanism) — Kera prefers no
   opt-out; (3) newsletter — consent + unsubscribe, controlled by the
-  Settings switch. **Risk to check:** the Pro renewal reminder is a Brevo
-  marketing automation, which Brevo won't send to contacts who
-  unsubscribed via an email link — consider making it a Brevo
-  transactional email or sending it from the backend.
+  Settings switch. Upgrade offers / "what Pro includes" pitches are
+  PROMOTIONAL (category 3, may rely on implied consent from the member
+  relationship but need an unsubscribe) — never mix them into category 2.
+- **TO BUILD: membership reminder emails** (none exist yet — no paying
+  members as of Oct 10, 2026). Must be **transactional**, sent by the
+  backend via Brevo's SMTP API on a daily Render cron job (~$1/mo), NOT a
+  Brevo marketing automation (those are blocked for anyone who clicked an
+  email unsubscribe link). Strictly factual: end date, renew-current-plan
+  link, what their current plan includes.
   Side effect: until a member is synced, the Stripe webhook's and the
   type-sync's Brevo PUTs fail (logged, non-fatal); the later sync sends
   current tier and types anyway.
@@ -416,6 +421,32 @@ both outside checks and a logged-in "second member" console test:
   accessibility, Google tracking); if spam still gets through, add
   Cloudflare Turnstile, not reCAPTCHA.
 - **Stripe checkout** upgrades the token's uid, not a uid from the body.
+
+### 🔒 Security audit — Oct 10, 2026
+Re-audited everything added since Sept 29. All routes guarded; no secrets
+in code or git history; no raw-HTML rendering of user content. Fixed:
+- **Dependencies:** `npm audit fix` (non-breaking) on both — cleared the
+  critical/high Express, path-to-regexp, body-parser, grpc, protobuf etc.
+  **Still open:** firebase-admin 12 → 14 major upgrade (moderate/high
+  advisories in Google libs; needs careful testing — own task). Frontend
+  firebase SDK advisories are in Firestore/grpc code the site doesn't use.
+- **Rate limits:** global 120 writes / 15 min / IP (`index.ts`, GETs and
+  the Stripe webhook exempt) + 10 account creations / hour / IP
+  (`/users/register`, `/users/register-oauth`).
+- **Saved addresses checked** (`utils/urlSafety.ts`): listing logo/header/
+  photos must be https; website http(s) or a bare domain; event
+  `externalEventUrl` http(s). All existing data passed before enabling.
+- **Headers:** backend hides `x-powered-by` + nosniff; `frontend/vercel.json`
+  sets X-Frame-Options SAMEORIGIN, CSP `frame-ancestors 'self'`, nosniff,
+  Referrer-Policy, Permissions-Policy (geolocation self). Do NOT add
+  Cross-Origin-Opener-Policy — it breaks the Google sign-in popup.
+- Admin message email now escapes subject/body.
+- **Firebase browser API key** restricted (Kera, Google Cloud Console) to
+  `*.vimarkets.ca/*`, `vimarkets.ca/*`, the stable dev preview URL and
+  `vi-markets-fa746.firebaseapp.com/*`. Per-build Vercel URLs can no
+  longer log in — always test on the stable `git-dev` preview.
+- Low risk, not fixed: an owner can point their listing's contact email
+  at someone else (contact form is limited to 5/hr/IP).
 
 ### ✅ Working (confirmed via full codebase audit)
 - User auth: signup, login, forgot-password, and **full password

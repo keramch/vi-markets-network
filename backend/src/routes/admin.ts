@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { EMAIL_LOGO_IMG } from "../utils/emailBranding";
+import { escapeHtml } from "../utils/escapeHtml";
 import { db, auth } from "../firebase";
 
 const router = Router();
@@ -64,9 +65,9 @@ router.post("/message", async (req, res) => {
                 <p style="color: #4A4243; margin: 0; font-size: 14px;">Vancouver Island's Local Market Directory</p>
               </div>
 
-              <h2 style="font-family: 'Rammetto One', Georgia, serif; color: #2E7A72; font-size: 24px; margin: 0 0 20px 0;">${subject}</h2>
+              <h2 style="font-family: 'Rammetto One', Georgia, serif; color: #2E7A72; font-size: 24px; margin: 0 0 20px 0;">${escapeHtml(subject)}</h2>
 
-              <p style="color: #4A4243; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0; white-space: pre-line;">${body}</p>
+              <p style="color: #4A4243; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0; white-space: pre-line;">${escapeHtml(body)}</p>
 
               <div style="border-top: 2px solid #EBF5EC; padding-top: 30px; margin-top: 40px; text-align: center;">
                 <p style="color: #4A4243; font-size: 16px; margin: 0 0 20px 0;">

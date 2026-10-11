@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "../firebase";
 import { requireAuth, isAdminUser } from "../middleware/auth";
 import { ownsListing } from "../utils/listingAccess";
+import { isSafeWebUrl } from "../utils/urlSafety";
 
 // Can the caller see/manage non-published events for this market?
 async function canManageMarketEvents(uid: string | undefined, marketPageId: string | undefined): Promise<boolean> {
@@ -89,6 +90,9 @@ router.post("/", requireAuth, async (req, res) => {
   if (!marketPageId || !name || !type || !location || !schedule) {
     return res.status(400).json({ error: "marketPageId, name, type, location, and schedule are required" });
   }
+  if (externalEventUrl && !isSafeWebUrl(externalEventUrl)) {
+    return res.status(400).json({ error: "Please enter a normal web address for the event link, like https://mysite.ca/event" });
+  }
 
   const callerIsAdmin = await isAdminUser(req.user!.uid);
   if (!callerIsAdmin) {
@@ -132,6 +136,9 @@ router.post("/", requireAuth, async (req, res) => {
 router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   const updates = { ...(req.body ?? {}) } as Record<string, unknown>;
+  if (updates.externalEventUrl && !isSafeWebUrl(updates.externalEventUrl)) {
+    return res.status(400).json({ error: "Please enter a normal web address for the event link, like https://mysite.ca/event" });
+  }
 
   try {
     const docRef = db.collection("marketEvents").doc(id);

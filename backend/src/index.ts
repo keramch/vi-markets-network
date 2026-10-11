@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import marketsRouter from "./routes/markets";
 import vendorsRouter from "./routes/vendors";
 import usersRouter from "./routes/users";
@@ -25,6 +26,13 @@ const PORT = process.env.PORT || 4000;
 // (otherwise rate limits are shared by every visitor)
 app.set("trust proxy", 1);
 
+// Don't advertise the server software; stop browsers guessing content types
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
+
 // Only our own sites may call the API from a browser. (Requests with no Origin
 // header — Stripe webhooks, server-to-server calls — are not affected by CORS.)
 const ALLOWED_ORIGINS = [
@@ -49,6 +57,18 @@ app.use(cors({
 app.use("/stripe", stripeRouter);
 
 app.use(express.json());
+
+// General limit on anything that writes (POST/PUT/PATCH/DELETE) — stops a
+// script from mass-creating accounts, reviews, etc. Generous for real people.
+// Reads (GET) aren't limited. Some routes add tighter limits of their own.
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS",
+  message: { error: "Too many requests — please wait a few minutes and try again." },
+}));
 
 // Identify the caller (if signed in) on every route below. Does not block anything.
 app.use(attachUser);

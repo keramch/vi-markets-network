@@ -7,6 +7,16 @@ import { requireAuth, requireAdmin, isAdminUser } from "../middleware/auth";
 
 const router = Router();
 
+// Account creation (email or Google) — 10 per hour per visitor is plenty for
+// real people (families sharing a connection included) and stops mass signups
+const accountCreationRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many sign-up attempts from this connection. Please try again in an hour." },
+});
+
 // Fields a member may change on their own users doc. Everything else
 // (isAdmin, subscription, email, ownedMarketId, ...) is admin-only.
 const SELF_EDITABLE_USER_FIELDS = new Set([
@@ -232,7 +242,7 @@ async function createMemberRecords(
 // POST /users/register → create a new user account from the signup wizard
 // Bots get a generic error (not fake success) so a real person who somehow
 // trips the guard sees something sensible and can retry.
-router.post("/register", spamGuard({ status: 400, body: { error: "Something went wrong. Please try again." } }), async (req, res) => {
+router.post("/register", accountCreationRateLimiter, spamGuard({ status: 400, body: { error: "Something went wrong. Please try again." } }), async (req, res) => {
   const { email, password, ...profile } = req.body as MemberProfileInput & {
     email: string;
     password: string;
@@ -296,7 +306,7 @@ router.post("/register", spamGuard({ status: 400, body: { error: "Something went
 // already signed in with a social provider (Google). Identity (uid + email)
 // comes ONLY from the verified Firebase ID token, never from the request body.
 // If the member already has a profile, it is returned unchanged (status 200).
-router.post("/register-oauth", async (req, res) => {
+router.post("/register-oauth", accountCreationRateLimiter, async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Please sign in again and retry." });
