@@ -4,7 +4,7 @@ import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
 import { SearchIcon, XIcon } from "./Icons";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 24; // divisible by 2, 3 and 4 so grid rows come out full
 
 interface BrowsePageProps {
   mode: "markets" | "vendors";

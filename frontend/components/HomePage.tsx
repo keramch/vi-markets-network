@@ -30,6 +30,9 @@ interface SearchableVendor extends Vendor {
   distance?: number;
 }
 
+// How many listings the homepage Featured grid shows (3 rows of 4 on desktop)
+const FEATURED_COUNT = 12;
+
 // --- helpers ---
 
 const fuzzySearch = (term: string, text: string | undefined) => {
@@ -213,7 +216,7 @@ const HomePage: React.FC<HomePageProps> = ({
       new Map([...tier1, ...tier2, ...tier3].map(item => [item.data.id, item])).values()
     );
 
-    return uniqueItems.slice(0, 8);
+    return uniqueItems.slice(0, FEATURED_COUNT);
   }, [activeMarkets, activeVendors]);
 
   const whatsNewItems = useMemo(() => {
@@ -622,7 +625,7 @@ const HomePage: React.FC<HomePageProps> = ({
                     <h3 className="text-2xl font-sans font-semibold text-brand-blue mb-4">
                       Markets
                     </h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                       {filteredMarkets.map((market) => (
                         <MarketCard
                           key={market.id}
@@ -639,7 +642,7 @@ const HomePage: React.FC<HomePageProps> = ({
                     <h3 className="text-2xl font-sans font-semibold text-brand-blue mb-4">
                       Vendors
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
                       {filteredVendors.map((vendor) => (
                         <VendorCard
                           key={vendor.id}
@@ -736,7 +739,7 @@ const HomePage: React.FC<HomePageProps> = ({
               </h2>
               {isLoading ? (
                 <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-                  {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+                  {Array.from({ length: FEATURED_COUNT }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
               ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
