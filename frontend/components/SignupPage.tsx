@@ -392,18 +392,24 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     ))}
                   </ul>
                   {accountType === 'community' && (
-                    <div className="flex items-start gap-3">
+                    <label
+                      htmlFor="newsletter-opt-in"
+                      className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                        newsletterOptIn ? 'border-brand-light-blue bg-brand-cream' : 'border-gray-200 bg-brand-cream/50 hover:border-gray-300'
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         id="newsletter-opt-in"
                         checked={newsletterOptIn}
                         onChange={(e) => setNewsletterOptIn(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-gold mt-0.5 flex-shrink-0"
+                        className="h-5 w-5 rounded border-gray-400 text-brand-light-blue focus:ring-brand-light-blue mt-0.5 flex-shrink-0"
                       />
-                      <label htmlFor="newsletter-opt-in" className="text-gray-700 text-sm cursor-pointer">
-                        Email me updates about new markets and vendors near me — you can unsubscribe anytime.
-                      </label>
-                    </div>
+                      <span className="text-sm text-gray-700">
+                        <span className="block font-semibold text-brand-text mb-0.5">Stay in the loop (optional)</span>
+                        Email me about new markets and vendors near me. You can unsubscribe anytime.
+                      </span>
+                    </label>
                   )}
                   <p className="text-sm text-gray-500 pt-1">
                     Want to read the full details?{' '}
