@@ -1117,7 +1117,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             )}
 
             {activeTab === 'settings' && isMarket(formData) && (
-                <ApplicationSettings marketData={formData} />
+                // Called as a function (not <ApplicationSettings />): it's defined inside this component,
+                // so rendering it as a component remounts it on every keystroke and the textarea loses focus
+                ApplicationSettings({ marketData: formData })
             )}
 
              {activeTab === 'applications' && isMarket(formData) && (
