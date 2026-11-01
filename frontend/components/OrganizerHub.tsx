@@ -42,8 +42,6 @@ function sortKey(event: MarketEvent): string {
   return event.schedule.startDate ?? event.schedule.date ?? '';
 }
 
-type EditScope = 'series' | 'following' | 'occurrence';
-
 const OrganizerHub: React.FC<OrganizerHubProps> = ({
   currentUser,
   market,
@@ -55,7 +53,6 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
-  const [editScope, setEditScope] = useState<EditScope>('series');
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -88,7 +85,6 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const openEdit = (event: MarketEvent) => {
     setSelectedEvent(event);
-    setEditScope('series');
     setEditModalOpen(true);
   };
 
@@ -162,8 +158,6 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
     return 'Special Edition';
   };
 
-  const isScopeDisabled = editScope !== 'series';
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
 
@@ -204,7 +198,6 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
           <button
             onClick={() => {
               setSelectedEvent(null);
-              setEditScope('series');
               setEditModalOpen(true);
             }}
             className="bg-brand-blue text-white text-sm font-medium px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors min-h-[3rem]"
@@ -378,44 +371,10 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         title={selectedEvent ? 'Edit Event' : 'Add Event'}
         maxWidth="lg"
       >
-        {/* Edit scope selector — only shown when editing an existing event */}
-        {selectedEvent && (
-          <div className="mb-5">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Edit scope
-            </p>
-            <div className="flex gap-2">
-              {(['series', 'following', 'occurrence'] as EditScope[]).map(scope => (
-                <button
-                  key={scope}
-                  type="button"
-                  onClick={() => setEditScope(scope)}
-                  className={`flex-1 py-2.5 rounded-full border text-xs font-medium transition-colors ${
-                    editScope === scope
-                      ? 'bg-brand-blue text-white border-brand-blue'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {scope === 'series'
-                    ? 'This series'
-                    : scope === 'following'
-                    ? 'This & following'
-                    : 'One occurrence'}
-                </button>
-              ))}
-            </div>
-            {isScopeDisabled && (
-              <p className="mt-2 text-xs text-amber-600 italic">
-                Per-occurrence editing coming soon.
-              </p>
-            )}
-          </div>
-        )}
-
         <MarketEventForm
           currentUser={currentUser}
           existingEvent={selectedEvent ?? undefined}
-          onSaved={isScopeDisabled ? closeEdit : handleSaved}
+          onSaved={handleSaved}
           onCancel={closeEdit}
         />
       </Modal>

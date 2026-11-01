@@ -325,6 +325,10 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
+      {existingEvent && existingEvent.type !== 'oneTime' && (
+        <p className="text-gray-600 text-sm">Changes apply to every date in this series.</p>
+      )}
+
       {/* Actions */}
       <div className="flex gap-3 pt-2">
         <button
