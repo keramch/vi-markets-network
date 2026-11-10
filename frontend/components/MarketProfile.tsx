@@ -8,7 +8,7 @@ import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, T
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
-import { formatTime } from '../utils';
+import { formatTime, nextOccurrence, recurrenceSummary } from '../utils';
 import ShareButton from './ShareButton';
 
 interface MarketProfileProps {
@@ -197,11 +197,15 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
               {upcomingEvents.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingEvents.map(event => {
-                    const dateStr = event.schedule.date || event.schedule.startDate || '';
-                    const formattedDate = dateStr
-                      ? new Date(dateStr + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+                    // Show the next real date, not the series start date (T001, T096)
+                    const next = nextOccurrence(event);
+                    const formattedDate = next
+                      ? new Date(next.date + 'T12:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
                       : '';
-                    const timeStr = `${formatTime(event.schedule.startTime)} – ${formatTime(event.schedule.endTime)}`;
+                    const timeStr = next
+                      ? `${formatTime(next.startTime)} – ${formatTime(next.endTime)}`
+                      : `${formatTime(event.schedule.startTime)} – ${formatTime(event.schedule.endTime)}`;
+                    const repeats = recurrenceSummary(event);
                     return (
                       <div key={event.id} className="flex items-start gap-3">
                         <span className="mt-2 w-2 h-2 rounded-full bg-brand-light-blue flex-shrink-0" />
@@ -221,7 +225,9 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                           ) : (
                             <p className="text-base font-medium text-brand-text">{event.name}</p>
                           )}
-                          <p className="text-sm text-gray-500">{event.location.venueName} · {timeStr}</p>
+                          <p className="text-sm text-gray-500">
+                            {event.location.venueName} · {timeStr}{repeats ? ` · ${repeats}` : ''}
+                          </p>
                         </div>
                       </div>
                     );

@@ -161,6 +161,42 @@ export function expandOccurrences(
   );
 }
 
+/**
+ * The next date an event actually happens, on or after today in the visitor's
+ * local time (not UTC, so an event stays listed for its whole day). Uses
+ * expandOccurrences, so it reads the right schedule fields for the event's
+ * type and skips cancelled dates. Returns null if nothing is coming up within
+ * the next 24 months (T001, T096).
+ */
+export function nextOccurrence(event: MarketEvent, from: Date = new Date()): CalendarOccurrence | null {
+  const todayIso = toIsoDate(from);
+  for (let i = 0; i < 24; i++) {
+    const monthDate = new Date(from.getFullYear(), from.getMonth() + i, 1);
+    const next = expandOccurrences([event], monthDate.getFullYear(), monthDate.getMonth())
+      .find(o => o.date >= todayIso);
+    if (next) return next;
+  }
+  return null;
+}
+
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Empty for one-time events. */
+export function recurrenceSummary(event: MarketEvent): string {
+  if (event.type === 'oneTime') return '';
+  // Monday first, so weekend markets read "Sat/Sun"
+  const days = [...(event.schedule.recurrenceDays ?? [])]
+    .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+    .map(d => SHORT_DAYS[d])
+    .join('/');
+  if (!days) return '';
+  switch (event.schedule.recurrenceFrequency) {
+    case 'biweekly': return `Every other ${days}`;
+    case 'monthly':  return `Monthly, ${days}`;
+    default:         return `Every ${days}`;
+  }
+}
+
 // ─── ICS / Google Calendar export ─────────────────────────────────────────────
 
 export function generateIcsContent(

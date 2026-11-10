@@ -8,7 +8,7 @@ import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 import { signInWithGoogle, isInAppBrowser } from './services/googleAuth';
-import { PASSWORD_POLICY_MESSAGE } from './utils';
+import { PASSWORD_POLICY_MESSAGE, nextOccurrence } from './utils';
 
 import Header from './components/Header';
 import { CheckCircleIcon } from './components/Icons';
@@ -102,17 +102,13 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
     if (!market?.id) return;
     api.getMarketEvents({ marketPageId: market.id, status: 'published' })
       .then(events => {
-        const today = new Date().toISOString().split('T')[0];
-        const future = events.filter(e => {
-          const eventDate = e.schedule.date || e.schedule.startDate || '';
-          return eventDate >= today;
-        });
-        future.sort((a, b) => {
-          const da = a.schedule.date || a.schedule.startDate || '';
-          const db = b.schedule.date || b.schedule.startDate || '';
-          return da.localeCompare(db);
-        });
-        setUpcomingEvents(future);
+        // Keep events with a real date coming up (a running series counts),
+        // soonest first (T001, T096).
+        const withNext = events
+          .map(e => ({ e, next: nextOccurrence(e) }))
+          .filter(x => x.next !== null);
+        withNext.sort((a, b) => a.next!.date.localeCompare(b.next!.date));
+        setUpcomingEvents(withNext.map(x => x.e));
       })
       .catch(() => {}); // non-fatal
   }, [market?.id]);
