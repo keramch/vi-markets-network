@@ -56,6 +56,10 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const [externalUrl, setExternalUrl] = useState(existingEvent?.externalEventUrl ?? '');
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
+  // A live event gets Save Changes / Unpublish instead of Save Draft / Publish,
+  // and Unpublish asks for confirmation because it hides every date (T093).
+  const isLive = existingEvent?.status === 'published';
+  const [confirmingUnpublish, setConfirmingUnpublish] = useState(false);
 
   const toggleDay = (d: number) =>
     setRecurrenceDays(prev =>
@@ -330,31 +334,59 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSubmit('draft')}
-          disabled={saving}
-          className="flex-1 py-2 border border-brand-blue text-brand-blue rounded-lg hover:bg-brand-blue/5 font-medium disabled:opacity-50"
-        >
-          Save Draft
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSubmit('published')}
-          disabled={saving}
-          className="flex-1 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Publish'}
-        </button>
-      </div>
+      {confirmingUnpublish ? (
+        <div className="border border-amber-300 bg-amber-50 rounded-lg p-4 space-y-3" role="alert">
+          <p className="text-sm text-gray-800">
+            Unpublishing takes every date of this event off the public calendar and your market
+            profile. Your changes are saved, and the event stays in your list as a draft. Publish
+            it again any time to bring the dates back.
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmingUnpublish(false)}
+              disabled={saving}
+              className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium disabled:opacity-50"
+            >
+              Keep it live
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubmit('draft')}
+              disabled={saving}
+              className="flex-1 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Yes, unpublish'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => (isLive ? setConfirmingUnpublish(true) : handleSubmit('draft'))}
+            disabled={saving}
+            className="flex-1 py-2 border border-brand-blue text-brand-blue rounded-lg hover:bg-brand-blue/5 font-medium disabled:opacity-50"
+          >
+            {isLive ? 'Unpublish' : 'Save Draft'}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubmit('published')}
+            disabled={saving}
+            className="flex-1 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : isLive ? 'Save Changes' : 'Publish'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
