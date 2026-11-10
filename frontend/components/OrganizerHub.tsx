@@ -39,7 +39,11 @@ function formatOneTimeDate(dateStr: string): string {
 }
 
 function sortKey(event: MarketEvent): string {
-  return event.schedule.startDate ?? event.schedule.date ?? '';
+  // An event that switched type keeps its old schedule fields, so sort by the
+  // field that matches its current type (T094).
+  return event.type === 'oneTime'
+    ? event.schedule.date ?? event.schedule.startDate ?? ''
+    : event.schedule.startDate ?? event.schedule.date ?? '';
 }
 
 const OrganizerHub: React.FC<OrganizerHubProps> = ({

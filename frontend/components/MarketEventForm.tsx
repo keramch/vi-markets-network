@@ -60,6 +60,12 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   // and Unpublish asks for confirmation because it hides every date (T093).
   const isLive = existingEvent?.status === 'published';
   const [confirmingUnpublish, setConfirmingUnpublish] = useState(false);
+  // Switching a live event to or from One-Time replaces its public dates.
+  // Recurring <-> Special Edition use the same series fields, so no warning.
+  // The server merges, so the old schedule fields stay and switching back
+  // restores them (T094).
+  const typeSwitchReplacesDates =
+    isLive && (existingEvent!.type === 'oneTime') !== (type === 'oneTime');
 
   const toggleDay = (d: number) =>
     setRecurrenceDays(prev =>
@@ -159,6 +165,13 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
             </button>
           ))}
         </div>
+        {typeSwitchReplacesDates && (
+          <p className="mt-2 border border-amber-300 bg-amber-50 rounded-lg p-3 text-sm text-gray-800" role="alert">
+            {type === 'oneTime'
+              ? 'Saving this replaces every date of this series on the public calendar with the single date below. Your series details are kept, so switching back restores them.'
+              : 'Saving this replaces the single date of this event on the public calendar with the series dates below. The one-time date is kept, so switching back restores it.'}
+          </p>
+        )}
       </div>
 
       {/* Name */}
