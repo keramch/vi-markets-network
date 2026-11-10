@@ -8,7 +8,7 @@ import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, T
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
-import { formatTime, nextOccurrence, recurrenceSummary } from '../utils';
+import { formatTime, upcomingOccurrences, recurrenceSummary } from '../utils';
 import ShareButton from './ShareButton';
 
 interface MarketProfileProps {
@@ -56,6 +56,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   onAddReview, onFeatureMarket, onContactSubmit, onApply,
   upcomingEvents = [], onOpenLoginModal,
 }) => {
+  const upcomingDates = upcomingOccurrences(upcomingEvents);
   const currentUserVendor = currentUser && currentUser.ownedVendorId
     ? vendors.find(v => v.id === currentUser.ownedVendorId)
     : null;
@@ -194,20 +195,16 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
               <hr className="my-6 border-gray-200" />
 
               <h3 className="text-xl font-serif text-brand-blue mb-4">Upcoming Events</h3>
-              {upcomingEvents.length > 0 ? (
+              {upcomingDates.length > 0 ? (
                 <div className="space-y-3">
-                  {upcomingEvents.map(event => {
-                    // Show the next real date, not the series start date (T001, T096)
-                    const next = nextOccurrence(event);
-                    const formattedDate = next
-                      ? new Date(next.date + 'T12:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
-                      : '';
-                    const timeStr = next
-                      ? `${formatTime(next.startTime)} – ${formatTime(next.endTime)}`
-                      : `${formatTime(event.schedule.startTime)} – ${formatTime(event.schedule.endTime)}`;
+                  {upcomingDates.map(({ event, date, startTime, endTime }) => {
+                    // One row per date in the next 6 weeks (T001, T096, T099)
+                    const formattedDate = new Date(date + 'T12:00:00')
+                      .toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+                    const timeStr = `${formatTime(startTime)} – ${formatTime(endTime)}`;
                     const repeats = recurrenceSummary(event);
                     return (
-                      <div key={event.id} className="flex items-start gap-3">
+                      <div key={`${event.id}-${date}`} className="flex items-start gap-3">
                         <span className="mt-2 w-2 h-2 rounded-full bg-brand-light-blue flex-shrink-0" />
                         <div className="min-w-[5.625rem] flex-shrink-0">
                           <span className="text-base font-semibold text-gray-700">{formattedDate}</span>

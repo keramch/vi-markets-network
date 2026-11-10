@@ -179,6 +179,44 @@ export function nextOccurrence(event: MarketEvent, from: Date = new Date()): Cal
   return null;
 }
 
+/**
+ * Every date in the next `days` days (today included, local time), across all
+ * the given events, soonest first. An event with nothing in that window still
+ * appears once with its next date, so a series starting later doesn't vanish
+ * (T099).
+ */
+export function upcomingOccurrences(
+  events: MarketEvent[],
+  days = 42,
+  from: Date = new Date()
+): CalendarOccurrence[] {
+  const todayIso = toIsoDate(from);
+  const endIso = toIsoDate(new Date(from.getFullYear(), from.getMonth(), from.getDate() + days - 1));
+
+  const inWindow: CalendarOccurrence[] = [];
+  const endDate = new Date(endIso + 'T12:00:00');
+  for (
+    let m = new Date(from.getFullYear(), from.getMonth(), 1);
+    m <= endDate;
+    m = new Date(m.getFullYear(), m.getMonth() + 1, 1)
+  ) {
+    for (const o of expandOccurrences(events, m.getFullYear(), m.getMonth())) {
+      if (o.date >= todayIso && o.date <= endIso) inWindow.push(o);
+    }
+  }
+
+  const shown = new Set(inWindow.map(o => o.event.id));
+  for (const e of events) {
+    if (shown.has(e.id)) continue;
+    const next = nextOccurrence(e, from);
+    if (next) inWindow.push(next);
+  }
+
+  return inWindow.sort((a, b) =>
+    a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date)
+  );
+}
+
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Empty for one-time events. */
