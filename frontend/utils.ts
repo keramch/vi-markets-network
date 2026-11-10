@@ -109,6 +109,11 @@ export function expandOccurrences(
 
     const rangeStart = new Date(Math.max(monthStart.getTime(), eventStart.getTime()));
     const rangeEnd   = new Date(Math.min(monthEnd.getTime(),   eventEnd.getTime()));
+    // Compare whole days. eventStart/eventEnd are at noon but monthEnd is at
+    // midnight, so without this the last day of a series' first month was
+    // dropped (T002).
+    rangeStart.setHours(0, 0, 0, 0);
+    rangeEnd.setHours(0, 0, 0, 0);
 
     if (rangeStart > rangeEnd) continue;
 
