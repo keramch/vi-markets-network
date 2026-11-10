@@ -105,7 +105,9 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         ? { date }
         : {
             startDate,
-            ...(endDate ? { endDate } : {}),
+            // An emptied end date is sent as '' so the server's merge clears
+            // it; leaving it out kept the old value (T004)
+            ...(endDate ? { endDate } : existingEvent?.schedule.endDate ? { endDate: '' } : {}),
             recurrenceDays,
             recurrenceFrequency,
           }),
@@ -127,8 +129,13 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       exceptions: existingEvent?.exceptions ?? [],
       status,
       photos:     existingEvent?.photos ?? [],
-      ...(externalUrl.trim() ? { externalEventUrl: externalUrl.trim() } : {}),
-      ...(marketType.length > 0 ? { marketType } : {}),
+      // Same for an emptied link or Market Type: clear only that field (T004)
+      ...(externalUrl.trim()
+        ? { externalEventUrl: externalUrl.trim() }
+        : existingEvent?.externalEventUrl ? { externalEventUrl: '' } : {}),
+      ...(marketType.length > 0
+        ? { marketType }
+        : ((existingEvent as any)?.marketType?.length ?? 0) > 0 ? { marketType: [] } : {}),
     } as Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt'>;
 
     try {
