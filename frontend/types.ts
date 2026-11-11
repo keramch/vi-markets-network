@@ -400,7 +400,7 @@ export interface MarketEvent {
   slug?: string; // readable link part, unique within the market; older events may not have one yet
   description?: string; // optional; the event page falls back to the market's description
   posterUrl?: string;   // vertical poster, shown on the event page
-  tileUrl?: string;     // horizontal share image (1200 × 630), used for link previews
+  tileUrl?: string;     // horizontal share image (1200 × 628), used for link previews
   type: 'recurring' | 'oneTime' | 'specialEdition';
   marketTags: MarketTag[];
   location: {

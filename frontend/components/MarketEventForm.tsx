@@ -408,7 +408,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           <p>Both images are optional, but we recommend adding both:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Vertical poster</strong>, like your print poster (8.5 × 11). It's shown on your event page.</li>
-            <li><strong>Horizontal share image</strong>, like a Facebook event cover (1200 × 630). It's the picture people see when your event link is shared on Facebook, in messages and elsewhere. Keep important words away from the edges, since some apps trim them a little.</li>
+            <li><strong>Horizontal share image</strong>. It's the picture people see when your event link is shared on Facebook, in messages and elsewhere. The best fit is 1200 × 628 (Canva's "Facebook Ad" size). A Facebook event cover (1920 × 1080) works too, with a little trimmed off the top and bottom. Keep important words away from the edges.</li>
           </ul>
         </div>
 
