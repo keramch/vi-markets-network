@@ -17,6 +17,7 @@ import followsRouter from "./routes/follows";
 import brevoRouter from "./routes/brevo";
 import stripeRouter from "./routes/stripe";
 import contactRouter from "./routes/contact";
+import sharePreviewRouter from "./routes/sharePreview";
 import { attachUser } from "./middleware/auth";
 
 const app = express();
@@ -92,6 +93,7 @@ app.use("/vendor-applications", vendorApplicationsRouter);
 app.use("/follows", followsRouter);
 app.use("/brevo", brevoRouter);
 app.use("/contact", contactRouter);
+app.use("/share-preview", sharePreviewRouter);
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
