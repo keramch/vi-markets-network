@@ -42,7 +42,10 @@ export default async function handler(req, res) {
   const description = found?.description || SITE_CARD.description;
   const image = found?.image || SITE_CARD.image;
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'vimarkets.ca';
-  const url = `https://${host}${found ? path : ''}`;
+  // Keep ?date= on event links, so clicking through from Facebook opens the
+  // page on the shared date ("Your date") instead of the next one
+  const date = typeof req.query.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date) ? req.query.date : '';
+  const url = `https://${host}${found ? path : ''}${found && date ? `?date=${date}` : ''}`;
 
   const tags = [
     ['property', 'og:site_name', 'VI Markets Network'],
