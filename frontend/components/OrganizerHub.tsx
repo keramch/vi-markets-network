@@ -4,6 +4,7 @@ import type { User, Market, MarketEvent } from '../types';
 import * as api from '../services/api.live';
 import Modal from './Modal';
 import MarketEventForm from './MarketEventForm';
+import DiscardChangesDialog from './DiscardChangesDialog';
 import { eventUrl } from '../utils';
 
 interface OrganizerHubProps {
@@ -116,8 +117,10 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   // anything was changed
   const formDirty = useRef(false);
   const trackDirty = useCallback((dirty: boolean) => { formDirty.current = dirty; }, []);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const closeFromOutside = () => {
-    if (!formDirty.current || window.confirm('Close without saving your changes?')) closeEdit();
+    if (formDirty.current) setConfirmingDiscard(true);
+    else closeEdit();
   };
 
   const handleSaved = (saved: MarketEvent) => {
@@ -404,7 +407,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
       <Modal
         isOpen={editModalOpen}
         onClose={closeEdit}
-        onClickOutside={closeFromOutside}
+        onClickOutside={confirmingDiscard ? undefined : closeFromOutside}
         title={selectedEvent ? 'Edit Event' : 'Add Event'}
         maxWidth="lg"
       >
@@ -416,6 +419,11 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
           onDirtyChange={trackDirty}
         />
       </Modal>
+      <DiscardChangesDialog
+        isOpen={confirmingDiscard}
+        onKeepEditing={() => setConfirmingDiscard(false)}
+        onDiscard={() => { setConfirmingDiscard(false); closeEdit(); }}
+      />
     </div>
   );
 };

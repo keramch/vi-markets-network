@@ -9,6 +9,7 @@ import {
 } from '../utils';
 import Modal from './Modal';
 import MarketEventForm from './MarketEventForm';
+import DiscardChangesDialog from './DiscardChangesDialog';
 import {
   ChevronLeft,
   ChevronRight,
@@ -74,6 +75,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
   // Whether the create-event form has unsaved changes (asked before a click-off closes it)
   const formDirty = useRef(false);
   const trackDirty = useCallback((dirty: boolean) => { formDirty.current = dirty; }, []);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
 
   const year  = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-based
@@ -491,8 +493,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
         <Modal
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
-          onClickOutside={() => {
-            if (!formDirty.current || window.confirm('Close without saving your changes?')) setIsFormOpen(false);
+          onClickOutside={confirmingDiscard ? undefined : () => {
+            if (formDirty.current) setConfirmingDiscard(true);
+            else setIsFormOpen(false);
           }}
           title="Create Market Event"
           maxWidth="xl"
@@ -508,6 +511,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
           />
         </Modal>
       )}
+      <DiscardChangesDialog
+        isOpen={confirmingDiscard}
+        onKeepEditing={() => setConfirmingDiscard(false)}
+        onDiscard={() => { setConfirmingDiscard(false); setIsFormOpen(false); }}
+      />
     </div>
   );
 };
