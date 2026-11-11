@@ -63,6 +63,9 @@ export interface MarketEvent {
   organizerUid: string;
   name: string;
   slug?: string; // readable link part, unique within the market, never changes once set
+  description?: string; // optional; the event page falls back to the market's description
+  posterUrl?: string;   // vertical poster, shown on the event page
+  tileUrl?: string;     // square image, used for link previews
   type: 'recurring' | 'oneTime' | 'specialEdition';
   marketTags: MarketTag[];
   location: {

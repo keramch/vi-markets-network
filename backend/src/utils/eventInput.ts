@@ -13,6 +13,9 @@ const OWNER_STATUSES = ["draft", "published"];
 const ADMIN_STATUSES = ["draft", "published", "cancelled", "archived"];
 const MAX_TEXT = 200;
 const MAX_NOTE = 500;
+const MAX_DESCRIPTION = 2000;
+// Poster and tile must be images uploaded through the app, never an outside address
+const OUR_STORAGE = "https://firebasestorage.googleapis.com/v0/b/";
 
 type Result = { data: Record<string, unknown> } | { error: string };
 
@@ -135,6 +138,17 @@ export function sanitizeEventInput(body: unknown, opts: { isAdmin: boolean }): R
         fail("Please enter a normal web address for the event link, like https://mysite.ca/event");
       }
       out.externalEventUrl = url;
+    }
+    if ("description" in b) out.description = text(b.description, "Description", MAX_DESCRIPTION);
+    for (const key of ["posterUrl", "tileUrl"]) {
+      if (key in b) {
+        const url = b[key];
+        // '' clears it
+        if (url !== "" && (typeof url !== "string" || !url.startsWith(OUR_STORAGE) || !isSafeWebUrl(url))) {
+          fail("Images must be uploaded through the event form.");
+        }
+        out[key] = url;
+      }
     }
     // Moving an event to another market or organizer is admin-only
     if (opts.isAdmin) {
