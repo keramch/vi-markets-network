@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import type { MarketEvent, MarketTag, User } from '../types';
 import { MarketTags, MarketCategories } from '../types';
 import * as api from '../services/api.live';
+import ImageUploader from './ImageUploader';
+import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../services/storageUpload';
 
 interface MarketEventFormProps {
   currentUser: User;
@@ -54,6 +56,12 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     (existingEvent as any)?.marketType ?? []
   );
   const [externalUrl, setExternalUrl] = useState(existingEvent?.externalEventUrl ?? '');
+  const [description, setDescription] = useState(existingEvent?.description ?? '');
+  // Saved image addresses ('' once removed) and newly chosen files, uploaded on save
+  const [posterUrl, setPosterUrl]     = useState(existingEvent?.posterUrl ?? '');
+  const [tileUrl, setTileUrl]         = useState(existingEvent?.tileUrl ?? '');
+  const [posterFile, setPosterFile]   = useState<File | null>(null);
+  const [tileFile, setTileFile]       = useState<File | null>(null);
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
   // A live event gets Save Changes / Unpublish instead of Save Draft / Publish,
@@ -98,6 +106,26 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     setSaving(true);
     setError('');
 
+    // Upload any newly chosen images into the market's own image folder
+    // (storage.rules lets the market's owner write there)
+    const marketId = existingEvent?.marketPageId ?? currentUser.ownedMarketId!;
+    let finalPosterUrl = posterUrl;
+    let finalTileUrl = tileUrl;
+    try {
+      if (posterFile) {
+        const ext = posterFile.name.split('.').pop() ?? 'jpg';
+        finalPosterUrl = await uploadImage(posterFile, `markets/${marketId}/event_poster_${Date.now()}.${ext}`);
+      }
+      if (tileFile) {
+        const ext = tileFile.name.split('.').pop() ?? 'jpg';
+        finalTileUrl = await uploadImage(tileFile, `markets/${marketId}/event_tile_${Date.now()}.${ext}`);
+      }
+    } catch {
+      setError('The image could not be uploaded. Please try again, or save without it.');
+      setSaving(false);
+      return;
+    }
+
     const schedule: MarketEvent['schedule'] = {
       startTime,
       endTime,
@@ -136,6 +164,12 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       ...(marketType.length > 0
         ? { marketType }
         : ((existingEvent as any)?.marketType?.length ?? 0) > 0 ? { marketType: [] } : {}),
+      // Same pattern: send a value, or '' only when one was saved and is now emptied
+      ...(description.trim()
+        ? { description: description.trim() }
+        : existingEvent?.description ? { description: '' } : {}),
+      ...(finalPosterUrl ? { posterUrl: finalPosterUrl } : existingEvent?.posterUrl ? { posterUrl: '' } : {}),
+      ...(finalTileUrl ? { tileUrl: finalTileUrl } : existingEvent?.tileUrl ? { tileUrl: '' } : {}),
     } as Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt'>;
 
     try {
@@ -220,6 +254,22 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
             );
           })}
         </div>
+      </div>
+
+      {/* Description */}
+      <div>
+        <label htmlFor="event-description" className={labelCls}>About this event</label>
+        <p id="event-description-help" className="text-sm text-gray-500 mb-2">
+          Optional. Shown on the event page. If you leave it empty, your market's own description is shown instead.
+        </p>
+        <textarea
+          id="event-description"
+          aria-describedby="event-description-help"
+          className={`${inputCls} min-h-[7rem]`}
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          maxLength={2000}
+        />
       </div>
 
       {/* Location */}
@@ -334,6 +384,52 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Images: a vertical poster for the page, a square tile for link previews */}
+      <fieldset className="border border-gray-200 rounded-lg p-3 space-y-4">
+        <legend className="text-sm font-semibold text-gray-600 px-1">Event images</legend>
+        <div className="bg-brand-cream rounded-lg p-3 text-sm text-gray-700 space-y-1">
+          <p>Both images are optional, but we recommend adding both:</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Vertical poster</strong>, like your print poster (8.5 × 11). It's shown on your event page.</li>
+            <li><strong>Square tile</strong>, like an Instagram post (1080 × 1080). It's the picture people see when your event link is shared on Facebook, in messages and elsewhere. Keep important words near the middle, since some apps trim the edges.</li>
+          </ul>
+        </div>
+
+        {([
+          { key: 'poster', title: 'Vertical poster', url: posterUrl, setUrl: setPosterUrl, file: posterFile, setFile: setPosterFile, ratio: '8.5:11', max: 1600, shape: 'w-24 aspect-[17/22]' },
+          { key: 'tile',   title: 'Square tile',     url: tileUrl,   setUrl: setTileUrl,   file: tileFile,   setFile: setTileFile,   ratio: '1:1',    max: 1200, shape: 'w-24 aspect-square' },
+        ] as const).map(img => (
+          <div key={img.key}>
+            {img.url && !img.file ? (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">{img.title}</p>
+                <div className="flex items-center gap-4">
+                  <img src={img.url} alt={`Current ${img.title.toLowerCase()}`} className={`${img.shape} object-cover rounded-md border border-gray-200`} />
+                  <button
+                    type="button"
+                    onClick={() => img.setUrl('')}
+                    className="px-4 py-2 min-h-[2.75rem] border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 font-medium"
+                  >
+                    Remove or replace
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <ImageUploader
+                id={`event-${img.key}`}
+                label={img.title}
+                onFilesChanged={files => img.setFile(files[0] ?? null)}
+                maxFiles={1}
+                maxSizeKB={MAX_IMAGE_SIZE_BYTES / 1024}
+                allowedTypes={ALLOWED_IMAGE_TYPES}
+                aspectRatio={img.ratio}
+                maxDimension={img.max}
+              />
+            )}
+          </div>
+        ))}
+      </fieldset>
 
       {/* External URL */}
       <div>
