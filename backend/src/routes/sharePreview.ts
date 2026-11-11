@@ -32,9 +32,35 @@ function httpsUrl(value: unknown): string | null {
   return typeof value === "string" && value.startsWith("https://") ? value : null;
 }
 
+// A series that starts and ends within one week is a one-off multi-day market
+// (the T015 workaround). Shows its first and last real dates instead of
+// "Every Sat/Sun". Mirrors shortSeriesRange in frontend/utils.ts.
+function shortSeriesRange(event: FirebaseFirestore.DocumentData): string {
+  const { startDate, endDate } = event.schedule ?? {};
+  const days: unknown[] = event.schedule?.recurrenceDays ?? [];
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  if (event.type === "oneTime" || typeof startDate !== "string" || typeof endDate !== "string") return "";
+  if (!iso.test(startDate) || !iso.test(endDate)) return "";
+  const start = new Date(`${startDate}T12:00:00Z`);
+  const end = new Date(`${endDate}T12:00:00Z`);
+  const spanDays = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  if (spanDays < 0 || spanDays > 6) return "";
+  const dates: Date[] = [];
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    if (days.includes(d.getUTCDay())) dates.push(new Date(d));
+  }
+  if (dates.length === 0) return "";
+  const fmt = (d: Date) => d.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+  const first = fmt(dates[0]);
+  const last = fmt(dates[dates.length - 1]);
+  return first === last ? first : `${first} – ${last}`;
+}
+
 // "Every Sat", "Every other Sat/Sun", "Monthly, Wed" (Monday first, like the site)
 function repeats(event: FirebaseFirestore.DocumentData): string {
   if (event.type === "oneTime") return "";
+  const range = shortSeriesRange(event);
+  if (range) return range;
   const days = [...(event.schedule?.recurrenceDays ?? [])]
     .filter((d: unknown) => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6)
     .sort((a: number, b: number) => ((a + 6) % 7) - ((b + 6) % 7))

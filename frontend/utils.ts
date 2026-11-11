@@ -228,9 +228,36 @@ export function upcomingOccurrences(
 
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Empty for one-time events. */
+/**
+ * A series that starts and ends within one week is really a one-off multi-day
+ * market (the T015 workaround: Recurring, Sat + Sun, start and end that
+ * weekend). Returns its first and last real dates, e.g. "Sat, Nov 28 – Sun,
+ * Nov 29", or '' if it isn't one. Mirrored in backend routes/sharePreview.ts.
+ */
+export function shortSeriesRange(event: MarketEvent): string {
+  const { startDate, endDate, recurrenceDays = [] } = event.schedule;
+  if (event.type === 'oneTime' || !startDate || !endDate) return '';
+  const start = new Date(startDate + 'T12:00:00');
+  const end = new Date(endDate + 'T12:00:00');
+  const spanDays = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  if (spanDays < 0 || spanDays > 6) return '';
+  const dates: Date[] = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if (recurrenceDays.includes(d.getDay())) dates.push(new Date(d));
+  }
+  if (dates.length === 0) return '';
+  const fmt = (d: Date) => d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+  const first = fmt(dates[0]);
+  const last = fmt(dates[dates.length - 1]);
+  return first === last ? first : `${first} – ${last}`;
+}
+
+/** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Empty for one-time events.
+ *  A series within one week shows its dates instead (see shortSeriesRange). */
 export function recurrenceSummary(event: MarketEvent): string {
   if (event.type === 'oneTime') return '';
+  const range = shortSeriesRange(event);
+  if (range) return range;
   // Monday first, so weekend markets read "Sat/Sun"
   const days = [...(event.schedule.recurrenceDays ?? [])]
     .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
