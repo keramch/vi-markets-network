@@ -399,20 +399,22 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         </div>
       </div>
 
-      {/* Images: a vertical poster for the page, a square tile for link previews */}
+      {/* Images: a vertical poster for the page, a horizontal share image for link
+          previews (stored as tileUrl; it was a square tile until Nov 10, when
+          Kera saw Facebook crop squares to a wide strip) */}
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-4">
         <legend className="text-sm font-semibold text-gray-600 px-1">Event images</legend>
         <div className="bg-brand-cream rounded-lg p-3 text-sm text-gray-700 space-y-1">
           <p>Both images are optional, but we recommend adding both:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Vertical poster</strong>, like your print poster (8.5 × 11). It's shown on your event page.</li>
-            <li><strong>Square tile</strong>, like an Instagram post (1080 × 1080). It's the picture people see when your event link is shared on Facebook, in messages and elsewhere. Keep important words near the middle, since some apps trim the edges.</li>
+            <li><strong>Horizontal share image</strong>, like a Facebook event cover (1200 × 630). It's the picture people see when your event link is shared on Facebook, in messages and elsewhere. Keep important words away from the edges, since some apps trim them a little.</li>
           </ul>
         </div>
 
         {([
           { key: 'poster', title: 'Vertical poster', url: posterUrl, setUrl: setPosterUrl, file: posterFile, setFile: setPosterFile, ratio: '8.5:11', max: 1600, shape: 'w-24 aspect-[17/22]' },
-          { key: 'tile',   title: 'Square tile',     url: tileUrl,   setUrl: setTileUrl,   file: tileFile,   setFile: setTileFile,   ratio: '1:1',    max: 1200, shape: 'w-24 aspect-square' },
+          { key: 'tile',   title: 'Horizontal share image', url: tileUrl, setUrl: setTileUrl, file: tileFile, setFile: setTileFile, ratio: '1.9:1', max: 1200, shape: 'w-40 aspect-[40/21]' },
         ] as const).map(img => (
           <div key={img.key}>
             {img.url && !img.file ? (
