@@ -413,8 +413,8 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         </div>
 
         {([
-          { key: 'poster', title: 'Vertical poster', url: posterUrl, setUrl: setPosterUrl, file: posterFile, setFile: setPosterFile, ratio: '8.5:11', max: 1600, shape: 'w-24 aspect-[17/22]' },
-          { key: 'tile',   title: 'Horizontal share image', url: tileUrl, setUrl: setTileUrl, file: tileFile, setFile: setTileFile, ratio: '1.9:1', max: 1200, shape: 'w-40 aspect-[40/21]' },
+          { key: 'poster', title: 'Vertical poster', url: posterUrl, setUrl: setPosterUrl, file: posterFile, setFile: setPosterFile, ratio: '8.5:11', max: 1600, format: 'webp', shape: 'w-24 aspect-[17/22]' },
+          { key: 'tile',   title: 'Horizontal share image', url: tileUrl, setUrl: setTileUrl, file: tileFile, setFile: setTileFile, ratio: '1.9:1', max: 1200, format: 'jpeg', shape: 'w-40 aspect-[40/21]' },
         ] as const).map(img => (
           <div key={img.key}>
             {img.url && !img.file ? (
@@ -441,6 +441,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
                 allowedTypes={ALLOWED_IMAGE_TYPES}
                 aspectRatio={img.ratio}
                 maxDimension={img.max}
+                outputFormat={img.format}
               />
             )}
           </div>

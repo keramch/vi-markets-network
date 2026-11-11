@@ -12,9 +12,12 @@ interface ImageUploaderProps {
   allowedTypes?: string[];
   aspectRatio?: string;
   maxDimension?: number;
+  // Resized images are saved as WebP (smaller). Link preview images use JPEG,
+  // because Facebook and some other apps don't reliably read WebP previews.
+  outputFormat?: 'webp' | 'jpeg';
 }
 
-async function resizeToWebP(file: File, maxDimension: number): Promise<File> {
+async function resizeToWebP(file: File, maxDimension: number, outputFormat: 'webp' | 'jpeg' = 'webp'): Promise<File> {
   return new Promise((resolve) => {
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
@@ -34,6 +37,11 @@ async function resizeToWebP(file: File, maxDimension: number): Promise<File> {
 
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve(file); return; }
+      if (outputFormat === 'jpeg') {
+        // JPEG has no transparency: put see-through areas on white, not black
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       canvas.toBlob(
@@ -44,8 +52,8 @@ async function resizeToWebP(file: File, maxDimension: number): Promise<File> {
           const baseName = file.name.replace(/\.[^.]+$/, '');
           resolve(new File([blob], `${baseName}${ext}`, { type }));
         },
-        'image/webp',
-        0.85,
+        outputFormat === 'jpeg' ? 'image/jpeg' : 'image/webp',
+        outputFormat === 'jpeg' ? 0.92 : 0.85,
       );
     };
     img.onerror = () => {
@@ -65,6 +73,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   allowedTypes = ['image/jpeg', 'image/png'],
   aspectRatio,
   maxDimension = 1600,
+  outputFormat = 'webp',
 }) => {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -108,7 +117,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
 
       // Step 2: resize and convert to WebP if image exceeds maxDimension
-      processed.push(await resizeToWebP(converted, maxDimension));
+      processed.push(await resizeToWebP(converted, maxDimension, outputFormat));
     }
 
     setProcessing(false);
@@ -138,7 +147,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     onFilesChanged(currentFiles);
 
     event.target.value = '';
-  }, [files, previews, maxFiles, allowedTypes, maxSizeKB, maxDimension, onFilesChanged]);
+  }, [files, previews, maxFiles, allowedTypes, maxSizeKB, maxDimension, outputFormat, onFilesChanged]);
 
   const handleRemoveImage = (index: number) => {
     URL.revokeObjectURL(previews[index]);
