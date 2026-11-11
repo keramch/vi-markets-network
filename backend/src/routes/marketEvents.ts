@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "../firebase";
 import { requireAuth, isAdminUser } from "../middleware/auth";
 import { ownsListing } from "../utils/listingAccess";
-import { isSafeWebUrl } from "../utils/urlSafety";
+import { sanitizeEventInput } from "../utils/eventInput";
 import { slugify, firstFreeSlug } from "../utils/slug";
 
 // A readable link part for an event, unique within its market. Archived events
@@ -97,24 +97,24 @@ router.get("/:id", async (req, res) => {
 // body: MarketEvent fields (minus id, createdAt, updatedAt)
 // Only the market's owner (or an admin) can add events to it.
 router.post("/", requireAuth, async (req, res) => {
-  const { marketPageId, name, type, marketTags, location, schedule, status = "draft", photos = [], externalEventUrl, exceptions = [] } = req.body;
-  let { organizerUid } = req.body;
-
-  if (!marketPageId || !name || !type || !location || !schedule) {
-    return res.status(400).json({ error: "marketPageId, name, type, location, and schedule are required" });
-  }
-  if (externalEventUrl && !isSafeWebUrl(externalEventUrl)) {
-    return res.status(400).json({ error: "Please enter a normal web address for the event link, like https://mysite.ca/event" });
-  }
+  const { marketPageId } = req.body ?? {};
+  let { organizerUid } = req.body ?? {};
 
   const callerIsAdmin = await isAdminUser(req.user!.uid);
+  const checked = sanitizeEventInput(req.body, { isAdmin: callerIsAdmin });
+  if ("error" in checked) return res.status(400).json({ error: checked.error });
+  const { name, type, location, schedule } = checked.data;
+  if (typeof marketPageId !== "string" || !marketPageId || !name || !type || !location || !schedule) {
+    return res.status(400).json({ error: "marketPageId, name, type, location, and schedule are required" });
+  }
+
   if (!callerIsAdmin) {
     if (!(await ownsListing(req.user!.uid, "markets", marketPageId))) {
       return res.status(403).json({ error: "You can only add events to your own market." });
     }
     organizerUid = req.user!.uid;
   }
-  if (!organizerUid) {
+  if (typeof organizerUid !== "string" || !organizerUid) {
     return res.status(400).json({ error: "organizerUid is required" });
   }
 
@@ -126,18 +126,16 @@ router.post("/", requireAuth, async (req, res) => {
     console.error("Error picking event slug:", err);
     return res.status(500).json({ error: "Failed to create market event" });
   }
+  const { marketPageId: _m, organizerUid: _o, externalEventUrl, ...fields } = checked.data;
   const data = {
+    marketTags: [],
+    exceptions: [],
+    photos: [],
+    status: "draft",
+    ...fields,
     marketPageId,
     organizerUid,
-    name,
     slug,
-    type,
-    marketTags: marketTags ?? [],
-    location,
-    schedule,
-    exceptions,
-    status,
-    photos,
     ...(externalEventUrl ? { externalEventUrl } : {}),
     createdAt: now,
     updatedAt: now,
@@ -156,10 +154,6 @@ router.post("/", requireAuth, async (req, res) => {
 // Organizer who created it, the market's owner, or an admin.
 router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = { ...(req.body ?? {}) } as Record<string, unknown>;
-  if (updates.externalEventUrl && !isSafeWebUrl(updates.externalEventUrl)) {
-    return res.status(400).json({ error: "Please enter a normal web address for the event link, like https://mysite.ca/event" });
-  }
 
   try {
     const docRef = db.collection("marketEvents").doc(id);
@@ -167,17 +161,14 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (access === "not-found") return res.status(404).json({ error: "Market event not found" });
     if (access === "forbidden") return res.status(403).json({ error: "You can only edit your own market's events." });
 
-    // Which market an event belongs to, and who created it, never change via edit
-    delete updates.id;
-    delete updates.createdAt;
-    if (access !== "admin") {
-      delete updates.marketPageId;
-      delete updates.organizerUid;
-    }
+    // Only the form's own fields get through. Which market an event belongs to, and
+    // who created it, change only for admins. id, createdAt and slug never change here.
+    const checked = sanitizeEventInput(req.body, { isAdmin: access === "admin" });
+    if ("error" in checked) return res.status(400).json({ error: checked.error });
+    const updates = checked.data;
 
     // The link never changes after it's set, even if the event is renamed, so shared
     // links keep working. Events made before slugs existed get one on their next save.
-    delete updates.slug;
     const current = (await docRef.get()).data()!;
     if (!current.slug) {
       const name = typeof updates.name === "string" && updates.name ? updates.name : current.name;
