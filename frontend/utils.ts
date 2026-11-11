@@ -268,56 +268,7 @@ export function directionsUrl(event: MarketEvent): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 }
 
-// ─── ICS / Google Calendar export ─────────────────────────────────────────────
-
-export function generateIcsContent(
-  event: MarketEvent,
-  date: string,
-  startTime: string,
-  endTime: string
-): string {
-  const dtStart = `${date.replace(/-/g, '')}T${startTime.replace(':', '')}00`;
-  const dtEnd   = `${date.replace(/-/g, '')}T${endTime.replace(':', '')}00`;
-  const uid     = `${event.id}-${date}@vimarkets.ca`;
-  const now     = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
-  const loc     = `${event.location.venueName}\\, ${event.location.address}\\, ${event.location.city}`;
-
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//VI Markets//EN',
-    'BEGIN:VEVENT',
-    `UID:${uid}`,
-    `DTSTAMP:${now}`,
-    `DTSTART;TZID=America/Vancouver:${dtStart}`,
-    `DTEND;TZID=America/Vancouver:${dtEnd}`,
-    `SUMMARY:${event.name}`,
-    `LOCATION:${loc}`,
-    ...(event.externalEventUrl ? [`URL:${event.externalEventUrl}`] : []),
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ];
-
-  return lines.join('\r\n');
-}
-
-export function downloadIcs(
-  event: MarketEvent,
-  date: string,
-  startTime: string,
-  endTime: string
-): void {
-  const content = generateIcsContent(event, date, startTime, endTime);
-  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${event.name.replace(/\s+/g, '-')}-${date}.ics`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+// ─── Google Calendar link (.ics downloads dropped Nov 10; see T102) ─────────────────────────────────────────────
 
 export function buildGoogleCalendarUrl(
   event: MarketEvent,

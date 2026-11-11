@@ -3,7 +3,6 @@ import type { MarketEvent, MarketTag, User } from '../types';
 import * as api from '../services/api.live';
 import {
   expandOccurrences,
-  downloadIcs,
   buildGoogleCalendarUrl,
   formatTime,
   type CalendarOccurrence,
@@ -18,7 +17,6 @@ import {
   List,
   MapPin,
   Clock,
-  Download,
   CalendarPlus,
   X,
 } from 'lucide-react';
@@ -354,13 +352,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => downloadIcs(event, date, startTime, endTime)}
-              className="flex items-center gap-1.5 px-3 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export .ics
-            </button>
             <a
               href={buildGoogleCalendarUrl(event, date, startTime, endTime)}
               target="_blank"
@@ -368,7 +359,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
               className="flex items-center gap-1.5 px-3 py-3 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100"
             >
               <CalendarPlus className="w-3.5 h-3.5" />
-              Add to Google
+              Add to Google Calendar
             </a>
             <button
               onClick={() => {

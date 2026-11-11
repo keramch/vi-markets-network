@@ -4,7 +4,7 @@ import { CalendarPlus, Share2, MapPin, ExternalLink } from 'lucide-react';
 import type { Market, MarketEvent, User } from '../types';
 import {
   formatTime, upcomingOccurrences, nextOccurrence, recurrenceSummary,
-  downloadIcs, buildGoogleCalendarUrl, eventUrl, directionsUrl,
+  buildGoogleCalendarUrl, eventUrl, directionsUrl,
   type CalendarOccurrence,
 } from '../utils';
 
@@ -41,7 +41,6 @@ const EventPage: React.FC<EventPageProps> = ({
   market, event, selectedDate, currentUser, isFollowing, onToggleFollow, onOpenLoginModal, onBack,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [calendarChoice, setCalendarChoice] = useState(false);
 
   useEffect(() => {
     const previous = document.title;
@@ -137,35 +136,17 @@ const EventPage: React.FC<EventPageProps> = ({
                   )}
                   {featured.note && <p className="text-sm text-gray-600 mt-1">{featured.note}</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
+                    {/* Google Calendar adds straight to the person's calendar; .ics
+                        downloads were dropped (Kera, Nov 10) */}
                     {!featured.cancelled && (
-                      calendarChoice ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => { downloadIcs(event, featured!.date, featured!.startTime, featured!.endTime); setCalendarChoice(false); }}
-                            className="min-h-[2.75rem] px-4 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90"
-                          >
-                            Apple / Outlook
-                          </button>
-                          <a
-                            href={buildGoogleCalendarUrl(event, featured.date, featured.startTime, featured.endTime)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => setCalendarChoice(false)}
-                            className="min-h-[2.75rem] px-4 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90 inline-flex items-center"
-                          >
-                            Google Calendar
-                          </a>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setCalendarChoice(true)}
-                          className="min-h-[2.75rem] px-4 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90 inline-flex items-center gap-2"
-                        >
-                          <CalendarPlus className="w-5 h-5" aria-hidden="true" /> Add to calendar
-                        </button>
-                      )
+                      <a
+                        href={buildGoogleCalendarUrl(event, featured.date, featured.startTime, featured.endTime)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-h-[2.75rem] px-4 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90 inline-flex items-center gap-2"
+                      >
+                        <CalendarPlus className="w-5 h-5" aria-hidden="true" /> Add to Google Calendar
+                      </a>
                     )}
                     <button
                       type="button"
@@ -238,15 +219,16 @@ const EventPage: React.FC<EventPageProps> = ({
                           </p>
                         </div>
                         {!o.cancelled && (
-                          <button
-                            type="button"
-                            onClick={() => downloadIcs(event, o.date, o.startTime, o.endTime)}
-                            aria-label={`Add ${longDate(o.date)} to calendar`}
-                            title="Add to calendar"
+                          <a
+                            href={buildGoogleCalendarUrl(event, o.date, o.startTime, o.endTime)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Add ${longDate(o.date)} to Google Calendar`}
+                            title="Add to Google Calendar"
                             className="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-brand-light-blue hover:bg-brand-cream"
                           >
                             <CalendarPlus className="w-5 h-5" aria-hidden="true" />
-                          </button>
+                          </a>
                         )}
                       </li>
                     );
