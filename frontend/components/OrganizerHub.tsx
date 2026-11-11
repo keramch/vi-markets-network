@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ClipboardList, MessageSquare } from 'lucide-react';
 import type { User, Market, MarketEvent } from '../types';
 import * as api from '../services/api.live';
@@ -107,8 +107,17 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   };
 
   const closeEdit = () => {
+    formDirty.current = false;
     setEditModalOpen(false);
     setSelectedEvent(null);
+  };
+
+  // Clicking outside the event window (or Escape) closes it, asking first if
+  // anything was changed
+  const formDirty = useRef(false);
+  const trackDirty = useCallback((dirty: boolean) => { formDirty.current = dirty; }, []);
+  const closeFromOutside = () => {
+    if (!formDirty.current || window.confirm('Close without saving your changes?')) closeEdit();
   };
 
   const handleSaved = (saved: MarketEvent) => {
@@ -395,6 +404,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
       <Modal
         isOpen={editModalOpen}
         onClose={closeEdit}
+        onClickOutside={closeFromOutside}
         title={selectedEvent ? 'Edit Event' : 'Add Event'}
         maxWidth="lg"
       >
@@ -403,6 +413,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
           existingEvent={selectedEvent ?? undefined}
           onSaved={handleSaved}
           onCancel={closeEdit}
+          onDirtyChange={trackDirty}
         />
       </Modal>
     </div>

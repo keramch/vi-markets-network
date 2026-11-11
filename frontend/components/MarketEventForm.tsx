@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { MarketEvent, MarketTag, User } from '../types';
 import { MarketTags, MarketCategories } from '../types';
 import * as api from '../services/api.live';
@@ -10,6 +10,9 @@ interface MarketEventFormProps {
   onSaved: (event: MarketEvent) => void;
   onCancel: () => void;
   existingEvent?: MarketEvent;
+  // Told whether anything differs from when the form opened, so a click
+  // outside the window can ask before throwing changes away
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const TAG_LABELS: Record<string, string> = {
@@ -29,6 +32,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   onSaved,
   onCancel,
   existingEvent,
+  onDirtyChange,
 }) => {
   const [type, setType] = useState<'recurring' | 'oneTime' | 'specialEdition'>(
     existingEvent?.type ?? 'recurring'
@@ -74,6 +78,16 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   // restores them (T094).
   const typeSwitchReplacesDates =
     isLive && (existingEvent!.type === 'oneTime') !== (type === 'oneTime');
+
+  const snapshot = JSON.stringify([
+    type, name, venueName, address, city, province, startTime, endTime, date, startDate, endDate,
+    recurrenceDays, recurrenceFrequency, selectedTags, marketType, externalUrl, description,
+    posterUrl, tileUrl, posterFile?.name ?? '', tileFile?.name ?? '',
+  ]);
+  const initialSnapshot = useRef(snapshot);
+  useEffect(() => {
+    onDirtyChange?.(snapshot !== initialSnapshot.current);
+  }, [snapshot, onDirtyChange]);
 
   const toggleDay = (d: number) =>
     setRecurrenceDays(prev =>

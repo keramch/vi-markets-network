@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { MarketEvent, MarketTag, User } from '../types';
 import * as api from '../services/api.live';
 import {
@@ -71,6 +71,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
   const [activeTag, setActiveTag] = useState<MarketTag | null>(null);
   const [selectedOcc, setSelectedOcc] = useState<CalendarOccurrence | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  // Whether the create-event form has unsaved changes (asked before a click-off closes it)
+  const formDirty = useRef(false);
+  const trackDirty = useCallback((dirty: boolean) => { formDirty.current = dirty; }, []);
 
   const year  = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-based
@@ -485,9 +488,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
 
       {/* Create event modal */}
       {isFormOpen && currentUser && (
-        <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title="Create Market Event" maxWidth="xl">
+        <Modal
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          onClickOutside={() => {
+            if (!formDirty.current || window.confirm('Close without saving your changes?')) setIsFormOpen(false);
+          }}
+          title="Create Market Event"
+          maxWidth="xl"
+        >
           <MarketEventForm
             currentUser={currentUser}
+            onDirtyChange={trackDirty}
             onSaved={newEvent => {
               setEvents(prev => [...prev, newEvent]);
               setIsFormOpen(false);
