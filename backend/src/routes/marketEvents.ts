@@ -3,6 +3,19 @@ import { db } from "../firebase";
 import { requireAuth, isAdminUser } from "../middleware/auth";
 import { ownsListing } from "../utils/listingAccess";
 import { isSafeWebUrl } from "../utils/urlSafety";
+import { slugify, firstFreeSlug } from "../utils/slug";
+
+// A readable link part for an event, unique within its market. Archived events
+// keep their slug reserved so an old shared link never points at a different event.
+async function uniqueEventSlug(name: string, marketPageId: string, ownId?: string): Promise<string> {
+  const snap = await db.collection("marketEvents").where("marketPageId", "==", marketPageId).get();
+  const taken = new Set<string>();
+  snap.docs.forEach(d => {
+    const s = d.data().slug;
+    if (d.id !== ownId && typeof s === "string" && s) taken.add(s);
+  });
+  return firstFreeSlug(slugify(name) || "event", taken);
+}
 
 // Can the caller see/manage non-published events for this market?
 async function canManageMarketEvents(uid: string | undefined, marketPageId: string | undefined): Promise<boolean> {
@@ -106,10 +119,18 @@ router.post("/", requireAuth, async (req, res) => {
   }
 
   const now = new Date().toISOString();
+  let slug: string;
+  try {
+    slug = await uniqueEventSlug(String(name), marketPageId);
+  } catch (err) {
+    console.error("Error picking event slug:", err);
+    return res.status(500).json({ error: "Failed to create market event" });
+  }
   const data = {
     marketPageId,
     organizerUid,
     name,
+    slug,
     type,
     marketTags: marketTags ?? [],
     location,
@@ -152,6 +173,15 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (access !== "admin") {
       delete updates.marketPageId;
       delete updates.organizerUid;
+    }
+
+    // The link never changes after it's set, even if the event is renamed, so shared
+    // links keep working. Events made before slugs existed get one on their next save.
+    delete updates.slug;
+    const current = (await docRef.get()).data()!;
+    if (!current.slug) {
+      const name = typeof updates.name === "string" && updates.name ? updates.name : current.name;
+      updates.slug = await uniqueEventSlug(String(name ?? ""), current.marketPageId, id);
     }
 
     await docRef.set({ ...updates, updatedAt: new Date().toISOString() }, { merge: true });

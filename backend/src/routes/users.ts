@@ -4,6 +4,7 @@ import { db, auth } from "../firebase";
 import { spamGuard } from "../middleware/spamGuard";
 import { syncMemberToBrevo, syncMemberIfVerified, getNewsletterStatus, removeMemberFromNewsletter, wantsNewsletter } from "../utils/brevoSync";
 import { requireAuth, requireAdmin, isAdminUser } from "../middleware/auth";
+import { slugify } from "../utils/slug";
 
 const router = Router();
 
@@ -30,16 +31,6 @@ const SELF_EDITABLE_USER_FIELDS = new Set([
 ]);
 
 // ── Slug helpers ──────────────────────────────────────────────────────────────
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/[\s]+/g, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 async function generateUniqueSlug(
   name: string,

@@ -397,6 +397,7 @@ export interface MarketEvent {
   marketPageId: string;
   organizerUid: string;
   name: string;
+  slug?: string; // readable link part, unique within the market; older events may not have one yet
   type: 'recurring' | 'oneTime' | 'specialEdition';
   marketTags: MarketTag[];
   location: {

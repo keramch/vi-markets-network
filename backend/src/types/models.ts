@@ -62,6 +62,7 @@ export interface MarketEvent {
   marketPageId: string;
   organizerUid: string;
   name: string;
+  slug?: string; // readable link part, unique within the market, never changes once set
   type: 'recurring' | 'oneTime' | 'specialEdition';
   marketTags: MarketTag[];
   location: {
