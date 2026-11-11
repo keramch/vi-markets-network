@@ -42,6 +42,9 @@ export interface CalendarOccurrence {
   date: string;       // YYYY-MM-DD
   startTime: string;  // HH:MM (may be overridden by exception)
   endTime: string;    // HH:MM
+  cancelled?: boolean; // only present when asked for with includeCancelled
+  changed?: boolean;   // this date has its own hours or note
+  note?: string;
 }
 
 function toIsoDate(d: Date): string {
@@ -69,7 +72,9 @@ function weekOfMonth(d: Date): number {
 export function expandOccurrences(
   events: MarketEvent[],
   year: number,
-  month: number
+  month: number,
+  // Event pages show cancelled dates crossed out; everywhere else drops them
+  options: { includeCancelled?: boolean } = {}
 ): CalendarOccurrence[] {
   const results: CalendarOccurrence[] = [];
   const monthStart = new Date(year, month, 1);
@@ -86,12 +91,15 @@ export function expandOccurrences(
 
     const pushOccurrence = (dateStr: string) => {
       const ex = exMap.get(dateStr);
-      if (ex?.type === 'cancelled') return;
+      if (ex?.type === 'cancelled' && !options.includeCancelled) return;
       results.push({
         event,
         date: dateStr,
         startTime: ex?.modifiedStartTime ?? schedule.startTime,
         endTime:   ex?.modifiedEndTime   ?? schedule.endTime,
+        ...(ex?.type === 'cancelled' ? { cancelled: true } : {}),
+        ...(ex?.type === 'modified' ? { changed: true } : {}),
+        ...(ex?.note ? { note: ex.note } : {}),
       });
     };
 
@@ -188,7 +196,8 @@ export function nextOccurrence(event: MarketEvent, from: Date = new Date()): Cal
 export function upcomingOccurrences(
   events: MarketEvent[],
   days = 42,
-  from: Date = new Date()
+  from: Date = new Date(),
+  options: { includeCancelled?: boolean } = {}
 ): CalendarOccurrence[] {
   const todayIso = toIsoDate(from);
   const endIso = toIsoDate(new Date(from.getFullYear(), from.getMonth(), from.getDate() + days - 1));
@@ -200,7 +209,7 @@ export function upcomingOccurrences(
     m <= endDate;
     m = new Date(m.getFullYear(), m.getMonth() + 1, 1)
   ) {
-    for (const o of expandOccurrences(events, m.getFullYear(), m.getMonth())) {
+    for (const o of expandOccurrences(events, m.getFullYear(), m.getMonth(), options)) {
       if (o.date >= todayIso && o.date <= endIso) inWindow.push(o);
     }
   }
@@ -233,6 +242,30 @@ export function recurrenceSummary(event: MarketEvent): string {
     case 'monthly':  return `Monthly, ${days}`;
     default:         return `Every ${days}`;
   }
+}
+
+// ─── Event page links ─────────────────────────────────────────────────────────
+
+/**
+ * The event page path: /markets/<market slug>/<event slug>. Events saved before
+ * slugs existed use their ID until their next save; the page accepts both.
+ * `date` (YYYY-MM-DD) opens the page on that one date.
+ */
+export function eventPath(marketSlug: string, event: Pick<MarketEvent, 'id' | 'slug'>, date?: string): string {
+  const path = `/markets/${marketSlug}/${encodeURIComponent(event.slug || event.id)}`;
+  return date ? `${path}?date=${date}` : path;
+}
+
+/** Full link for sharing or copying. */
+export function eventUrl(marketSlug: string, event: Pick<MarketEvent, 'id' | 'slug'>, date?: string): string {
+  return `${window.location.origin}${eventPath(marketSlug, event, date)}`;
+}
+
+/** Google Maps directions to an event's venue. */
+export function directionsUrl(event: MarketEvent): string {
+  const { venueName, address, city, province } = event.location;
+  const destination = [venueName, address, city, province].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 }
 
 // ─── ICS / Google Calendar export ─────────────────────────────────────────────

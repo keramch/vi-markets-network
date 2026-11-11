@@ -8,7 +8,8 @@ import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, T
 import { UserPlus, UserCheck, Globe } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
-import { formatTime, upcomingOccurrences, recurrenceSummary } from '../utils';
+import { formatTime, upcomingOccurrences, recurrenceSummary, eventPath } from '../utils';
+import { Link } from 'react-router-dom';
 import ShareButton from './ShareButton';
 
 interface MarketProfileProps {
@@ -210,15 +211,14 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                           <span className="text-base font-semibold text-gray-700">{formattedDate}</span>
                         </div>
                         <div>
-                          {event.externalEventUrl ? (
-                            <a
-                              href={event.externalEventUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-base font-medium text-brand-teal hover:underline"
+                          {/* Opens the event page on this date; its own website is linked from there (T013) */}
+                          {market.slug ? (
+                            <Link
+                              to={eventPath(market.slug, event, date)}
+                              className="text-base font-medium text-brand-light-blue underline hover:text-brand-blue"
                             >
                               {event.name}
-                            </a>
+                            </Link>
                           ) : (
                             <p className="text-base font-medium text-brand-text">{event.name}</p>
                           )}

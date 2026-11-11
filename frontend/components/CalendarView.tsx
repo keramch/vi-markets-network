@@ -26,6 +26,7 @@ import {
 interface CalendarViewProps {
   currentUser?: User | null;
   onSelectMarket: (id: string) => void;
+  onSelectEvent: (event: MarketEvent, date: string) => void;
   onBack: () => void;
 }
 
@@ -61,7 +62,7 @@ const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket, onBack }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket, onSelectEvent, onBack }) => {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
@@ -371,12 +372,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
             </a>
             <button
               onClick={() => {
-                onSelectMarket(event.marketPageId);
+                // Opens the event page on this date (T013)
+                onSelectEvent(event, date);
                 setSelectedOcc(null);
               }}
               className="flex items-center gap-1.5 px-3 py-3 bg-brand-blue/10 text-brand-blue rounded-lg text-sm hover:bg-brand-blue/20 ml-auto"
             >
-              View Market →
+              View event →
             </button>
           </div>
         </div>

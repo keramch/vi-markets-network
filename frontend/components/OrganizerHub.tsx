@@ -4,6 +4,7 @@ import type { User, Market, MarketEvent } from '../types';
 import * as api from '../services/api.live';
 import Modal from './Modal';
 import MarketEventForm from './MarketEventForm';
+import { eventUrl } from '../utils';
 
 interface OrganizerHubProps {
   currentUser: User;
@@ -59,6 +60,19 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Copies the public event page link for sharing (T013)
+  const copyEventLink = async (event: MarketEvent) => {
+    if (!market.slug) return;
+    try {
+      await navigator.clipboard.writeText(eventUrl(market.slug, event));
+      setCopiedId(event.id);
+      setTimeout(() => setCopiedId(prev => (prev === event.id ? null : prev)), 2500);
+    } catch {
+      window.prompt('Copy this link:', eventUrl(market.slug, event));
+    }
+  };
 
   const tier = currentUser.subscription?.tier ?? 'free';
   const isFoundingMember = currentUser.subscription?.foundingMember === true;
@@ -291,6 +305,15 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {event.status === 'published' && market.slug && (
+                        <button
+                          onClick={() => copyEventLink(event)}
+                          className="text-brand-light-blue border border-brand-light-blue/40 rounded text-sm px-3 py-2 hover:bg-brand-cream transition-colors"
+                          aria-live="polite"
+                        >
+                          {copiedId === event.id ? 'Copied!' : 'Copy link'}
+                        </button>
+                      )}
                       <button
                         onClick={() => openEdit(event)}
                         className="text-brand-teal border border-brand-teal/40 rounded text-xs px-3 py-2 hover:bg-teal-50 transition-colors"

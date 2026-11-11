@@ -8,7 +8,7 @@ import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 import { signInWithGoogle, isInAppBrowser } from './services/googleAuth';
-import { PASSWORD_POLICY_MESSAGE, nextOccurrence } from './utils';
+import { PASSWORD_POLICY_MESSAGE, nextOccurrence, eventPath } from './utils';
 
 import Header from './components/Header';
 import { CheckCircleIcon } from './components/Icons';
@@ -22,6 +22,7 @@ import Dashboard from './components/Dashboard';
 import StripePaymentForm from './components/StripePaymentForm';
 import PaymentSuccessModal from './components/PaymentSuccessModal';
 import CalendarView from './components/CalendarView';
+import EventPage from './components/EventPage';
 import NotificationToast from './components/NotificationToast';
 import AdminPanel from './components/AdminPanel';
 import Promotions from './components/Promotions';
@@ -143,6 +144,78 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
       onApply={onApply}
       upcomingEvents={upcomingEvents}
       onOpenLoginModal={onOpenLoginModal}
+    />
+  );
+};
+
+interface EventPageRouteProps {
+  markets: Market[];
+  favoritedMarketIds: string[];
+  currentUser: User | null;
+  onToggleFavorite: (id: string) => void;
+  onOpenLoginModal: () => void;
+  isDataLoading: boolean;
+}
+// /markets/:slug/:eventSlug — the event part is the event's slug, or its ID for
+// events saved before slugs existed (T013). An ID link moves to the slug link.
+const EventPageRoute: React.FC<EventPageRouteProps> = ({
+  markets, favoritedMarketIds, currentUser, onToggleFavorite, onOpenLoginModal, isDataLoading,
+}) => {
+  const { slug, eventSlug } = useParams<{ slug: string; eventSlug: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const market = markets.find(m => m.slug === slug);
+  const [event, setEvent] = React.useState<MarketEvent | null | undefined>(undefined); // undefined = loading
+
+  React.useEffect(() => {
+    if (!market?.id) return;
+    setEvent(undefined);
+    api.getMarketEvents({ marketPageId: market.id, status: 'published' })
+      .then(events => {
+        const found = events.find(e => e.slug === eventSlug) ?? events.find(e => e.id === eventSlug) ?? null;
+        if (found?.slug && found.slug !== eventSlug) {
+          navigate(`${eventPath(market.slug!, found)}${location.search}`, { replace: true });
+        }
+        setEvent(found);
+      })
+      .catch(() => setEvent(null));
+  }, [market?.id, eventSlug]);
+
+  if (isDataLoading || (market && event === undefined)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+        <div className="text-brand-blue text-sm">Loading...</div>
+      </div>
+    );
+  }
+  if (!market || market.status !== 'active') return <Navigate to="/" replace />;
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-brand-cream px-4 py-16 text-center">
+        <h1 className="font-serif text-2xl text-brand-blue">This event isn't available</h1>
+        <p className="mt-3 text-base text-brand-text">It may have ended or been taken down by the organizer.</p>
+        <button
+          type="button"
+          onClick={() => navigate(`/markets/${market.slug}`)}
+          className="mt-6 min-h-[2.75rem] px-5 rounded-lg bg-brand-light-blue text-white font-semibold"
+        >
+          See {market.name}
+        </button>
+      </div>
+    );
+  }
+
+  const dateParam = new URLSearchParams(location.search).get('date') ?? undefined;
+  return (
+    <EventPage
+      market={market}
+      event={event}
+      selectedDate={dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined}
+      currentUser={currentUser}
+      isFollowing={favoritedMarketIds.includes(market.id)}
+      onToggleFollow={onToggleFavorite}
+      onOpenLoginModal={onOpenLoginModal}
+      onBack={() => (window.history.length > 1 ? navigate(-1) : navigate(`/markets/${market.slug}`))}
     />
   );
 };
@@ -1169,6 +1242,16 @@ const App: React.FC = () => {
                 isDataLoading={isDataLoading}
               />
             } />
+            <Route path="/markets/:slug/:eventSlug" element={
+              <EventPageRoute
+                markets={markets}
+                favoritedMarketIds={favoritedMarketIds}
+                currentUser={currentUser}
+                onToggleFavorite={handleToggleMarketFavorite}
+                onOpenLoginModal={() => setLoginModalOpen(true)}
+                isDataLoading={isDataLoading}
+              />
+            } />
             <Route path="/vendors/:slug" element={
               <VendorProfileRoute
                 vendors={vendors}
@@ -1188,6 +1271,10 @@ const App: React.FC = () => {
               <CalendarView
                 currentUser={currentUser}
                 onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onSelectEvent={(event, date) => {
+                  const m = markets.find(m => m.id === event.marketPageId);
+                  if (m?.slug) navigate(eventPath(m.slug, event, date));
+                }}
                 onBack={() => navigate('/')}
               />
             } />
