@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { ShareIcon, CheckIcon } from './Icons';
+import { prefersShareSheet } from '../utils';
 
 interface ShareButtonProps {
     className?: string;
@@ -16,7 +17,7 @@ const ShareButton: React.FC<ShareButtonProps> = ({ className = "p-2 rounded-full
       url: window.location.href,
     };
 
-    if (navigator.share) {
+    if (prefersShareSheet()) {
       try {
         await navigator.share(shareData);
       } catch (err) {

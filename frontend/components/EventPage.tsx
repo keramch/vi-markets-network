@@ -4,7 +4,7 @@ import { CalendarPlus, Share2, MapPin, ExternalLink } from 'lucide-react';
 import type { Market, MarketEvent, User } from '../types';
 import {
   formatTime, upcomingOccurrences, nextOccurrence, recurrenceSummary,
-  buildGoogleCalendarUrl, eventUrl, directionsUrl,
+  buildGoogleCalendarUrl, eventUrl, directionsUrl, prefersShareSheet,
   type CalendarOccurrence,
 } from '../utils';
 
@@ -67,7 +67,7 @@ const EventPage: React.FC<EventPageProps> = ({
 
   const handleShare = async () => {
     const url = eventUrl(market.slug ?? '', event, selectedDate);
-    if (navigator.share) {
+    if (prefersShareSheet()) {
       try { await navigator.share({ title: event.name, text: `${event.name} on VI Markets`, url }); } catch { /* closed */ }
       return;
     }

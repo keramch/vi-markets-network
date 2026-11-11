@@ -261,6 +261,16 @@ export function eventUrl(marketSlug: string, event: Pick<MarketEvent, 'id' | 'sl
   return `${window.location.origin}${eventPath(marketSlug, event, date)}`;
 }
 
+/**
+ * Share buttons open the phone's share sheet on phones and tablets. On a
+ * computer they copy the link instead: the desktop share panel (e.g. Windows')
+ * is clumsy and can't be closed by clicking outside it.
+ */
+export function prefersShareSheet(): boolean {
+  return typeof navigator.share === 'function'
+    && window.matchMedia('(pointer: coarse)').matches;
+}
+
 /** Google Maps directions to an event's venue. */
 export function directionsUrl(event: MarketEvent): string {
   const { venueName, address, city, province } = event.location;
