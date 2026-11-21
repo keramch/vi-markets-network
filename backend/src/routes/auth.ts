@@ -26,8 +26,10 @@ router.get("/me", requireAuth, async (req, res) => {
       return res.json({ id: byUid.id, ...byUid.data() });
     }
 
-    // Fallback for older docs not keyed by UID — match on the token's own email
-    if (email) {
+    // Fallback for older docs not keyed by UID — match on the token's own email,
+    // but only once that email is verified, so an account that merely typed
+    // someone else's address can't open their profile (T101)
+    if (email && req.user!.emailVerified) {
       let snapshot = await db
         .collection("users")
         .where("emailLower", "==", email.toLowerCase())
