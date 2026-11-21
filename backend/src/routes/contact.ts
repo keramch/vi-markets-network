@@ -39,6 +39,13 @@ router.post("/send", contactRateLimiter, spamGuard({ status: 200, body: { succes
     });
     return;
   }
+  // Sensible sizes, and a reply-to that is an email address (T101)
+  if ([recipientEmail, senderName, senderEmail, subject, message].some(v => typeof v !== "string")
+    || senderName.length > 200 || subject.length > 200 || message.length > 5000
+    || senderEmail.length > 254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(senderEmail)) {
+    res.status(400).json({ error: "Please check your name, email address and message, then try again." });
+    return;
+  }
 
   let recipientName: string | null;
   try {

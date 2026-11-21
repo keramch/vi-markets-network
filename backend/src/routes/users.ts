@@ -242,6 +242,18 @@ router.post("/register", accountCreationRateLimiter, spamGuard({ status: 400, bo
   if (!email || !password || !firstName || !lastName || !accountType) {
     return res.status(400).json({ error: "Missing required fields" });
   }
+  // Checked before the login account is created, so a bad request can't leave
+  // a login with no profile behind (T101)
+  if (accountType !== "vendor" && accountType !== "market" && accountType !== "community") {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+  if (accountType !== "community" && !String(profile.businessName ?? "").trim()) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+  const tooLong = (value: unknown, max: number) => typeof value === "string" && value.length > max;
+  if ([firstName, lastName, profile.businessName, profile.city].some(v => tooLong(v, 200)) || tooLong(profile.description, 5000)) {
+    return res.status(400).json({ error: "One of the fields is too long. Please shorten it and try again." });
+  }
 
   try {
     const emailLower = email.toLowerCase();

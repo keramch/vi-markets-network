@@ -47,20 +47,31 @@ router.post("/", requireAuth, async (req, res) => {
     customResponses: { question: string; answer: string }[];
   };
 
-  if (!vendorId || !marketId) {
+  if (typeof vendorId !== "string" || !vendorId || typeof marketId !== "string" || !marketId) {
     return res.status(400).json({ error: "vendorId and marketId are required" });
+  }
+  // Answers are question/answer text pairs of a sensible size (T101)
+  const responses = customResponses ?? [];
+  if (!Array.isArray(responses) || responses.length > 50 || !responses.every(r =>
+    r && typeof r === "object" && typeof r.question === "string" && typeof r.answer === "string"
+    && r.question.length <= 1000 && r.answer.length <= 5000)) {
+    return res.status(400).json({ error: "Please check your answers and try again." });
   }
 
   try {
     if (!(await ownsListing(req.user!.uid, "vendors", vendorId))) {
       return res.status(403).json({ error: "You can only apply with your own vendor profile." });
     }
+    const market = await db.collection("markets").doc(marketId).get();
+    if (!market.exists || market.data()?.status !== "active") {
+      return res.status(404).json({ error: "This market isn't taking applications right now." });
+    }
 
     const now = new Date();
     const newApplication = {
       vendorId,
       marketId,
-      customResponses: Array.isArray(customResponses) ? customResponses : [],
+      customResponses: responses.map(r => ({ question: r.question, answer: r.answer })),
       status: "pending",
       date: now.toISOString().split("T")[0], // YYYY-MM-DD like your mock
       createdAt: now.getTime()
