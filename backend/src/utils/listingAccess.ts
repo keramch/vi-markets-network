@@ -15,27 +15,66 @@ export async function ownsListing(uid: string, collection: ListingCollection, id
 // reviews are added by GET /markets and GET /vendors from other collections)
 const COMPUTED_LISTING_FIELDS = ["id", "ownerFoundingMember", "reviews"];
 
-// Only admins (or trusted server code like the Stripe webhook) may set these.
-// The profile editor sends the whole listing back on save, so for non-admins
-// these are silently dropped rather than rejected.
-const ADMIN_ONLY_LISTING_FIELDS = [
-  "ownerId",
-  "status",
-  "isFeatured",
-  "featuredUntil",
-  "impressionCount",
-  "joinDate",
-  "slug",
+// The only fields an owner may change on their own listing (T101). Everything
+// else is admin-only: ownership (ownerId, organizerUid, coManagerUids), status,
+// Featured placement, joinDate, slug, a market's vendorIds, and any made-up
+// field. The profile editor sends the whole listing back on save, so other
+// fields are silently dropped rather than rejected.
+// Taken from Market and Vendor in frontend/types.ts plus the fields live
+// listings hold (category, categories and attendingMarketIds are legacy).
+const SHARED_OWNER_FIELDS = [
+  "name",
+  "logoUrl",
+  "headerPhotoUrl",
+  "headerPhotoPosition",
+  "description",
+  "photos",
+  "contact",
+  "tags",
+  "promotions",
+  "updatedAt",
 ];
+const OWNER_EDITABLE_FIELDS: Record<ListingCollection, Set<string>> = {
+  markets: new Set([
+    ...SHARED_OWNER_FIELDS,
+    "marketTypes",
+    "location",
+    "schedule",
+    "amenities",
+    "paymentOptions",
+    "seasonalInfo",
+    "accessibility",
+    "applicationFormQuestions",
+    "allowedVendorCategories",
+    "externalEventUrl",
+  ]),
+  vendors: new Set([
+    ...SHARED_OWNER_FIELDS,
+    "vendorTypes",
+    "category",
+    "categories",
+    "priceRange",
+    "attendingMarkets",
+    "attendingMarketIds",
+    "productHighlights",
+    "sustainabilityPractices",
+    "certifications",
+    "originStory",
+    "city",
+  ]),
+};
 
 export function sanitizeListingUpdate(
   updates: Record<string, unknown>,
   callerIsAdmin: boolean,
+  collection: ListingCollection,
 ): Record<string, unknown> {
   const clean = { ...updates };
   for (const key of COMPUTED_LISTING_FIELDS) delete clean[key];
   if (!callerIsAdmin) {
-    for (const key of ADMIN_ONLY_LISTING_FIELDS) delete clean[key];
+    for (const key of Object.keys(clean)) {
+      if (!OWNER_EDITABLE_FIELDS[collection].has(key)) delete clean[key];
+    }
   }
   return clean;
 }

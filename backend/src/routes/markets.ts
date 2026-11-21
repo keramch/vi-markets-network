@@ -86,7 +86,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (!callerIsAdmin && !(await ownsListing(req.user!.uid, "markets", id))) {
       return res.status(403).json({ error: "You can only edit your own market." });
     }
-    const updates = sanitizeListingUpdate((req.body ?? {}) as Record<string, unknown>, callerIsAdmin) as Record<string, any>;
+    const updates = sanitizeListingUpdate((req.body ?? {}) as Record<string, unknown>, callerIsAdmin, "markets") as Record<string, any>;
     const urlProblem = checkListingUrls(updates);
     if (urlProblem) {
       return res.status(400).json({ error: urlProblem });
