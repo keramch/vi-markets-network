@@ -136,7 +136,7 @@ firestore.rules, storage.rules
 ## Design rules
 
 - No text smaller than 14px anywhere.
-- Never use `font-bold` with Rammetto One (`font-serif`).
+- `font-serif` now maps to Hanken Grotesk (the name is misleading; rename is scheduled for post-beta cleanup). Always render at weight 800.
 - On dark backgrounds, always use `brand-teal-light`, never `brand-light-blue` or `brand-blue`, for text.
 - Kera wants labels on every form field, not placeholders.
 

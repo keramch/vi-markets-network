@@ -159,7 +159,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                       <RibbonIcon className="w-5 h-5" />
                     </span>
                   )}
-                  <h1 className="text-3xl font-serif font-normal text-brand-blue">{market.name}</h1>
+                  <h1 className="text-3xl font-serif font-extrabold text-brand-blue">{market.name}</h1>
                 </div>
                 {market.marketTypes && market.marketTypes.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2 justify-start">

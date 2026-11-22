@@ -26,7 +26,7 @@ const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket,
       </div>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-semibold font-serif text-brand-blue mb-6">Followed Markets</h2>
+        <h2 className="text-3xl font-extrabold font-serif text-brand-blue mb-6">Followed Markets</h2>
         {markets.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {markets.map(market => <MarketCard key={market.id} market={market} onSelect={onSelectMarket} />)}
@@ -40,7 +40,7 @@ const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket,
       </section>
 
       <section>
-        <h2 className="text-3xl font-semibold font-serif text-brand-blue mb-6">Followed Vendors</h2>
+        <h2 className="text-3xl font-extrabold font-serif text-brand-blue mb-6">Followed Vendors</h2>
         {vendors.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {vendors.map(vendor => <VendorCard key={vendor.id} vendor={vendor} onSelect={onSelectVendor} />)}

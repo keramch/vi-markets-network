@@ -10,7 +10,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignup }) => {
     <main className="min-h-screen bg-brand-cream">
       {/* Hero */}
       <div id="pagetop-header" className="bg-brand-blue text-white py-16 px-4 text-center">
-        <h1 className="text-4xl md:text-5xl font-normal font-serif mb-3">
+        <h1 className="text-4xl md:text-5xl font-extrabold font-serif mb-3">
           Jump in early. Lock in your rate.
         </h1>
         <p className="text-brand-teal-light text-lg max-w-2xl mx-auto leading-relaxed">
@@ -27,7 +27,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignup }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             {/* Free */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col">
-              <h3 className="text-xl font-serif font-normal text-brand-blue mb-0.5">Free</h3>
+              <h3 className="text-xl font-serif font-extrabold text-brand-blue mb-0.5">Free</h3>
               <p className="text-sm text-gray-500 mb-3">Forever</p>
               <div className="mb-4">
                 <span className="text-3xl font-extrabold text-gray-900">$0</span>
@@ -54,7 +54,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignup }) => {
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-blue text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
                 Introductory Rate
               </span>
-              <h3 className="text-xl font-serif font-normal text-brand-blue mb-3">Pro</h3>
+              <h3 className="text-xl font-serif font-extrabold text-brand-blue mb-3">Pro</h3>
               <div className="mb-1">
                 <span className="text-2xl font-extrabold text-brand-blue">$30 CAD</span>
                 <span className="text-sm text-gray-500 ml-1">/ 6 months + GST</span>
@@ -107,7 +107,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onBack, onSignup }) => {
 
         {/* Phase 2 preview */}
         <div className="bg-brand-cream rounded-2xl p-8 mb-14">
-          <h2 className="text-2xl font-serif font-normal text-brand-blue text-center mb-3">
+          <h2 className="text-2xl font-serif font-extrabold text-brand-blue text-center mb-3">
             More is coming.
           </h2>
           <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">

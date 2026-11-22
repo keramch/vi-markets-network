@@ -158,7 +158,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                       <RibbonIcon className="w-5 h-5" />
                     </span>
                   )}
-                  <h1 className="text-3xl font-serif font-normal text-brand-blue">{vendor.name}</h1>
+                  <h1 className="text-3xl font-serif font-extrabold text-brand-blue">{vendor.name}</h1>
                 </div>
                 {vendor.vendorTypes && vendor.vendorTypes.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2 justify-start">

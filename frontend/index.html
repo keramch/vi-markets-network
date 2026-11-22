@@ -21,14 +21,16 @@
     <meta name="apple-mobile-web-app-title" content="VI Markets" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Rammetto+One&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              'serif': ['"Rammetto One"', 'cursive'],
+              // Headings. The name 'serif' is historical: it's Hanken Grotesk
+              // ExtraBold, weight and spacing set in index.css
+              'serif': ['"Hanken Grotesk"', 'sans-serif'],
               'sans': ['Outfit', 'sans-serif'],
             },
             colors: {

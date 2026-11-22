@@ -1,3 +1,18 @@
 input {
   -webkit-transform: translateZ(0);
 }
+
+/* Headings: font-serif is Hanken Grotesk ExtraBold (the class name is
+   historical; a rename is planned after beta). Always weight 800, with
+   tighter letter-spacing from 24px (text-2xl) up. */
+.font-serif {
+  font-weight: 800;
+}
+.font-serif:is(.text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl, .text-7xl, .text-8xl, .text-9xl) {
+  letter-spacing: -0.04em;
+}
+@media (min-width: 640px) {
+  .font-serif:is(.sm\:text-2xl, .sm\:text-3xl, .sm\:text-4xl, .sm\:text-5xl) {
+    letter-spacing: -0.04em;
+  }
+}
