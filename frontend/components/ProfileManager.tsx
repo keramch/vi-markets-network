@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { vendorTypeLabel } from '../utils';
+import { vendorTypeLabel, cleanSocial, socialUrl, socialProblem, SOCIAL_PLATFORMS, SOCIAL_LABEL, type SocialPlatform } from '../utils';
 import ReviewRemovalRequest from './ReviewRemovalRequest';
 import type { Market, Vendor, Review, Application, User, ScheduleRule } from '../types';
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
@@ -56,7 +56,12 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     onToggleAutoRenew,
     onOpenUpgradeModal
 }) => {
-  const [formData, setFormData] = useState(profileData);
+  // The editor used to have two Website boxes (contact and socials); start from
+  // whichever one was filled in, and save the same value to both
+  const [formData, setFormData] = useState<typeof profileData>(() => ({
+    ...profileData,
+    contact: { ...profileData.contact, website: profileData.contact?.website || profileData.contact?.socials?.website || '' },
+  }));
   const [scheduleConflicts, setScheduleConflicts] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>('details');
 
@@ -137,6 +142,18 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     }));
   };
   
+  // Turns "https://www.instagram.com/name/", "@name" etc. into the plain username
+  const handleSocialBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const platform = e.target.name as SocialPlatform;
+    const cleaned = cleanSocial(platform, e.target.value);
+    // Leave it as typed if it can't become a link, so the member can see and fix it
+    if (!socialUrl(platform, e.target.value) || cleaned === e.target.value) return;
+    setFormData(prev => ({
+      ...prev,
+      contact: { ...prev.contact, socials: { ...prev.contact?.socials, [platform]: cleaned } },
+    }));
+  };
+
   const handleCheckboxChange = (
       e: React.ChangeEvent<HTMLInputElement>,
       group: 'amenities' | 'tags' | 'vendorTypes'
@@ -169,7 +186,12 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     setSaveSuccess(false);
     setUploadError(null);
 
-    let updatedData: Market | Vendor = { ...formData };
+    const socials = { ...formData.contact?.socials };
+    for (const platform of SOCIAL_PLATFORMS) {
+      if (socials[platform] && socialUrl(platform, socials[platform])) socials[platform] = cleanSocial(platform, socials[platform]);
+    }
+    const website = (formData.contact?.website ?? '').trim();
+    let updatedData: Market | Vendor = { ...formData, contact: { ...formData.contact, website, socials: { ...socials, website } } };
     const totalFiles = (pendingLogoFile ? 1 : 0) + pendingGalleryFiles.length;
 
     if (totalFiles > 0) {
@@ -484,33 +506,20 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                             </div>
                         </div>
                         <div className="mt-6">
-                            <h4 className="text-sm font-semibold text-brand-blue mb-3">Social & Web Links</h4>
+                            <h4 className="text-sm font-semibold text-brand-blue mb-1">Social Links</h4>
+                            <p className="text-sm text-gray-600 mb-3">Type your username or paste the link to your page. We'll tidy it up.</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-                                    <input id="social-instagram" type="text" name="instagram" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.instagram ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
-                                    <input id="social-facebook" type="text" name="facebook" placeholder="your-page-name" autoComplete="url" value={formData.contact?.socials?.facebook ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
-                                    <p className="text-xs text-gray-400 mt-1">We'll add https://www.facebook.com/ automatically</p>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Etsy</label>
-                                    <input id="social-etsy" type="text" name="etsy" placeholder="shop-name" autoComplete="url" value={formData.contact?.socials?.etsy ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
-                                    <input id="social-tiktok" type="text" name="tiktok" placeholder="@username" autoComplete="username" value={formData.contact?.socials?.tiktok ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Pinterest</label>
-                                    <input id="social-pinterest" type="text" name="pinterest" placeholder="username" autoComplete="username" value={formData.contact?.socials?.pinterest ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                    <input id="social-website" type="text" name="website" placeholder="yoursite.com" autoComplete="url" value={formData.contact?.socials?.website ?? ''} onChange={handleSocialChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
-                                </div>
+                                {SOCIAL_PLATFORMS.map(platform => {
+                                    const value = formData.contact?.socials?.[platform] ?? '';
+                                    const problem = socialProblem(platform, value);
+                                    return (
+                                        <div key={platform}>
+                                            <label htmlFor={`social-${platform}`} className="block text-sm font-medium text-gray-700 mb-1">{SOCIAL_LABEL[platform]}</label>
+                                            <input id={`social-${platform}`} type="text" name={platform} placeholder="Username or link" autoComplete="off" value={value} onChange={handleSocialChange} onBlur={handleSocialBlur} aria-invalid={!!problem} className={`block w-full border rounded-md shadow-sm py-3 px-3 ${problem ? 'border-brand-gold' : 'border-gray-300'}`}/>
+                                            {problem && <p className="text-sm text-brand-gold mt-1">{problem}</p>}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

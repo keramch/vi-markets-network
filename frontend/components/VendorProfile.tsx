@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import type { SpamGuardFields } from './SpamGuard';
 import type { Vendor, Market, User } from '../types';
-import { InstagramIcon, FacebookIcon, PinterestIcon, EtsyIcon, TikTokIcon, RibbonIcon } from './Icons';
-import { UserPlus, UserCheck, Globe } from 'lucide-react';
+import { RibbonIcon } from './Icons';
+import SocialLinks, { socialLinks } from './SocialLinks';
+import { UserPlus, UserCheck } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import ShareButton from './ShareButton';
@@ -51,14 +52,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
   const displayedReviews = approvedReviews.slice(0, 12);
   const isFoundingMember = vendor.ownerFoundingMember ?? owner?.subscription?.foundingMember;
   const storyText = vendor.description;
-  const hasSocials = !!(
-    vendor.contact?.socials?.instagram ||
-    vendor.contact?.socials?.facebook ||
-    vendor.contact?.socials?.pinterest ||
-    vendor.contact?.socials?.etsy ||
-    vendor.contact?.socials?.tiktok ||
-    vendor.contact?.socials?.website
-  );
+  const hasSocials = socialLinks(vendor.contact).length > 0;
   const hasAlreadyReviewed = currentUser
     ? vendor.reviews.some(r => r.userId === currentUser.id)
     : false;
@@ -315,38 +309,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                 <>
                   <hr className="my-4 border-gray-200" />
                   <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
-                  <div className="flex gap-3 mb-5">
-                    {vendor.contact?.socials?.instagram && (
-                      <a href={`https://instagram.com/${vendor.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                        <InstagramIcon className="w-5 h-5" />
-                      </a>
-                    )}
-                    {vendor.contact?.socials?.facebook && (
-                      <a href={`https://facebook.com/${vendor.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                        <FacebookIcon className="w-5 h-5" />
-                      </a>
-                    )}
-                    {vendor.contact?.socials?.pinterest && (
-                      <a href={`https://pinterest.com/${vendor.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                        <PinterestIcon className="w-5 h-5" />
-                      </a>
-                    )}
-                    {vendor.contact?.socials?.etsy && (
-                      <a href={`https://etsy.com/shop/${vendor.contact.socials.etsy}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                        <EtsyIcon className="w-5 h-5" />
-                      </a>
-                    )}
-                    {vendor.contact?.socials?.tiktok && (
-                      <a href={`https://tiktok.com/@${vendor.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                        <TikTokIcon className="w-5 h-5" />
-                      </a>
-                    )}
-                    {vendor.contact?.socials?.website && (
-                      <a href={vendor.contact.socials.website.startsWith('http') ? vendor.contact.socials.website : `https://${vendor.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                        <Globe className="w-5 h-5" />
-                      </a>
-                    )}
-                  </div>
+                  <SocialLinks contact={vendor.contact} />
                 </>
               )}
             </div>

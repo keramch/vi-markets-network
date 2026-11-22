@@ -355,3 +355,99 @@ export const getVendorTypes = (vendor: { vendorTypes?: string[]; category?: stri
 
 export const vendorTypeLabel = (vendor: { vendorTypes?: string[]; category?: string }): string =>
   getVendorTypes(vendor).join(' · ');
+
+// ── Social and website links ─────────────────────────────────────────────────
+// Members type these in every way: "@name", "name", "instagram.com/name",
+// "https://www.facebook.com/name", even "www.facebook.com/www.facebook.com/name".
+// cleanSocial turns any of those into the plain username (or, for Facebook,
+// the page path such as "groups/123" or "profile.php?id=123"), and socialUrl
+// builds the working link from it. Profiles call socialUrl on whatever is
+// saved, so older entries in the wrong format link correctly too.
+
+export type SocialPlatform = 'instagram' | 'facebook' | 'pinterest' | 'etsy' | 'tiktok';
+export const SOCIAL_PLATFORMS: SocialPlatform[] = ['instagram', 'facebook', 'etsy', 'tiktok', 'pinterest'];
+
+export const SOCIAL_LABEL: Record<SocialPlatform, string> = {
+  instagram: 'Instagram', facebook: 'Facebook', pinterest: 'Pinterest', etsy: 'Etsy', tiktok: 'TikTok',
+};
+
+// The site's address, wherever it appears in what was typed
+const SOCIAL_DOMAIN: Record<SocialPlatform, RegExp> = {
+  instagram: /(?:https?:\/\/)?(?:www\.|m\.)?instagram\.com\/?/i,
+  facebook: /(?:https?:\/\/)?(?:www\.|m\.|web\.|business\.)?(?:facebook|fb)\.com\/?/i,
+  pinterest: /(?:https?:\/\/)?(?:[a-z]{2,3}\.)?pinterest\.(?:com|ca)\/?/i,
+  etsy: /(?:https?:\/\/)?(?:www\.)?etsy\.com\/?/i,
+  tiktok: /(?:https?:\/\/)?(?:www\.|m\.)?tiktok\.com\/?/i,
+};
+
+// Usernames on these sites are letters, numbers, dots, dashes and underscores
+const VALID_HANDLE = /^[A-Za-z0-9._-]+$/;
+
+export const cleanSocial = (platform: SocialPlatform, raw: string | undefined | null): string => {
+  let value = String(raw ?? '').trim();
+  // An Etsy shop's own address: name.etsy.com
+  const etsySub = platform === 'etsy' ? value.match(/(?:https?:\/\/)?([a-z0-9-]+)\.etsy\.com/i) : null;
+  if (etsySub && etsySub[1].toLowerCase() !== 'www') return etsySub[1];
+  // Keep only the link if there are words around it, then strip the site's
+  // address, even when it was pasted twice
+  const at = value.search(SOCIAL_DOMAIN[platform]);
+  if (at >= 0) {
+    value = value.slice(at).split(/\s/)[0];
+    for (let next = value.replace(SOCIAL_DOMAIN[platform], ''); next !== value; next = value.replace(SOCIAL_DOMAIN[platform], '')) {
+      value = next;
+    }
+  }
+  value = value.replace(/^[@#]/, '').split('#')[0];
+
+  if (platform === 'facebook') {
+    // A page name with spaces ("Sisu Pottery") is kept as typed and searched for
+    if (/\s/.test(value)) return value.replace(/\s+/g, ' ');
+    // Keep the page path; the only query worth keeping is a profile's id
+    const [path, query = ''] = value.split('?');
+    const id = new URLSearchParams(query).get('id');
+    const cleanPath = path.replace(/\/+$/, '');
+    return id && /^profile\.php$/i.test(cleanPath) ? `profile.php?id=${id}` : cleanPath;
+  }
+
+  const segments = value.split('?')[0].split('/').filter(Boolean);
+  if (platform === 'etsy' && segments[0]?.toLowerCase() === 'shop') segments.shift();
+  return (segments[0] ?? '').replace(/^@/, '').replace(/\s+/g, '');
+};
+
+export const socialUrl = (platform: SocialPlatform, raw: string | undefined | null): string | null => {
+  const handle = cleanSocial(platform, raw);
+  if (!handle) return null;
+  if (platform === 'facebook') {
+    if (handle.includes('@')) return null; // an email address typed in by mistake
+    return /\s/.test(handle)
+      ? `https://www.facebook.com/search/top?q=${encodeURIComponent(handle)}`
+      : `https://www.facebook.com/${encodeURI(handle)}`;
+  }
+  if (!VALID_HANDLE.test(handle)) return null; // e.g. an email address typed in by mistake
+  switch (platform) {
+    case 'instagram': return `https://www.instagram.com/${handle}/`;
+    case 'pinterest': return `https://www.pinterest.com/${handle}/`;
+    case 'etsy':      return `https://www.etsy.com/shop/${handle}`;
+    case 'tiktok':    return `https://www.tiktok.com/@${handle}`;
+  }
+};
+
+// A short note for the profile editor when what was typed can't become a link
+export const socialProblem = (platform: SocialPlatform, raw: string | undefined | null): string | null =>
+  String(raw ?? '').trim() && !socialUrl(platform, raw)
+    ? `That doesn't look like a ${SOCIAL_LABEL[platform]} username or link.`
+    : null;
+
+// A website link that always opens: adds https:// when it's missing, and
+// returns null for anything that isn't an ordinary web address.
+export const websiteUrl = (raw: string | undefined | null): string | null => {
+  const value = String(raw ?? '').trim();
+  if (!value) return null;
+  const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value.replace(/^\/+/, '')}`;
+  try {
+    const url = new URL(withScheme);
+    return (url.protocol === 'https:' || url.protocol === 'http:') && url.hostname.includes('.') ? url.href : null;
+  } catch {
+    return null;
+  }
+};

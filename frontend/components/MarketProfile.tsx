@@ -4,8 +4,9 @@ import React from 'react';
 import { getVendorTypes } from '../utils';
 import type { SpamGuardFields } from './SpamGuard';
 import type { Market, Vendor, User, Review, Application, MarketEvent } from '../types';
-import { MapPinIcon, CalendarIcon, InstagramIcon, FacebookIcon, PinterestIcon, TikTokIcon, RibbonIcon } from './Icons';
-import { UserPlus, UserCheck, Globe } from 'lucide-react';
+import { MapPinIcon, CalendarIcon, RibbonIcon } from './Icons';
+import SocialLinks from './SocialLinks';
+import { UserPlus, UserCheck } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import { formatTime, upcomingOccurrences, recurrenceSummary, eventPath } from '../utils';
@@ -346,35 +347,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
             {/* Left: Connect */}
             <div>
               <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {market.name}</h2>
-              {market.contact?.socials && (
-                <div className="flex gap-3 mb-5">
-                  {market.contact.socials.instagram && (
-                    <a href={`https://instagram.com/${market.contact.socials.instagram}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <InstagramIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {market.contact.socials.facebook && (
-                    <a href={`https://facebook.com/${market.contact.socials.facebook}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <FacebookIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {market.contact.socials.pinterest && (
-                    <a href={`https://pinterest.com/${market.contact.socials.pinterest}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <PinterestIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {market.contact.socials.tiktok && (
-                    <a href={`https://tiktok.com/@${market.contact.socials.tiktok}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <TikTokIcon className="w-5 h-5" />
-                    </a>
-                  )}
-                  {market.contact.socials.website && (
-                    <a href={market.contact.socials.website.startsWith('http') ? market.contact.socials.website : `https://${market.contact.socials.website}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-brand-blue hover:text-white transition-colors">
-                      <Globe className="w-5 h-5" />
-                    </a>
-                  )}
-                </div>
-              )}
+              <SocialLinks contact={market.contact} />
               <ContactForm recipientEmail={market.contact?.email} currentUser={currentUser} onSend={(params) => onContactSubmit({ ...params, recipientName: market.name })} />
             </div>
 
