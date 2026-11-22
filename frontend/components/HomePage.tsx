@@ -96,9 +96,9 @@ function FilterSelect<T extends string>({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T | "all")}
-        className={`appearance-none text-xs pl-3 pr-7 py-1.5 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-brand-gold cursor-pointer transition-colors ${
+        className={`appearance-none text-xs pl-3 pr-7 py-1.5 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-white cursor-pointer transition-colors ${
           isActive
-            ? "bg-brand-gold text-white font-semibold"
+            ? "bg-white text-brand-gold font-semibold"
             : "bg-white/90 text-gray-800 hover:bg-white"
         }`}
       >
@@ -111,7 +111,7 @@ function FilterSelect<T extends string>({
       </select>
       <ChevronDownIcon
         className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
-          isActive ? "text-white" : "text-gray-500"
+          isActive ? "text-brand-gold" : "text-gray-500"
         }`}
       />
     </div>
@@ -431,12 +431,12 @@ const HomePage: React.FC<HomePageProps> = ({
   return (
     <main>
       {/* Hero section */}
-      <div id="pagetop-header" className={`relative bg-brand-blue text-white px-4 text-center transition-all ${showSearchResults ? "py-6 md:py-16" : "py-16"}`}>
+      <div id="pagetop-header" className={`relative bg-brand-gold text-white px-4 text-center transition-all ${showSearchResults ? "py-6 md:py-16" : "py-16"}`}>
         <div className="relative z-10">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 font-serif">
             Your Guide to Island Markets
           </h1>
-          <p className={`max-w-2xl mx-auto mb-8 text-lg text-brand-teal-light ${showSearchResults ? "hidden md:block" : ""}`}>
+          <p className={`max-w-2xl mx-auto mb-8 text-lg text-white ${showSearchResults ? "hidden md:block" : ""}`}>
             Find all things handmade, homemade, and locally grown or created on Vancouver
             Island.
           </p>
@@ -458,7 +458,7 @@ const HomePage: React.FC<HomePageProps> = ({
                   placeholder="Search for sourdough, pottery, etc..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full p-3 pl-12 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-brand-gold border-0"
+                  className="w-full p-3 pl-12 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/70 border-0"
                 />
               </div>
               <div className="relative md:col-span-2">
@@ -470,12 +470,12 @@ const HomePage: React.FC<HomePageProps> = ({
                   placeholder="City or postal code"
                   value={locationTerm}
                   onChange={handleLocationTermChange}
-                  className="w-full p-3 pl-12 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-brand-gold border-0"
+                  className="w-full p-3 pl-12 rounded-full text-gray-900 focus:outline-none focus:ring-4 focus:ring-white/70 border-0"
                 />
               </div>
               <button
                 type="submit"
-                className="md:col-span-1 bg-brand-gold text-white font-semibold rounded-full py-3 px-5 hover:bg-brand-gold/90 focus:outline-none focus:ring-4 focus:ring-white/60 transition-colors"
+                className="md:col-span-1 bg-white text-brand-gold font-semibold rounded-full py-3 px-5 hover:bg-brand-cream focus:outline-none focus:ring-4 focus:ring-white/60 transition-colors"
               >
                 Search
               </button>
@@ -493,12 +493,12 @@ const HomePage: React.FC<HomePageProps> = ({
                 </button>
               </p>
             )}
-            <div className="flex items-center justify-center mt-3 text-sm text-brand-teal-light">
+            <div className="flex items-center justify-center mt-3 text-sm text-white">
               {locationStatus === "Use my location" ? (
                 <button
                   type="button"
                   onClick={handleRequestLocation}
-                  className="flex items-center gap-1.5 text-brand-teal-light hover:text-white underline underline-offset-2 transition-colors"
+                  className="flex items-center gap-1.5 text-white hover:no-underline underline underline-offset-2 transition-colors"
                 >
                   <MapPinIcon className="w-4 h-4" />
                   Use my location
@@ -509,7 +509,7 @@ const HomePage: React.FC<HomePageProps> = ({
                   <button
                     type="button"
                     onClick={handleResetLocation}
-                    className="ml-2 text-xs underline hover:no-underline opacity-70 hover:opacity-100"
+                    className="ml-2 text-xs underline hover:no-underline"
                   >
                     change
                   </button>
@@ -544,7 +544,7 @@ const HomePage: React.FC<HomePageProps> = ({
                   onChange={(e) =>
                     setSortBy(e.target.value as "match" | "distance")
                   }
-                  className="appearance-none text-xs pl-3 pr-7 py-1.5 rounded-full border-0 bg-white/90 text-gray-800 hover:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold cursor-pointer transition-colors"
+                  className="appearance-none text-xs pl-3 pr-7 py-1.5 rounded-full border-0 bg-white/90 text-gray-800 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white cursor-pointer transition-colors"
                 >
                   <option value="match">Best Match</option>
                   <option value="distance" disabled={!searchCenter}>
@@ -560,14 +560,14 @@ const HomePage: React.FC<HomePageProps> = ({
                 onClick={() => setMoreFiltersOpen((open) => !open)}
                 className={`flex items-center gap-1.5 text-xs px-4 py-1.5 rounded-full font-medium transition-colors ${
                   moreFiltersOpen || activeTagCount > 0
-                    ? "bg-brand-gold text-white"
+                    ? "bg-white text-brand-gold"
                     : "bg-white/90 text-gray-800 hover:bg-white"
                 }`}
               >
                 <FilterIcon className="w-4 h-4" />
                 More Filters
                 {activeTagCount > 0 && (
-                  <span className="bg-white text-brand-blue text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none">
+                  <span className="bg-brand-gold text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold leading-none">
                     {activeTagCount}
                   </span>
                 )}
@@ -578,7 +578,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 <button
                   type="button"
                   onClick={clearAllFilters}
-                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full text-white/70 hover:text-white transition-colors"
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full text-white hover:underline transition-colors"
                 >
                   <XIcon className="w-3.5 h-3.5" />
                   Clear
