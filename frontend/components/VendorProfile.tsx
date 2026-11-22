@@ -9,6 +9,7 @@ import { UserPlus, UserCheck } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import ShareButton from './ShareButton';
+import { Link } from 'react-router-dom';
 import PhotoGallery from './PhotoGallery';
 
 interface VendorProfileProps {
@@ -178,7 +179,17 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
             </div>
 
             {/* Share — always at the far right */}
-            <div className="flex-shrink-0 pt-2">
+            <div className="flex-shrink-0 pt-2 flex items-center gap-1">
+              {/* Admins only: jump straight to editing this profile, and come back here after saving */}
+              {currentUser?.isAdmin && (
+                <Link
+                  to={`/hq/edit/vendor/${vendor.id}`}
+                  state={{ returnTo: `/vendors/${vendor.slug}` }}
+                  className="text-sm font-medium text-brand-light-blue hover:underline px-2 py-1"
+                >
+                  Edit profile
+                </Link>
+              )}
               <ShareButton className="p-2 rounded-full transition-colors duration-200 text-gray-400 hover:bg-white hover:text-brand-blue" />
             </div>
 

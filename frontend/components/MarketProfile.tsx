@@ -178,7 +178,17 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
               {followButton}
             </div>
 
-            <div className="flex-shrink-0 pt-2">
+            <div className="flex-shrink-0 pt-2 flex items-center gap-1">
+              {/* Admins only: jump straight to editing this profile, and come back here after saving */}
+              {currentUser?.isAdmin && (
+                <Link
+                  to={`/hq/edit/market/${market.id}`}
+                  state={{ returnTo: `/markets/${market.slug}` }}
+                  className="text-sm font-medium text-brand-light-blue hover:underline px-2 py-1"
+                >
+                  Edit profile
+                </Link>
+              )}
               <ShareButton className="p-2 rounded-full transition-colors duration-200 text-gray-400 hover:bg-white hover:text-brand-blue" />
             </div>
 

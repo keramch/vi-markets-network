@@ -278,13 +278,16 @@ interface AdminEditProfileRouteProps {
   vendors: Vendor[];
   users: User[];
   currentUser: User | null;
-  onSaveChanges: (data: Market | Vendor) => Promise<void>;
+  onSaveChanges: (data: Market | Vendor, returnTo?: string) => Promise<void>;
 }
 const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
   markets, vendors, users, currentUser, onSaveChanges,
 }) => {
   const { profileType, profileId } = useParams<{ profileType: string; profileId: string }>();
   const navigate = useNavigate();
+  // Opened from a profile's Edit profile link: go back to that profile, not HQ
+  const requested = (useLocation().state as { returnTo?: string } | null)?.returnTo;
+  const returnTo = typeof requested === 'string' && /^\/(markets|vendors)\/[\w-]+$/.test(requested) ? requested : undefined;
   if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
   const profileToEdit = profileType === 'market'
     ? markets.find(m => m.id === profileId)
@@ -295,8 +298,8 @@ const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
       profileData={profileToEdit}
       user={users.find(u => u.ownedMarketId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
       allMarkets={markets}
-      onSaveChanges={onSaveChanges}
-      onBack={() => navigate('/hq')}
+      onSaveChanges={(data) => onSaveChanges(data, returnTo)}
+      onBack={() => navigate(returnTo ?? '/hq')}
       isAdmin={true}
       listingReviews={[]}
       onRequestReviewRemoval={async () => {}}
@@ -821,7 +824,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateProfileAsAdmin = async (updatedProfileData: Market | Vendor) => {
+  const handleUpdateProfileAsAdmin = async (updatedProfileData: Market | Vendor, returnTo?: string) => {
     try {
         if (isMarket(updatedProfileData)) {
             const updatedMarket = await api.updateMarket(updatedProfileData.id, updatedProfileData);
@@ -833,8 +836,12 @@ const App: React.FC = () => {
             const freshMarkets = await api.getMarkets();
             setMarkets(freshMarkets);
         }
-        setAdminActiveTab('memberships');
-        navigate('/hq');
+        if (returnTo) {
+            navigate(returnTo);
+        } else {
+            setAdminActiveTab('memberships');
+            navigate('/hq');
+        }
         showNotification("Profile updated successfully!");
     } catch (error) {
         showNotification("Failed to update profile.");
