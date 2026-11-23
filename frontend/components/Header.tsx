@@ -1,6 +1,7 @@
 
 
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Logo, UserIcon, MegaphoneIcon, SettingsIcon, FileTextIcon } from './Icons';
 import { UserCheck } from 'lucide-react';
 import type { User, View } from '../types';
@@ -17,28 +18,32 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
   const isVendorOwner = !!currentUser?.ownedVendorId;
   const isProMember = currentUser?.subscription?.tier === 'pro' || currentUser?.subscription?.tier === 'superPro' || currentUser?.subscription?.foundingMember === true;
   const [menuOpen, setMenuOpen] = useState(false);
+  // Rhubarb bar on every page except the home page, whose hero is already rhubarb (T120)
+  const onRhubarb = useLocation().pathname !== '/';
+  const navTone = onRhubarb ? 'text-white hover:bg-white/15' : 'text-brand-blue hover:bg-brand-blue/10';
+  const joinTone = onRhubarb ? 'bg-white text-brand-gold hover:bg-brand-cream' : 'bg-brand-gold text-white hover:bg-brand-gold/90';
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-20">
+    <header className={`${onRhubarb ? 'bg-brand-gold' : 'bg-white'} shadow-md sticky top-0 z-20`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div
             className="flex-shrink-0 cursor-pointer"
             onClick={() => onNavigate({ type: 'home' })}
           >
-            <Logo />
+            <Logo onDark={onRhubarb} />
           </div>
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               <button
                 onClick={() => onNavigate({ type: 'home' })}
-                className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
               >
                 Home
               </button>
               <button
                 onClick={() => onNavigate({ type: 'calendar' })}
-                className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
               >
                 Calendar
               </button>
@@ -46,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 <>
                   <button
                     onClick={() => onNavigate({ type: 'dashboard' })}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
+                    className={`${navTone} px-3 py-3 rounded-md text-sm font-medium flex items-center`}
                   >
                     <UserCheck className="w-4 h-4 mr-2" />
                     Following
@@ -54,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   {isVendorOwner && isProMember && (
                     <button
                         onClick={() => onNavigate({ type: 'myApplications' })}
-                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
+                        className={`${navTone} px-3 py-3 rounded-md text-sm font-medium flex items-center`}
                     >
                         <FileTextIcon className="w-4 h-4 mr-2" />
                         My Applications
@@ -63,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   {currentUser.ownedMarketId && (
                     <button
                       onClick={() => onNavigate({ type: 'organizerHub' })}
-                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                      className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
                     >
                       My Market
                     </button>
@@ -72,14 +77,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     <>
                       <button
                         onClick={() => onNavigate({ type: 'manageProfile' })}
-                        className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                        className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
                       >
                         Manage Profile
                       </button>
                       {isProMember && (
                         <button
                           onClick={() => onNavigate({ type: 'promotions' })}
-                          className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
+                          className={`${navTone} px-3 py-3 rounded-md text-sm font-medium flex items-center`}
                         >
                           <MegaphoneIcon className="w-4 h-4 mr-2" />
                           Promotions
@@ -88,23 +93,23 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     </>
                   )}
                   {currentUser.isAdmin && (
-                     <button onClick={() => onNavigate({ type: 'adminPanel' })} className="text-brand-gold hover:bg-brand-gold/10 px-3 py-3 rounded-md text-sm font-medium">Market HQ</button>
+                     <button onClick={() => onNavigate({ type: 'adminPanel' })} className={`${onRhubarb ? 'text-white font-semibold hover:bg-white/15' : 'text-brand-gold hover:bg-brand-gold/10 font-medium'} px-3 py-3 rounded-md text-sm`}>Market HQ</button>
                   )}
-                  <div className="flex items-center border-l pl-4 ml-2 space-x-4">
-                    <div className="flex items-center text-sm text-brand-blue">
+                  <div className={`flex items-center border-l pl-4 ml-2 space-x-4 ${onRhubarb ? 'border-white/40' : ''}`}>
+                    <div className={`flex items-center text-sm ${onRhubarb ? 'text-white' : 'text-brand-blue'}`}>
                       <UserIcon className="w-5 h-5 mr-2" />
                       <span>{currentUser.email}</span>
                     </div>
                      <button
                         onClick={() => onNavigate({ type: 'notificationSettings' })}
-                        className="text-gray-500 hover:text-brand-blue p-2 rounded-full"
+                        className={`${onRhubarb ? 'text-white hover:bg-white/15' : 'text-gray-500 hover:text-brand-blue'} p-2 rounded-full`}
                         title="Notification Settings"
                       >
                         <SettingsIcon className="w-5 h-5" />
                       </button>
                     <button
                       onClick={onLogout}
-                      className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                      className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
                     >
                       Logout
                     </button>
@@ -114,19 +119,19 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                 <>
                   <button
                     onClick={() => onNavigate({ type: 'signup' })}
-                    className="bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors"
+                    className={`${joinTone} px-4 py-3 rounded-full text-sm font-semibold transition-colors`}
                   >
                     Join Free
                   </button>
                    <button
                     onClick={onMembership}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                    className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
                   >
                     Membership
                   </button>
                   <button
                     onClick={onLogin}
-                    className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium"
+                    className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
                   >
                     User Login
                   </button>
@@ -136,14 +141,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
           </div>
           {!currentUser && (
             <button
-              className="md:hidden bg-brand-gold text-white px-4 py-3 rounded-full text-sm font-semibold hover:bg-brand-gold/90 transition-colors min-h-[3rem]"
+              className={`md:hidden ${joinTone} px-4 py-3 rounded-full text-sm font-semibold transition-colors min-h-[3rem]`}
               onClick={() => onNavigate({ type: 'signup' })}
             >
               Join Free
             </button>
           )}
           <button
-            className="md:hidden text-brand-blue text-2xl px-3 py-2"
+            className={`md:hidden ${onRhubarb ? 'text-white' : 'text-brand-blue'} text-2xl px-3 py-2`}
             onClick={() => setMenuOpen(open => !open)}
             aria-label="Toggle menu"
           >

@@ -2,12 +2,13 @@
 
 import React from 'react';
 
-export const Logo = () => (
+// onDark: white version for the rhubarb header bar (T120)
+export const Logo = ({ onDark = false }: { onDark?: boolean }) => (
   <div className="flex flex-col items-center leading-none">
-    <span className="font-serif text-2xl text-brand-blue">
+    <span className={`font-serif text-2xl ${onDark ? 'text-white' : 'text-brand-blue'}`}>
       VI MARKETS
     </span>
-    <span className="text-xs font-sans tracking-widest text-brand-light-blue uppercase">
+    <span className={`text-xs font-sans tracking-widest uppercase ${onDark ? 'text-white' : 'text-brand-light-blue'}`}>
       Guide
     </span>
   </div>
