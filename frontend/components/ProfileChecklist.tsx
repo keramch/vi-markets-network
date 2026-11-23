@@ -12,6 +12,7 @@ export interface ChecklistItem {
   short: string; // for the "Done:" line, e.g. "logo"
   why: string;
   action: string;
+  to?: string; // where the action goes; the profile editor if not set
 }
 
 const hiddenKey = (profileId: string) => `vim-checklist-hidden-${profileId}`;
@@ -65,7 +66,7 @@ const ProfileChecklist: React.FC<{ profileId: string; items: ChecklistItem[] }> 
               <p className="text-base font-semibold text-brand-text">{item.title}</p>
               <p className="text-sm text-gray-600 mt-0.5">{item.why}</p>
             </div>
-            <Link to="/dashboard/profile" className="text-sm font-semibold text-brand-light-blue underline hover:no-underline">
+            <Link to={item.to ?? '/dashboard/profile'} className="text-sm font-semibold text-brand-light-blue underline hover:no-underline">
               {item.action}
             </Link>
           </li>
