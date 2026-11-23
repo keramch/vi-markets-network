@@ -17,20 +17,20 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
   const isVendorOwner = !!currentUser?.ownedVendorId;
   const isProMember = currentUser?.subscription?.tier === 'pro' || currentUser?.subscription?.tier === 'superPro' || currentUser?.subscription?.foundingMember === true;
   const [menuOpen, setMenuOpen] = useState(false);
-  // Rhubarb bar on every page except the home page, whose hero is already rhubarb (T120)
-  const onRhubarb = useLocation().pathname !== '/';
-  const navTone = onRhubarb ? 'text-white hover:bg-white/15' : 'text-brand-blue hover:bg-brand-blue/10';
-  const joinTone = onRhubarb ? 'bg-white text-brand-gold hover:bg-brand-cream' : 'bg-brand-gold text-white hover:bg-brand-gold/90';
+  // Teal bar on every page except the home page, whose hero is already teal (T120)
+  const onColour = useLocation().pathname !== '/';
+  const navTone = onColour ? 'text-white hover:bg-white/15' : 'text-brand-blue hover:bg-brand-blue/10';
+  const joinTone = onColour ? 'bg-white text-brand-gold hover:bg-brand-cream' : 'bg-brand-gold text-white hover:bg-brand-gold/90';
 
   return (
-    <header className={`${onRhubarb ? 'bg-brand-gold' : 'bg-white'} shadow-md sticky top-0 z-20`}>
+    <header className={`${onColour ? 'bg-brand-light-blue' : 'bg-white'} shadow-md sticky top-0 z-20`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div
             className="flex-shrink-0 cursor-pointer"
             onClick={() => onNavigate({ type: 'home' })}
           >
-            <Logo onDark={onRhubarb} />
+            <Logo onDark={onColour} />
           </div>
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
@@ -92,16 +92,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     </>
                   )}
                   {currentUser.isAdmin && (
-                     <button onClick={() => onNavigate({ type: 'adminPanel' })} className={`${onRhubarb ? 'text-white font-semibold hover:bg-white/15' : 'text-brand-gold hover:bg-brand-gold/10 font-medium'} px-3 py-3 rounded-md text-sm`}>Market HQ</button>
+                     <button onClick={() => onNavigate({ type: 'adminPanel' })} className={`${onColour ? 'text-white font-semibold hover:bg-white/15' : 'text-brand-gold hover:bg-brand-gold/10 font-medium'} px-3 py-3 rounded-md text-sm`}>Market HQ</button>
                   )}
-                  <div className={`flex items-center border-l pl-4 ml-2 space-x-4 ${onRhubarb ? 'border-white/40' : ''}`}>
-                    <div className={`flex items-center text-sm ${onRhubarb ? 'text-white' : 'text-brand-blue'}`}>
+                  <div className={`flex items-center border-l pl-4 ml-2 space-x-4 ${onColour ? 'border-white/40' : ''}`}>
+                    <div className={`flex items-center text-sm ${onColour ? 'text-white' : 'text-brand-blue'}`}>
                       <UserIcon className="w-5 h-5 mr-2" />
                       <span>{currentUser.email}</span>
                     </div>
                      <button
                         onClick={() => onNavigate({ type: 'notificationSettings' })}
-                        className={`${onRhubarb ? 'text-white hover:bg-white/15' : 'text-gray-500 hover:text-brand-blue'} p-2 rounded-full`}
+                        className={`${onColour ? 'text-white hover:bg-white/15' : 'text-gray-500 hover:text-brand-blue'} p-2 rounded-full`}
                         title="Notification Settings"
                       >
                         <SettingsIcon className="w-5 h-5" />
@@ -147,7 +147,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
             </button>
           )}
           <button
-            className={`md:hidden ${onRhubarb ? 'text-white' : 'text-brand-blue'} text-2xl px-3 py-2`}
+            className={`md:hidden ${onColour ? 'text-white' : 'text-brand-blue'} text-2xl px-3 py-2`}
             onClick={() => setMenuOpen(open => !open)}
             aria-label="Toggle menu"
           >

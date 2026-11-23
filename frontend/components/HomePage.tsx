@@ -474,7 +474,7 @@ const HomePage: React.FC<HomePageProps> = ({
   return (
     <main>
       {/* Hero section */}
-      <div id="pagetop-header" className={`relative bg-brand-gold text-white px-4 text-center transition-all ${showSearchResults ? "py-6 md:py-16" : "py-16"}`}>
+      <div id="pagetop-header" className={`relative bg-brand-light-blue text-white px-4 text-center transition-all ${showSearchResults ? "py-6 md:py-16" : "py-16"}`}>
         <div className="relative z-10">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 font-serif">
             Your Guide to Island Markets

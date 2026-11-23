@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-// onDark: white version for the rhubarb header bar (T120)
+// onDark: white version for the coloured header bar (T120)
 export const Logo = ({ onDark = false }: { onDark?: boolean }) => (
   <div className="flex flex-col items-center leading-none">
     <span className={`font-serif text-2xl ${onDark ? 'text-white' : 'text-brand-blue'}`}>
