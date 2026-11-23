@@ -489,6 +489,13 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                         <label className="block text-sm font-medium text-gray-700">Name</label>
                         <input type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                     </div>
+                    {!isMarket(formData) && (
+                        <div>
+                            <label htmlFor="vendor-city" className="block text-sm font-medium text-gray-700">Town or area</label>
+                            <input id="vendor-city" type="text" name="city" maxLength={60} autoComplete="address-level2" value={(formData as Vendor).city ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
+                            <p className="text-sm text-gray-500 mt-1">Where you're based, for example Comox Valley or Nanaimo. Shown under your name on your profile.</p>
+                        </div>
+                    )}
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold text-brand-blue mb-2">Contact Info</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
