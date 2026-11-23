@@ -107,7 +107,9 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
   const hasPhotos = (vendor.photos?.length ?? 0) > 0;
   const hasMarkets = currentEntries.length > 0 || pastEntries.length > 0;
   const hasSidebar = hasSocials || hasTags;
-  const isOwner = !!currentUser && currentUser.id === vendor.ownerId;
+  // The member's own account names the vendor profile it owns; older accounts
+  // can have a profile ID that differs from the listing's ownerId, so check both
+  const isOwner = !!currentUser && (currentUser.ownedVendorId === vendor.id || currentUser.id === vendor.ownerId);
   const avgRating = approvedReviews.length
     ? (approvedReviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) / approvedReviews.length).toFixed(1)
     : null;
