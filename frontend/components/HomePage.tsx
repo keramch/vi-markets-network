@@ -11,7 +11,7 @@ import { MarketCategories, VendorTypes } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
 import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
-import { getDistance } from "../utils";
+import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
 
 interface HomePageProps {
   markets: Market[];
@@ -137,7 +137,17 @@ const HomePage: React.FC<HomePageProps> = ({
   onViewAllMarkets,
   onViewAllVendors,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  // Search words and filters are kept for this browser tab, so coming back
+  // from a profile shows the same results (T118)
+  const [savedSearch] = useState(() =>
+    loadTabState("vim-home-search", {
+      searchTerm: "",
+      marketCategory: "all" as MarketCategory | "all",
+      vendorType: "all" as VendorType | "all",
+      vendorTags: [] as string[],
+    })
+  );
+  const [searchTerm, setSearchTerm] = useState(savedSearch.searchTerm);
   const [locationTerm, setLocationTerm] = useState("");
 
   const [filteredMarkets, setFilteredMarkets] = useState<SearchableMarket[]>(
@@ -152,10 +162,19 @@ const HomePage: React.FC<HomePageProps> = ({
   const [searchCenter, setSearchCenter] = useState<Coordinates | null>(null);
 
   const [selectedMarketCategory, setSelectedMarketCategory] =
-    useState<MarketCategory | "all">("all");
+    useState<MarketCategory | "all">(savedSearch.marketCategory);
   const [selectedVendorTypes, setSelectedVendorTypes] =
-    useState<VendorType | "all">("all");
-  const [selectedVendorTags, setSelectedVendorTags] = useState<string[]>([]);
+    useState<VendorType | "all">(savedSearch.vendorType);
+  const [selectedVendorTags, setSelectedVendorTags] = useState<string[]>(savedSearch.vendorTags);
+
+  useEffect(() => {
+    saveTabState("vim-home-search", {
+      searchTerm,
+      marketCategory: selectedMarketCategory,
+      vendorType: selectedVendorTypes,
+      vendorTags: selectedVendorTags,
+    });
+  }, [searchTerm, selectedMarketCategory, selectedVendorTypes, selectedVendorTags]);
   const [sortBy, setSortBy] = useState<"match" | "distance">("match");
 
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
@@ -164,6 +183,25 @@ const HomePage: React.FC<HomePageProps> = ({
   const carouselRef = useRef<HTMLDivElement>(null);
   // card width (w-36 = 144px) + gap (gap-3 = 12px)
   const CARD_STEP = 156;
+
+  // Opening a profile from a list remembers that list for Previous / Next (T118)
+  const resultsLabel = () => {
+    const parts = [
+      searchTerm.trim() && `"${searchTerm.trim()}"`,
+      selectedMarketCategory !== "all" && selectedMarketCategory,
+      selectedVendorTypes !== "all" && selectedVendorTypes,
+      ...selectedVendorTags,
+    ].filter(Boolean);
+    return parts.length ? `Back to results: ${parts.join(", ")}` : "Back to results";
+  };
+  const openMarketFrom = (ids: string[], backLabel: string) => (id: string) => {
+    rememberBrowseList("markets", ids, backLabel);
+    onSelectMarket(id);
+  };
+  const openVendorFrom = (ids: string[], backLabel: string) => (id: string) => {
+    rememberBrowseList("vendors", ids, backLabel);
+    onSelectVendor(id);
+  };
 
   const handleTagSelection = (tag: string) => {
     setSelectedVendorTags((prev) =>
@@ -392,6 +430,11 @@ const HomePage: React.FC<HomePageProps> = ({
   useEffect(() => {
     performSearch();
   }, [performSearch]);
+
+  // Back from a profile: return to where the visitor was (T118)
+  useEffect(() => {
+    if (!isLoading && (markets.length > 0 || vendors.length > 0)) applyScrollRestore();
+  }, [isLoading, markets.length, vendors.length]);
 
   const showSearchResults =
     searchTerm.trim().length > 0 ||
@@ -672,7 +715,7 @@ const HomePage: React.FC<HomePageProps> = ({
                         <MarketCard
                           key={market.id}
                           market={market}
-                          onSelect={onSelectMarket}
+                          onSelect={openMarketFrom(filteredMarkets.map((m) => m.id), resultsLabel())}
                           distance={market.distance}
                         />
                       ))}
@@ -689,7 +732,7 @@ const HomePage: React.FC<HomePageProps> = ({
                         <VendorCard
                           key={vendor.id}
                           vendor={vendor}
-                          onSelect={onSelectVendor}
+                          onSelect={openVendorFrom(filteredVendors.map((v) => v.id), resultsLabel())}
                           distance={vendor.distance}
                         />
                       ))}
@@ -742,7 +785,9 @@ const HomePage: React.FC<HomePageProps> = ({
                       <div
                         key={item.id}
                         className="flex-shrink-0 w-36 snap-start bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => item.type === "market" ? onSelectMarket(item.id) : onSelectVendor(item.id)}
+                        onClick={() => item.type === "market"
+                          ? openMarketFrom(whatsNewItems.filter((w) => w.type === "market").map((w) => w.id), "Back to What's New")(item.id)
+                          : openVendorFrom(whatsNewItems.filter((w) => w.type !== "market").map((w) => w.id), "Back to What's New")(item.id)}
                       >
                         {imageSrc
                           ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
@@ -790,13 +835,13 @@ const HomePage: React.FC<HomePageProps> = ({
                     <MarketCard
                       key={item.data.id}
                       market={item.data as Market}
-                      onSelect={onSelectMarket}
+                      onSelect={openMarketFrom(featuredItems.filter((f) => f.type === "market").map((f) => f.data.id), "Back to Featured")}
                     />
                   ) : (
                     <VendorCard
                       key={item.data.id}
                       vendor={item.data as Vendor}
-                      onSelect={onSelectVendor}
+                      onSelect={openVendorFrom(featuredItems.filter((f) => f.type !== "market").map((f) => f.data.id), "Back to Featured")}
                     />
                   )
                 )}

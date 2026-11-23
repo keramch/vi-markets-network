@@ -451,3 +451,79 @@ export const websiteUrl = (raw: string | undefined | null): string | null => {
     return null;
   }
 };
+
+
+// ── Browsing from one profile to the next (T118) ─────────────────────────────
+// When someone opens a profile from a list (search results, Browse, Saved, a
+// vendor's markets), the list is remembered for this browser tab, so the
+// profile can offer Previous / Next through that same list and a way back to
+// it. Without a list, profiles step through their kind alphabetically.
+// sessionStorage can be blocked (private windows); everything still works,
+// just without the remembered list.
+
+export type BrowseKind = 'markets' | 'vendors';
+
+export interface BrowseList {
+  kind: BrowseKind;
+  ids: string[];
+  backLabel: string;  // e.g. "Back to results: Pottery"
+  returnTo: string;   // path + search of the list page
+  scrollY: number;    // where the visitor was on that page
+}
+
+const browseKey = (kind: BrowseKind) => `vim-browse-${kind}`;
+const SCROLL_KEY = 'vim-restore-scroll';
+
+export const rememberBrowseList = (kind: BrowseKind, ids: string[], backLabel: string): void => {
+  const list: BrowseList = {
+    kind,
+    ids,
+    backLabel,
+    returnTo: window.location.pathname + window.location.search,
+    scrollY: window.scrollY,
+  };
+  try { sessionStorage.setItem(browseKey(kind), JSON.stringify(list)); } catch { /* storage blocked */ }
+};
+
+// The remembered list, if it includes this profile
+export const readBrowseList = (kind: BrowseKind, id: string): BrowseList | null => {
+  try {
+    const raw = sessionStorage.getItem(browseKey(kind));
+    if (!raw) return null;
+    const list = JSON.parse(raw) as BrowseList;
+    return Array.isArray(list.ids) && list.ids.includes(id) && typeof list.returnTo === 'string' ? list : null;
+  } catch {
+    return null;
+  }
+};
+
+// "Back to results": ask the list page to put the visitor back where they were
+export const requestScrollRestore = (path: string, y: number): void => {
+  try { sessionStorage.setItem(SCROLL_KEY, JSON.stringify({ path, y })); } catch { /* storage blocked */ }
+};
+
+// Called by a list page once its items are on screen
+export const applyScrollRestore = (): void => {
+  try {
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (!raw) return;
+    const { path, y } = JSON.parse(raw) as { path: string; y: number };
+    if (path !== window.location.pathname + window.location.search) return;
+    sessionStorage.removeItem(SCROLL_KEY);
+    // After the app's own scroll-to-top on page change
+    setTimeout(() => window.scrollTo(0, y), 80);
+  } catch { /* storage blocked */ }
+};
+
+// A small piece of page state kept for this browser tab (search words, filters)
+export const loadTabState = <T,>(key: string, fallback: T): T => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+  } catch {
+    return fallback;
+  }
+};
+export const saveTabState = (key: string, value: unknown): void => {
+  try { sessionStorage.setItem(key, JSON.stringify(value)); } catch { /* storage blocked */ }
+};

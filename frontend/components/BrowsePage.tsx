@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { vendorTypeLabel } from "../utils";
+import React, { useState, useMemo, useEffect } from "react";
+import { vendorTypeLabel, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
 import type { Market, Vendor } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
@@ -29,8 +29,14 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
   onBack,
   onSwitchMode,
 }) => {
-  const [filterTerm, setFilterTerm] = useState("");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Kept for this browser tab, so coming back from a profile shows the same
+  // filtered list, loaded as far as before (T118)
+  const stateKey = `vim-browse-page-${mode}`;
+  const [saved] = useState(() => loadTabState(stateKey, { filterTerm: "", visibleCount: PAGE_SIZE }));
+  const [filterTerm, setFilterTerm] = useState(saved.filterTerm);
+  const [visibleCount, setVisibleCount] = useState(saved.visibleCount);
+  useEffect(() => { saveTabState(stateKey, { filterTerm, visibleCount }); }, [stateKey, filterTerm, visibleCount]);
+  useEffect(() => { if (items.length > 0) applyScrollRestore(); }, [items.length]);
 
   const title = mode === "markets" ? "All Markets" : "All Vendors";
   const noun  = mode === "markets" ? "markets" : "vendors";
@@ -46,6 +52,16 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
   }, [items, filterTerm]);
 
   const visible = filtered.slice(0, visibleCount);
+
+  // Opening a profile remembers this list for Previous / Next (T118)
+  const openFromList = (id: string) => {
+    rememberBrowseList(
+      mode,
+      filtered.map((i) => i.id),
+      filterTerm.trim() ? `Back to ${noun}: "${filterTerm.trim()}"` : `Back to all ${noun}`
+    );
+    onSelect(id);
+  };
   const hasMore = visibleCount < filtered.length;
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,7 +145,7 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
               <MarketCard
                 key={market.id}
                 market={market}
-                onSelect={onSelect}
+                onSelect={openFromList}
               />
             ))}
           </div>
@@ -139,7 +155,7 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
               <VendorCard
                 key={vendor.id}
                 vendor={vendor}
-                onSelect={onSelect}
+                onSelect={openFromList}
               />
             ))}
           </div>

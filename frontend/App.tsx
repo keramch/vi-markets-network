@@ -8,7 +8,8 @@ import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 import { signInWithGoogle, isInAppBrowser } from './services/googleAuth';
-import { PASSWORD_POLICY_MESSAGE, nextOccurrence, eventPath } from './utils';
+import { PASSWORD_POLICY_MESSAGE, nextOccurrence, eventPath, rememberBrowseList } from './utils';
+import ProfileNav from './components/ProfileNav';
 
 import Header from './components/Header';
 import { CheckCircleIcon } from './components/Icons';
@@ -125,6 +126,8 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   if (!market || market.status !== 'active') return <Navigate to="/" replace />;
   const marketOwner = users.find(u => u.id === market.ownerId);
   return (
+    <>
+    <ProfileNav kind="markets" currentId={market.id} items={markets} />
     <MarketProfile
       market={market}
       vendors={vendors}
@@ -145,6 +148,7 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
       upcomingEvents={upcomingEvents}
       onOpenLoginModal={onOpenLoginModal}
     />
+    </>
   );
 };
 
@@ -252,14 +256,21 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
 
   if (!vendor || vendor.status !== 'active') return <Navigate to="/" replace />;
   const vendorOwner = users.find(u => u.id === vendor.ownerId);
+  // Markets this vendor attends, in their order, for Previous / Next (T118)
+  const attendedMarketIds = [...new Set((vendor.attendingMarkets || []).map(a => a.marketId))]
+    .filter(id => markets.some(m => m.id === id && m.status === 'active'));
   return (
+    <>
+    <ProfileNav kind="vendors" currentId={vendor.id} items={vendors} />
     <VendorProfile
       vendor={vendor}
       markets={markets}
       owner={vendorOwner}
       onSelectMarket={(id) => {
         const m = markets.find(m => m.id === id);
-        if (m?.slug) navigate(`/markets/${m.slug}`);
+        if (!m?.slug) return;
+        rememberBrowseList('markets', attendedMarketIds, `Back to ${vendor.name}`);
+        navigate(`/markets/${m.slug}`);
       }}
       onBack={() => navigate('/')}
       isFavorited={favoritedVendorIds.includes(vendor.id)}
@@ -270,6 +281,7 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
       onContactSubmit={onContactSubmit}
       onOpenLoginModal={onOpenLoginModal}
     />
+    </>
   );
 };
 
@@ -1321,8 +1333,16 @@ const App: React.FC = () => {
               <Dashboard
                 markets={markets.filter(m => favoritedMarketIds.includes(m.id))}
                 vendors={vendors.filter(v => favoritedVendorIds.includes(v.id))}
-                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
-                onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
+                onSelectMarket={(id) => {
+                  const m = markets.find(m => m.id === id); if (!m?.slug) return;
+                  rememberBrowseList('markets', markets.filter(m => favoritedMarketIds.includes(m.id)).map(m => m.id), 'Back to Saved');
+                  navigate(`/markets/${m.slug}`);
+                }}
+                onSelectVendor={(id) => {
+                  const v = vendors.find(v => v.id === id); if (!v?.slug) return;
+                  rememberBrowseList('vendors', vendors.filter(v => favoritedVendorIds.includes(v.id)).map(v => v.id), 'Back to Saved');
+                  navigate(`/vendors/${v.slug}`);
+                }}
                 onBack={() => navigate('/')}
               />
             } />
