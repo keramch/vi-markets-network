@@ -461,8 +461,26 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 <p>You are editing this profile as an administrator. Changes will be saved directly.</p>
             </div>
         )}
-        <h2 className="text-3xl font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Profile' : 'Vendor Profile'}</h2>
-        <p className="text-gray-600 mb-6">Edit your public profile and settings.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-3xl font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Profile' : 'Vendor Profile'}</h2>
+            <p className="text-gray-600">Edit your public profile and settings.</p>
+          </div>
+          {/* Opens in a new tab so unsaved edits here aren't lost. Owners also
+              see their "Help shoppers find you" checklist there (T119). */}
+          {profileData.slug && (
+            <a
+              href={`/${isMarket(profileData) ? 'markets' : 'vendors'}/${profileData.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 min-h-[3rem] px-5 rounded-full border-2 border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream"
+            >
+              {isAdmin ? 'View public profile' : 'See my profile'}
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6" /><path d="M20 4l-9 9" /><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" /></svg>
+              <span className="sr-only">(opens in a new tab)</span>
+            </a>
+          )}
+        </div>
 
         <div className="border-b mb-6">
             <div className="flex space-x-2 flex-wrap">
