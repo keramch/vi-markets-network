@@ -58,7 +58,8 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altPrefix = 'Photo'
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2" style={{ maxWidth: '100%' }}>
+      {/* One row of up to 4 thumbnails from small tablets up; they open the lightbox, so they stay modest */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" style={{ maxWidth: '100%' }}>
         {Array.from({ length: visibleCount }).map((_, i) => {
           const isOverflowTile = i === 3 && overflow > 0;
           return (
