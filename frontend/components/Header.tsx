@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Logo, UserIcon, MegaphoneIcon, SettingsIcon, FileTextIcon } from './Icons';
-import { UserCheck } from 'lucide-react';
+import { Logo, UserIcon, MegaphoneIcon, SettingsIcon, FileTextIcon, HeartIcon } from './Icons';
 import type { User, View } from '../types';
 
 interface HeaderProps {
@@ -53,8 +52,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     onClick={() => onNavigate({ type: 'dashboard' })}
                     className={`${navTone} px-3 py-3 rounded-md text-sm font-medium flex items-center`}
                   >
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    Following
+                    <HeartIcon className="w-4 h-4 mr-2" />
+                    Saved
                   </button>
                   {isVendorOwner && isProMember && (
                     <button
@@ -177,8 +176,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                   onClick={() => { onNavigate({ type: 'dashboard' }); setMenuOpen(false); }}
                   className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium flex items-center"
                 >
-                  <UserCheck className="w-4 h-4 mr-2" />
-                  Following
+                  <HeartIcon className="w-4 h-4 mr-2" />
+                  Saved
                 </button>
                 {isVendorOwner && isProMember && (
                   <button

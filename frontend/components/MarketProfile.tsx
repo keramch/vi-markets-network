@@ -4,9 +4,8 @@ import React from 'react';
 import { getVendorTypes } from '../utils';
 import type { SpamGuardFields } from './SpamGuard';
 import type { Market, Vendor, User, Review, Application, MarketEvent } from '../types';
-import { MapPinIcon, CalendarIcon, RibbonIcon } from './Icons';
+import { MapPinIcon, CalendarIcon, RibbonIcon, HeartIcon } from './Icons';
 import SocialLinks from './SocialLinks';
-import { UserPlus, UserCheck } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import { formatTime, upcomingOccurrences, recurrenceSummary, eventPath } from '../utils';
@@ -95,21 +94,22 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
     <button
       onClick={() => onToggleFavorite(market.id)}
       className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-        isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+        isFavorited ? 'bg-white text-brand-blue' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
       }`}
-      aria-label={isFavorited ? 'Unfollow this market' : 'Follow this market'}
+      aria-label={isFavorited ? 'Remove this market from your saved list' : 'Save this market'}
+      aria-pressed={isFavorited}
     >
-      {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-      {isFavorited ? 'Following' : 'Follow'}
+      <HeartIcon className="w-4 h-4 text-brand-gold" filled={isFavorited} />
+      {isFavorited ? 'Saved' : 'Save'}
     </button>
   ) : (
     <button
       onClick={onOpenLoginModal}
       className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
-      title="Log in or sign up to follow"
+      title="Log in or sign up to save"
     >
-      <UserPlus className="w-4 h-4" />
-      Follow
+      <HeartIcon className="w-4 h-4 text-brand-gold" />
+      Save
     </button>
   );
 
@@ -356,7 +356,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
 
             {/* Left: Connect */}
             <div>
-              <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {market.name}</h2>
+              <h2 className="text-2xl text-brand-blue font-serif mb-5">Follow along</h2>
               <SocialLinks contact={market.contact} />
               <ContactForm recipientEmail={market.contact?.email} currentUser={currentUser} onSend={(params) => onContactSubmit({ ...params, recipientName: market.name })} />
             </div>

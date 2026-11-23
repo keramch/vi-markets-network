@@ -86,7 +86,7 @@ const EventPage: React.FC<EventPageProps> = ({
         isFollowing ? 'bg-brand-light-blue text-white' : 'bg-white text-brand-light-blue hover:bg-brand-cream'
       }`}
     >
-      {isFollowing ? 'Following this market' : 'Follow this market'}
+      {isFollowing ? 'Saved: this market is in your list' : 'Save this market'}
     </button>
   );
 

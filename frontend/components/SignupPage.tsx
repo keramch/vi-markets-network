@@ -407,7 +407,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         type: 'community' as AccountType,
                         emoji: '🛍️',
                         title: 'Shopper / Community',
-                        desc: "I want to follow markets and vendors, discover what's on, and share my experiences.",
+                        desc: "I want to save my favourite markets and vendors, discover what's on, and share my experiences.",
                       },
                     ] as const
                   ).map(({ type, emoji, title, desc }) => (

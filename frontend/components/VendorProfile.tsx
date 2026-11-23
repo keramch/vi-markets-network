@@ -3,9 +3,8 @@
 import React, { useState } from 'react';
 import type { SpamGuardFields } from './SpamGuard';
 import type { Vendor, Market, User } from '../types';
-import { RibbonIcon } from './Icons';
+import { RibbonIcon, HeartIcon } from './Icons';
 import SocialLinks, { socialLinks } from './SocialLinks';
-import { UserPlus, UserCheck } from 'lucide-react';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
 import ShareButton from './ShareButton';
@@ -67,21 +66,22 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
     <button
       onClick={() => onToggleFavorite(vendor.id)}
       className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-        isFavorited ? 'bg-brand-blue text-white' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
+        isFavorited ? 'bg-white text-brand-blue' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
       }`}
-      aria-label={isFavorited ? 'Unfollow this vendor' : 'Follow this vendor'}
+      aria-label={isFavorited ? 'Remove this vendor from your saved list' : 'Save this vendor'}
+      aria-pressed={isFavorited}
     >
-      {isFavorited ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-      {isFavorited ? 'Following' : 'Follow'}
+      <HeartIcon className="w-4 h-4 text-brand-gold" filled={isFavorited} />
+      {isFavorited ? 'Saved' : 'Save'}
     </button>
   ) : (
     <button
       onClick={onOpenLoginModal}
       className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
-      title="Log in or sign up to follow"
+      title="Log in or sign up to save"
     >
-      <UserPlus className="w-4 h-4" />
-      Follow
+      <HeartIcon className="w-4 h-4 text-brand-gold" />
+      Save
     </button>
   );
 
@@ -319,7 +319,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
               {hasSocials && (
                 <>
                   <hr className="my-4 border-gray-200" />
-                  <h2 className="text-2xl text-brand-blue font-serif mb-5">Connect with {vendor.name}</h2>
+                  <h2 className="text-2xl text-brand-blue font-serif mb-5">Follow along</h2>
                   <SocialLinks contact={vendor.contact} />
                 </>
               )}
