@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Market, Vendor, Review, User, MemberStatus } from '../types';
 import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon, MapPinIcon, TagIcon, SearchIcon, XIcon } from './Icons';
+import UnclaimedMarkets from './UnclaimedMarkets';
 
 interface AdminPanelProps {
   markets: Market[];
@@ -16,8 +17,9 @@ interface AdminPanelProps {
   onToggleFoundingMember: (userId: string, isCurrentlyFounding: boolean) => void;
   onToggleFeatured: (type: 'market' | 'vendor', id: string, currentValue: boolean) => void;
   onSendMessage: (to: string, subject: string, body: string) => Promise<void>;
-  initialTab?: 'reviews' | 'memberships';
-  onTabChange?: (tab: 'reviews' | 'memberships') => void;
+  onCreateMarket: (data: { name: string; city: string; address: string; marketTypes: string[] }) => Promise<void>;
+  initialTab?: 'reviews' | 'memberships' | 'unclaimed';
+  onTabChange?: (tab: 'reviews' | 'memberships' | 'unclaimed') => void;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -33,12 +35,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onToggleFoundingMember,
   onToggleFeatured,
   onSendMessage,
+  onCreateMarket,
   initialTab = 'reviews',
   onTabChange,
 }) => {
-  const [activeMainTab, setActiveMainTab] = useState<'reviews' | 'memberships'>(initialTab);
+  const [activeMainTab, setActiveMainTab] = useState<'reviews' | 'memberships' | 'unclaimed'>(initialTab);
 
-  const switchTab = (tab: 'reviews' | 'memberships') => {
+  const switchTab = (tab: 'reviews' | 'memberships' | 'unclaimed') => {
     setActiveMainTab(tab);
     onTabChange?.(tab);
   };
@@ -182,8 +185,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           >
             <UsersIcon className="w-5 h-5" /> Memberships
           </button>
+          <button
+            onClick={() => switchTab('unclaimed')}
+            className={`${
+              activeMainTab === 'unclaimed'
+                ? 'border-brand-blue text-brand-blue'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            <MapPinIcon className="w-5 h-5" /> Unclaimed Markets
+          </button>
         </nav>
       </div>
+
+      {activeMainTab === 'unclaimed' && (
+        <UnclaimedMarkets
+          markets={markets}
+          vendors={vendors}
+          onEdit={(id) => onEditProfile(id, 'market')}
+          onDelete={(id) => onHardDeleteMember(id, 'market')}
+          onCreate={onCreateMarket}
+        />
+      )}
 
       {activeMainTab === 'reviews' && (
         <div className="bg-white p-6 rounded-lg shadow-md">

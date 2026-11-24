@@ -224,7 +224,8 @@ export const setFoundingMember = (userId: string, currentSub: User['subscription
 // MARKETS
 
 export const createMarket = (
-  payload: { name: string; vendorId: string; city?: string; address?: string }
+  // vendorId: a vendor adding a market to their profile; admins may leave it out (T105)
+  payload: { name: string; vendorId?: string; city?: string; address?: string; marketTypes?: string[] }
 ): Promise<Market> => {
   return request<any>("/markets", {
     method: "POST",

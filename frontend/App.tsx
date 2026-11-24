@@ -375,7 +375,7 @@ const App: React.FC = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
   const [showVerifiedToast, setShowVerifiedToast] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState<'reviews' | 'memberships'>('reviews');
+  const [adminActiveTab, setAdminActiveTab] = useState<'reviews' | 'memberships' | 'unclaimed'>('reviews');
 
   const [footerFirstName, setFooterFirstName] = useState('');
   const [footerEmail, setFooterEmail] = useState('');
@@ -962,6 +962,13 @@ const App: React.FC = () => {
     }
   };
 
+  // HQ › Unclaimed markets › Add a market (T105). Throws so the form can show an error.
+  const handleCreateMarketAsAdmin = async (data: { name: string; city: string; address: string; marketTypes: string[] }) => {
+    const created = await api.createMarket(data);
+    setMarkets(prev => [...prev, created]);
+    showNotification(`Added ${created.name}.`);
+  };
+
   const handleHardDeleteMember = async (memberId: string, type: 'market' | 'vendor') => {
     try {
       await api.hardDeleteMember(memberId, type);
@@ -1437,6 +1444,7 @@ const App: React.FC = () => {
                   onToggleFoundingMember={handleToggleFoundingMember}
                   onToggleFeatured={handleToggleFeatured}
                   onSendMessage={handleSendAdminMessage}
+                  onCreateMarket={handleCreateMarketAsAdmin}
                   initialTab={adminActiveTab}
                   onTabChange={setAdminActiveTab}
                 />
