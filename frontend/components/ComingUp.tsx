@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Market, MarketEvent } from '../types';
-import { upcomingOccurrences, formatTime, eventPath } from '../utils';
+import { upcomingOccurrences, formatTime, eventPath, recurrenceSummary, shortSeriesRange } from '../utils';
 
 // "Coming up" on the home page banner (T122): the next three market dates,
 // live from published events, each linking to its event page. Beside them,
@@ -71,7 +71,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
           className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
           <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
-            <strong className="font-semibold">Next up:</strong> {first.event.name}, {day(first.date, { weekday: 'short', month: 'short', day: 'numeric' })}
+            <strong className="font-semibold">Next up:</strong> {first.event.name}, {shortSeriesRange(first.event) || day(first.date, { weekday: 'short', month: 'short', day: 'numeric' })}
           </span>
           {/* Shown at its own proportions, never cropped */}
           <img src={poster} alt={`${first.event.name} poster`} className="block w-48 h-auto max-h-80 object-contain bg-white" />
@@ -107,6 +107,10 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
                 </span>
                 <span className="min-w-0">
                   <span className="block text-base font-semibold leading-snug">{o.event.name}</span>
+                  {/* Multi-day ("Sat, Nov 28 – Sun, Nov 29") or repeating ("Every Fri/Sat/Sun") */}
+                  {recurrenceSummary(o.event) && (
+                    <span className="block text-sm font-semibold text-brand-light-blue">{recurrenceSummary(o.event)}</span>
+                  )}
                   <span className="block text-sm text-gray-600">
                     {[o.event.location?.city, `${formatTime(o.startTime)} – ${formatTime(o.endTime)}`].filter(Boolean).join(' · ')}
                   </span>
