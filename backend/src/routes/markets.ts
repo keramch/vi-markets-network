@@ -5,8 +5,20 @@ import { getApprovedReviewsByEntity } from "../utils/reviews";
 import { requireAuth, isAdminUser } from "../middleware/auth";
 import { ownsListing, sanitizeListingUpdate } from "../utils/listingAccess";
 import { checkListingUrls } from "../utils/urlSafety";
+import { slugify } from "../utils/slug";
 
 const router = Router();
+
+// A readable link part for a market, unique among markets (base, base-2, ...)
+async function uniqueMarketSlug(name: string, ownId?: string): Promise<string> {
+  const base = slugify(name) || "market";
+  let candidate = base;
+  for (let n = 2; ; n++) {
+    const snap = await db.collection("markets").where("slug", "==", candidate).limit(2).get();
+    if (snap.docs.every(d => d.id === ownId)) return candidate;
+    candidate = `${base}-${n}`;
+  }
+}
 
 // GET /markets → returns all markets from Firestore
 router.get("/", async (_req, res) => {
@@ -30,44 +42,58 @@ router.get("/", async (_req, res) => {
   }
 });
 
-// POST /markets → create a placeholder (unclaimed) market record.
-// Only a vendor adding a market to their own profile (or an admin) may do this.
+// POST /markets → create an unclaimed market record.
+// A vendor adding a market to their own profile (vendorId = their vendor
+// profile), or an admin adding one directly from HQ (no vendorId needed, T105).
+// Every new market gets a slug, so it can have a public page (T020).
 router.post("/", requireAuth, async (req, res) => {
-  const { name, vendorId, city, address } = req.body;
-
-  if (!name || !vendorId) {
-    res.status(400).json({ error: "name and vendorId are required" });
-    return;
+  const { name, vendorId, city, address, marketTypes } = req.body ?? {};
+  const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const cleanName = text(name, 120);
+  if (!cleanName) {
+    return res.status(400).json({ error: "Please give the market a name." });
   }
 
-  if (!(await ownsListing(req.user!.uid, "vendors", vendorId)) && !(await isAdminUser(req.user!.uid))) {
-    res.status(403).json({ error: "You can only add markets to your own vendor profile." });
-    return;
+  const callerIsAdmin = await isAdminUser(req.user!.uid);
+  if (vendorId !== undefined && vendorId !== null && vendorId !== "") {
+    if (typeof vendorId !== "string") {
+      return res.status(400).json({ error: "vendorId must be text" });
+    }
+    if (!callerIsAdmin && !(await ownsListing(req.user!.uid, "vendors", vendorId))) {
+      return res.status(403).json({ error: "You can only add markets to your own vendor profile." });
+    }
+  } else if (!callerIsAdmin) {
+    return res.status(400).json({ error: "name and vendorId are required" });
   }
 
-  const data = {
-    name,
-    description: '',
-    marketTypes: [],
-    photos: [],
-    contact: { email: '' },
-    location: {
-      address: address ?? '',
-      city: city ?? '',
-      coordinates: { lat: 0, lng: 0 },
-    },
-    schedule: { rules: [] },
-    vendorIds: [vendorId],
-    reviews: [],
-    joinDate: new Date().toISOString(),
-    status: 'unclaimed',
-  };
+  // Market types only from admins (vendors add a name, town and address)
+  const types = callerIsAdmin && Array.isArray(marketTypes)
+    ? marketTypes.filter((t: unknown): t is string => typeof t === "string" && t.length <= 60).slice(0, 12)
+    : [];
 
   try {
+    const data = {
+      name: cleanName,
+      slug: await uniqueMarketSlug(cleanName),
+      description: '',
+      marketTypes: types,
+      photos: [],
+      contact: { email: '' },
+      location: {
+        address: text(address, 200),
+        city: text(city, 80),
+        coordinates: { lat: 0, lng: 0 },
+      },
+      schedule: { rules: [] },
+      vendorIds: vendorId ? [vendorId] : [],
+      reviews: [],
+      joinDate: new Date().toISOString(),
+      status: 'unclaimed',
+    };
     const docRef = await db.collection("markets").add(data);
     res.status(201).json({ id: docRef.id, ...data });
   } catch (err) {
-    console.error("Error creating placeholder market:", err);
+    console.error("Error creating market:", err);
     res.status(500).json({ error: "Failed to create market" });
   }
 });
@@ -94,7 +120,12 @@ router.patch("/:id", requireAuth, async (req, res) => {
 
     const docRef = db.collection("markets").doc(id);
     await docRef.set(updates, { merge: true });
-    const updated = await docRef.get();
+    let updated = await docRef.get();
+    // Older unclaimed markets have no slug: give them one on their next save (T105)
+    if (!updated.data()?.slug && updated.data()?.name) {
+      await docRef.update({ slug: await uniqueMarketSlug(String(updated.data()!.name), id) });
+      updated = await docRef.get();
+    }
 
     // ── Users collection sync (non-fatal) ────────────────────────────────────
     // When market.name is updated, also update users.businessName to keep in sync
