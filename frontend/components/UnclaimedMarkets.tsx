@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import type { Market, Vendor } from '../types';
+import type { Organizer, Vendor } from '../types';
 import { MarketCategories } from '../types';
 
 // HQ › Unclaimed markets (T105): markets nobody owns yet, added by vendors
@@ -8,7 +8,7 @@ import { MarketCategories } from '../types';
 // add new ones directly.
 
 interface UnclaimedMarketsProps {
-  markets: Market[];   // all markets
+  markets: Organizer[];   // all markets
   vendors: Vendor[];
   onEdit: (id: string) => void;
   onEvents: (id: string) => void;   // that market's dates (T124)
@@ -35,11 +35,11 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
   );
 
   // Who added or lists each market (vendors linked to it)
-  const linkedVendors = (m: Market) =>
+  const linkedVendors = (m: Organizer) =>
     vendors.filter(v => (m.vendorIds || []).includes(v.id) || (v.attendingMarkets || []).some(a => a.marketId === m.id));
 
   // Another market (claimed or not) with the same or overlapping name
-  const possibleDuplicate = (m: Market) => {
+  const possibleDuplicate = (m: Organizer) => {
     const mine = normalize(m.name);
     return markets.find(o => {
       if (o.id === m.id) return false;

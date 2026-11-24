@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { Market, Vendor } from '../types';
+import type { Organizer, Vendor } from '../types';
 
 interface ApplicationFormProps {
-  market: Market;
+  market: Organizer;
   vendor: Vendor;
   onSubmit: (marketId: string, customResponses: { question: string; answer: string }[]) => void;
 }

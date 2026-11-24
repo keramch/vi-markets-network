@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import type { Market, Vendor } from '../types';
+import type { Organizer, Vendor } from '../types';
 import { BotIcon, UserIcon, SendIcon } from './Icons';
 
 interface AIConciergeProps {
-  markets: Market[];
+  markets: Organizer[];
   vendors: Vendor[];
 }
 

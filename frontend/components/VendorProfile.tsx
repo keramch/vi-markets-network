@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import type { SpamGuardFields } from './SpamGuard';
-import type { Vendor, Market, User } from '../types';
+import type { Vendor, Organizer, User } from '../types';
 import { RibbonIcon, HeartIcon, MapPinIcon } from './Icons';
 import ProfileChecklist, { type ChecklistItem } from './ProfileChecklist';
 import SocialLinks, { socialLinks } from './SocialLinks';
@@ -14,7 +14,7 @@ import PhotoGallery from './PhotoGallery';
 
 interface VendorProfileProps {
   vendor: Vendor;
-  markets: Market[];
+  markets: Organizer[];
   owner?: User | null;
   onSelectMarket: (id: string) => void;
   onBack: () => void;
@@ -45,7 +45,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
       const market = markets.find(m => m.id === entry.marketId);
       return market ? { market, date: entry.date } : null;
     })
-    .filter((x): x is { market: Market; date: string } => x !== null);
+    .filter((x): x is { market: Organizer; date: string } => x !== null);
 
   const todayStr = todayPacific();
   const currentEntries = attendingEntries.filter(e => e.date >= todayStr);

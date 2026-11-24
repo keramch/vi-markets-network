@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarPlus, Share2, MapPin, ExternalLink } from 'lucide-react';
-import type { Market, MarketEvent, User } from '../types';
+import type { Organizer, Market, User } from '../types';
 import {
   formatTime, upcomingOccurrences, nextOccurrence, recurrenceSummary,
   buildGoogleCalendarUrl, eventUrl, directionsUrl, prefersShareSheet,
@@ -20,8 +20,8 @@ const TAG_LABELS: Record<string, string> = {
 };
 
 interface EventPageProps {
-  market: Market;
-  event: MarketEvent;
+  market: Organizer;
+  event: Market;
   selectedDate?: string; // from ?date= on a shared link
   currentUser: User | null;
   isFollowing: boolean;

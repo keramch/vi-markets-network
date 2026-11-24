@@ -1,10 +1,10 @@
 import React from 'react';
-import type { Application, Market } from '../types';
+import type { Application, Organizer } from '../types';
 import { FileTextIcon } from './Icons';
 
 interface MyApplicationsProps {
   applications: Application[];
-  markets: Market[];
+  markets: Organizer[];
   onSelectMarket: (id: string) => void;
   onBack: () => void;
 }

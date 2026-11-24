@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { vendorTypeLabel, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
-import type { Market, Vendor } from "../types";
+import type { Organizer, Vendor } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
 import { SearchIcon, XIcon } from "./Icons";
@@ -9,7 +9,7 @@ const PAGE_SIZE = 24; // divisible by 2, 3 and 4 so grid rows come out full
 
 interface BrowsePageProps {
   mode: "markets" | "vendors";
-  items: Market[] | Vendor[];
+  items: Organizer[] | Vendor[];
   onSelect: (id: string) => void;
   onBack: () => void;
   onSwitchMode: () => void;
@@ -141,7 +141,7 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
           </div>
         ) : mode === "markets" ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-            {(visible as Market[]).map((market) => (
+            {(visible as Organizer[]).map((market) => (
               <MarketCard
                 key={market.id}
                 market={market}

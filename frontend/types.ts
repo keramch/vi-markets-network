@@ -40,7 +40,7 @@ export interface User {
   autoRenew?: boolean;
   subscription: UserSubscription;
   userType?: UserType;
-  ownedMarketId?: string;
+  ownedOrganizerId?: string;
   ownedVendorId?: string;
   notificationSettings?: NotificationSettings;
 }
@@ -296,7 +296,7 @@ export interface Application {
   customResponses: { question: string; answer: string }[];
 }
 
-export interface Market {
+export interface Organizer {
   id: string;
   ownerId?: string;
   slug?: string;
@@ -392,9 +392,9 @@ export interface EventException {
   note?: string;
 }
 
-export interface MarketEvent {
+export interface Market {
   id: string;
-  marketPageId: string;
+  organizerId: string;
   organizerUid: string;
   name: string;
   slug?: string; // readable link part, unique within the market; older events may not have one yet

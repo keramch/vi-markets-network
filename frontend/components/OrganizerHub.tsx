@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ClipboardList, MessageSquare } from 'lucide-react';
-import type { User, Market, MarketEvent } from '../types';
+import type { User, Organizer, Market } from '../types';
 import * as api from '../services/api.live';
 import Modal from './Modal';
 import MarketEventForm from './MarketEventForm';
@@ -9,20 +9,20 @@ import { eventUrl } from '../utils';
 
 interface OrganizerHubProps {
   currentUser: User;
-  market: Market;
+  market: Organizer;
   onNavigateToProfile: () => void;
   onBack: () => void;
   // HQ › a market's Events (T124): an admin managing any market's dates,
   // usually an unclaimed one. Hides the owner's plan and coming-soon sections.
   adminView?: boolean;
   // Every market, so an admin can move an event to another market page
-  allMarkets?: Market[];
+  allMarkets?: Organizer[];
 }
 
 const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function formatRecurringDate(event: MarketEvent): string {
+function formatRecurringDate(event: Market): string {
   const days = (event.schedule.recurrenceDays ?? [])
     .map((d: number) => DAY_NAMES_SHORT[d])
     .join('/');
@@ -45,7 +45,7 @@ function formatOneTimeDate(dateStr: string): string {
   return `${dayName}, ${MONTH_NAMES_SHORT[m]} ${d}`;
 }
 
-function sortKey(event: MarketEvent): string {
+function sortKey(event: Market): string {
   // An event that switched type keeps its old schedule fields, so sort by the
   // field that matches its current type (T094).
   return event.type === 'oneTime'
@@ -63,17 +63,17 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 }) => {
   // Shown after an admin moves an event to another market page
   const [movedNote, setMovedNote] = useState('');
-  const [events, setEvents] = useState<MarketEvent[]>([]);
+  const [events, setEvents] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Market | null>(null);
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Copies the public event page link for sharing (T013)
-  const copyEventLink = async (event: MarketEvent) => {
+  const copyEventLink = async (event: Market) => {
     if (!market.slug) return;
     try {
       await navigator.clipboard.writeText(eventUrl(market.slug, event));
@@ -111,7 +111,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   // ── edit handlers ────────────────────────────────────────────────────────────
 
-  const openEdit = (event: MarketEvent) => {
+  const openEdit = (event: Market) => {
     setSelectedEvent(event);
     setEditModalOpen(true);
   };
@@ -132,11 +132,11 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
     else closeEdit();
   };
 
-  const handleSaved = (saved: MarketEvent) => {
+  const handleSaved = (saved: Market) => {
     closeEdit();
-    if (saved.marketPageId !== market.id) {
+    if (saved.organizerId !== market.id) {
       // Moved to another market page: it no longer belongs on this list
-      const to = allMarkets?.find(m => m.id === saved.marketPageId)?.name ?? 'another market';
+      const to = allMarkets?.find(m => m.id === saved.organizerId)?.name ?? 'another market';
       setMovedNote(`"${saved.name}" moved to ${to}.`);
       setEvents(prev => prev.filter(e => e.id !== saved.id));
       return;
@@ -199,7 +199,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   // ── event type label ─────────────────────────────────────────────────────────
 
-  const typeLabel = (t: MarketEvent['type']) => {
+  const typeLabel = (t: Market['type']) => {
     if (t === 'recurring') return 'Recurring';
     if (t === 'oneTime') return 'One-Time';
     return 'Special Edition';

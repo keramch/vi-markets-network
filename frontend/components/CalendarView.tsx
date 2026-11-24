@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import type { Market, MarketEvent, MarketTag, User } from '../types';
+import type { Organizer, Market, MarketTag, User } from '../types';
 import * as api from '../services/api.live';
 import {
   expandOccurrences,
@@ -25,9 +25,9 @@ import {
 interface CalendarViewProps {
   currentUser?: User | null;
   // The signed-in member's own market, if they have one: Add Event puts dates there
-  ownMarket?: Market;
+  ownMarket?: Organizer;
   onSelectMarket: (id: string) => void;
-  onSelectEvent: (event: MarketEvent, date: string) => void;
+  onSelectEvent: (event: Market, date: string) => void;
   onBack: () => void;
 }
 
@@ -69,7 +69,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onS
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
-  const [events, setEvents] = useState<MarketEvent[]>([]);
+  const [events, setEvents] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState<MarketTag | null>(null);
   const [selectedOcc, setSelectedOcc] = useState<CalendarOccurrence | null>(null);

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { vendorTypeLabel, cleanSocial, socialUrl, socialProblem, SOCIAL_PLATFORMS, SOCIAL_LABEL, type SocialPlatform } from '../utils';
 import ReviewRemovalRequest from './ReviewRemovalRequest';
-import type { Market, Vendor, Review, Application, User, ScheduleRule } from '../types';
+import type { Organizer, Vendor, Review, Application, User, ScheduleRule } from '../types';
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
 import ImageUploader from './ImageUploader';
 import HelpTip from './HelpTip';
@@ -13,22 +13,22 @@ import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../servi
 import * as api from '../services/api.live';
 
 interface ProfileManagerProps {
-  profileData: Market | Vendor;
+  profileData: Organizer | Vendor;
   user: User | null;
-  allMarkets: Market[];
+  allMarkets: Organizer[];
   applications?: Application[];
   vendors?: Vendor[];
   listingReviews: Review[]; // pending + approved reviews of this listing (read-only)
   onRequestReviewRemoval: (reviewId: string, reason: string) => Promise<void>;
   onUpdateApplicationStatus?: (applicationId: string, status: 'approved' | 'rejected') => void;
-  onSaveChanges: (updatedData: Market | Vendor) => void;
+  onSaveChanges: (updatedData: Organizer | Vendor) => void;
   onBack: () => void;
   isAdmin: boolean;
   onToggleAutoRenew: (autoRenew: boolean) => void;
   onOpenUpgradeModal?: () => void;
 }
 
-const isMarket = (profile: Market | Vendor): profile is Market => {
+const isMarket = (profile: Organizer | Vendor): profile is Organizer => {
   return 'location' in profile;
 };
 
@@ -191,7 +191,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       if (socials[platform] && socialUrl(platform, socials[platform])) socials[platform] = cleanSocial(platform, socials[platform]);
     }
     const website = (formData.contact?.website ?? '').trim();
-    let updatedData: Market | Vendor = { ...formData, contact: { ...formData.contact, website, socials: { ...socials, website } } };
+    let updatedData: Organizer | Vendor = { ...formData, contact: { ...formData.contact, website, socials: { ...socials, website } } };
     const totalFiles = (pendingLogoFile ? 1 : 0) + pendingGalleryFiles.length;
 
     if (totalFiles > 0) {
@@ -267,7 +267,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     </button>
   );
 
-  const ApplicationSettings = ({marketData}: {marketData: Market}) => (
+  const ApplicationSettings = ({marketData}: {marketData: Organizer}) => (
     <div className="space-y-6">
         <div>
             <h3 className="text-lg font-semibold text-brand-blue mb-2">Allowed Vendor Types</h3>
@@ -305,7 +305,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     </div>
   );
 
-  const ManageApplications = ({marketData}: {marketData: Market}) => {
+  const ManageApplications = ({marketData}: {marketData: Organizer}) => {
     const marketApplications = applications.filter(app => app.marketId === marketData.id);
 
     return (
@@ -625,9 +625,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                             <input
                                                 type="checkbox"
                                                 value={cat}
-                                                checked={(formData as Market).marketTypes?.includes(cat) || false}
+                                                checked={(formData as Organizer).marketTypes?.includes(cat) || false}
                                                 onChange={() => {
-                                                    const market = formData as Market;
+                                                    const market = formData as Organizer;
                                                     const current = market.marketTypes || [];
                                                     const updated = current.includes(cat)
                                                         ? current.filter(t => t !== cat)
@@ -661,9 +661,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                           <input
                                             type="checkbox"
                                             value={tag}
-                                            checked={(formData as Market).tags?.includes(tag) || false}
+                                            checked={(formData as Organizer).tags?.includes(tag) || false}
                                             onChange={(e) => {
-                                              const market = formData as Market;
+                                              const market = formData as Organizer;
                                               const current = market.tags || [];
                                               const updated = e.target.checked
                                                 ? [...current, e.target.value]

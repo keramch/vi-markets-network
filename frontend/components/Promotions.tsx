@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import type { Market, Vendor } from '../types';
+import type { Organizer, Vendor } from '../types';
 import { MegaphoneIcon } from './Icons';
 
 interface Promotion {
@@ -11,7 +11,7 @@ interface Promotion {
 }
 
 interface PromotionsProps {
-  ownedMarket?: Market;
+  ownedMarket?: Organizer;
   ownedVendor?: Vendor;
   onPurchasePromotion: (promotion: Promotion) => void;
   onBack: () => void;

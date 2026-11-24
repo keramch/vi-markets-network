@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type {
-  Market,
+  Organizer,
   Vendor,
   Coordinates,
   MarketCategory,
   VendorType,
   Review,
-  MarketEvent,
+  Market,
 } from "../types";
 import { MarketCategories, VendorTypes } from "../types";
 import MarketCard from "./MarketCard";
@@ -17,7 +17,7 @@ import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
 import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
 
 interface HomePageProps {
-  markets: Market[];
+  markets: Organizer[];
   vendors: Vendor[];
   isLoading: boolean;
   onSelectMarket: (id: string) => void;
@@ -26,7 +26,7 @@ interface HomePageProps {
   onViewAllVendors: () => void;
 }
 
-interface SearchableMarket extends Market {
+interface SearchableMarket extends Organizer {
   distance?: number;
 }
 interface SearchableVendor extends Vendor {
@@ -183,7 +183,7 @@ const HomePage: React.FC<HomePageProps> = ({
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
 
   // Published market events for the Coming up panel (T122); non-fatal if it fails
-  const [upcomingEvents, setUpcomingEvents] = useState<MarketEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Market[]>([]);
   useEffect(() => {
     api.getMarketEvents({ status: "published" }).then(setUpcomingEvents).catch(() => {});
   }, []);
@@ -237,7 +237,7 @@ const HomePage: React.FC<HomePageProps> = ({
     };
 
     const allActive = [
-      ...activeMarkets.map(m => ({ type: "market" as const, data: m as Market })),
+      ...activeMarkets.map(m => ({ type: "market" as const, data: m as Organizer })),
       ...activeVendors.map(v => ({ type: "vendor" as const, data: v as Vendor })),
     ];
 
@@ -267,7 +267,7 @@ const HomePage: React.FC<HomePageProps> = ({
   }, [activeMarkets, activeVendors]);
 
   const whatsNewItems = useMemo(() => {
-    const allItems: ((Market | Vendor) & { type: "market" | "vendor" })[] = [
+    const allItems: ((Organizer | Vendor) & { type: "market" | "vendor" })[] = [
       ...activeMarkets.map((m) => ({ ...m, type: "market" as const })),
       ...activeVendors.map((v) => ({ ...v, type: "vendor" as const })),
     ];
@@ -847,7 +847,7 @@ const HomePage: React.FC<HomePageProps> = ({
                   item.type === "market" ? (
                     <MarketCard
                       key={item.data.id}
-                      market={item.data as Market}
+                      market={item.data as Organizer}
                       onSelect={openMarketFrom(featuredItems.filter((f) => f.type === "market").map((f) => f.data.id), "Back to Featured")}
                     />
                   ) : (

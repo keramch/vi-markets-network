@@ -1,4 +1,4 @@
-import type { Coordinates, MarketEvent, EventException } from './types';
+import type { Coordinates, Market, EventException } from './types';
 
 /**
  * Calculates the distance between two geographical coordinates in kilometers.
@@ -38,7 +38,7 @@ export const formatTime = (time: string): string => {
 // ─── Calendar helpers ──────────────────────────────────────────────────────────
 
 export interface CalendarOccurrence {
-  event: MarketEvent;
+  event: Market;
   date: string;       // YYYY-MM-DD
   startTime: string;  // HH:MM (may be overridden by exception)
   endTime: string;    // HH:MM
@@ -70,7 +70,7 @@ function weekOfMonth(d: Date): number {
  * Only published events are included. Cancelled exceptions are suppressed.
  */
 export function expandOccurrences(
-  events: MarketEvent[],
+  events: Market[],
   year: number,
   month: number,
   // Event pages show cancelled dates crossed out; everywhere else drops them
@@ -176,7 +176,7 @@ export function expandOccurrences(
  * type and skips cancelled dates. Returns null if nothing is coming up within
  * the next 24 months (T001, T096).
  */
-export function nextOccurrence(event: MarketEvent, from: Date = new Date()): CalendarOccurrence | null {
+export function nextOccurrence(event: Market, from: Date = new Date()): CalendarOccurrence | null {
   const todayIso = toIsoDate(from);
   for (let i = 0; i < 24; i++) {
     const monthDate = new Date(from.getFullYear(), from.getMonth() + i, 1);
@@ -194,7 +194,7 @@ export function nextOccurrence(event: MarketEvent, from: Date = new Date()): Cal
  * (T099).
  */
 export function upcomingOccurrences(
-  events: MarketEvent[],
+  events: Market[],
   days = 42,
   from: Date = new Date(),
   options: { includeCancelled?: boolean } = {}
@@ -234,7 +234,7 @@ const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  * weekend). Returns its first and last real dates, e.g. "Sat, Nov 28 – Sun,
  * Nov 29", or '' if it isn't one. Mirrored in backend routes/sharePreview.ts.
  */
-export function shortSeriesRange(event: MarketEvent): string {
+export function shortSeriesRange(event: Market): string {
   const { startDate, endDate, recurrenceDays = [] } = event.schedule;
   if (event.type === 'oneTime' || !startDate || !endDate) return '';
   const start = new Date(startDate + 'T12:00:00');
@@ -254,7 +254,7 @@ export function shortSeriesRange(event: MarketEvent): string {
 
 /** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Empty for one-time events.
  *  A series within one week shows its dates instead (see shortSeriesRange). */
-export function recurrenceSummary(event: MarketEvent): string {
+export function recurrenceSummary(event: Market): string {
   if (event.type === 'oneTime') return '';
   const range = shortSeriesRange(event);
   if (range) return range;
@@ -278,13 +278,13 @@ export function recurrenceSummary(event: MarketEvent): string {
  * slugs existed use their ID until their next save; the page accepts both.
  * `date` (YYYY-MM-DD) opens the page on that one date.
  */
-export function eventPath(marketSlug: string, event: Pick<MarketEvent, 'id' | 'slug'>, date?: string): string {
+export function eventPath(marketSlug: string, event: Pick<Market, 'id' | 'slug'>, date?: string): string {
   const path = `/markets/${marketSlug}/${encodeURIComponent(event.slug || event.id)}`;
   return date ? `${path}?date=${date}` : path;
 }
 
 /** Full link for sharing or copying. */
-export function eventUrl(marketSlug: string, event: Pick<MarketEvent, 'id' | 'slug'>, date?: string): string {
+export function eventUrl(marketSlug: string, event: Pick<Market, 'id' | 'slug'>, date?: string): string {
   return `${window.location.origin}${eventPath(marketSlug, event, date)}`;
 }
 
@@ -299,7 +299,7 @@ export function prefersShareSheet(): boolean {
 }
 
 /** Google Maps directions to an event's venue. */
-export function directionsUrl(event: MarketEvent): string {
+export function directionsUrl(event: Market): string {
   const { venueName, address, city, province } = event.location;
   const destination = [venueName, address, city, province].filter(Boolean).join(', ');
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
@@ -308,7 +308,7 @@ export function directionsUrl(event: MarketEvent): string {
 // ─── Google Calendar link (.ics downloads dropped Nov 10; see T102) ─────────────────────────────────────────────
 
 export function buildGoogleCalendarUrl(
-  event: MarketEvent,
+  event: Market,
   date: string,
   startTime: string,
   endTime: string

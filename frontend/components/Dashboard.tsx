@@ -1,11 +1,11 @@
 import React from 'react';
-import type { Market, Vendor } from '../types';
+import type { Organizer, Vendor } from '../types';
 import MarketCard from './MarketCard';
 import VendorCard from './VendorCard';
 import { HeartIcon } from './Icons';
 
 interface DashboardProps {
-  markets: Market[];
+  markets: Organizer[];
   vendors: Vendor[];
   onSelectMarket: (id: string) => void;
   onSelectVendor: (id: string) => void;

@@ -1,4 +1,4 @@
-import type { Market, Vendor, Application, User } from '../types';
+import type { Organizer, Vendor, Application, User } from '../types';
 import { MarketCategories, DayOfWeek, MarketAmenities, PaymentOptions } from '../types';
 
 export const users: User[] = [
@@ -7,7 +7,7 @@ export const users: User[] = [
         email: 'manager@citycentermarket.com',
         postalCode: 'V9R 1A1',
         subscription: { tier: 'pro', billingCycle: 'annual', foundingMember: false, termEnds: null, introRate: false, stripeCustomerId: null, stripePaymentId: null },
-        ownedMarketId: 'market-1',
+        ownedOrganizerId: 'market-1',
         autoRenew: true,
     },
     {
@@ -167,7 +167,7 @@ export const vendors: Vendor[] = [
   },
 ];
 
-export const markets: Market[] = [
+export const markets: Organizer[] = [
   {
     id: 'market-1',
     ownerId: 'user-owner-market-1',

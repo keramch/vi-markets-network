@@ -2,14 +2,14 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { firebaseAuth } from "./firebase";
 import type { SpamGuardFields } from "../components/SpamGuard";
 import type {
-  Market,
+  Organizer,
   Vendor,
   User,
   Review,
   Application,
   NotificationSettings,
   MemberStatus,
-  MarketEvent,
+  Market,
   Follow
 } from "../types";
 
@@ -77,7 +77,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 // -------- NORMALIZERS --------
 
-function normalizeMarket(raw: any): Market {
+function normalizeMarket(raw: any): Organizer {
   return {
     ...raw,
     reviews: raw.reviews || [],
@@ -91,7 +91,7 @@ function normalizeMarket(raw: any): Market {
     region: "",
     coordinates: undefined
   } as any)
-  } as Market;
+  } as Organizer;
 }
 
 function normalizeVendor(raw: any): Vendor {
@@ -127,7 +127,7 @@ function normalizeApplication(raw: any): Application {
 
 // LISTS
 
-export const getMarkets = async (): Promise<Market[]> => {
+export const getMarkets = async (): Promise<Organizer[]> => {
   const raw = await request<any[]>("/markets");
   return raw.map(normalizeMarket);
 };
@@ -226,7 +226,7 @@ export const setFoundingMember = (userId: string, currentSub: User['subscription
 export const createMarket = (
   // vendorId: a vendor adding a market to their profile; admins may leave it out (T105)
   payload: { name: string; vendorId?: string; city?: string; address?: string; marketTypes?: string[] }
-): Promise<Market> => {
+): Promise<Organizer> => {
   return request<any>("/markets", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -235,9 +235,9 @@ export const createMarket = (
 
 export const updateMarket = (
   marketId: string,
-  updates: Partial<Market>
-): Promise<Market> => {
-  return request<Market>(`/markets/${marketId}`, {
+  updates: Partial<Organizer>
+): Promise<Organizer> => {
+  return request<Organizer>(`/markets/${marketId}`, {
     method: "PATCH",
     body: JSON.stringify(updates)
   });
@@ -409,20 +409,20 @@ export const getMarketEvents = async (params: {
   status?: string;
   month?: number;
   year?: number;
-} = {}): Promise<MarketEvent[]> => {
+} = {}): Promise<Market[]> => {
   const qs = new URLSearchParams();
   if (params.marketPageId) qs.set("marketPageId", params.marketPageId);
   if (params.status) qs.set("status", params.status);
   if (params.month !== undefined) qs.set("month", String(params.month));
   if (params.year !== undefined) qs.set("year", String(params.year));
   const query = qs.toString();
-  return request<MarketEvent[]>(`/market-events${query ? `?${query}` : ""}`);
+  return request<Market[]>(`/market-events${query ? `?${query}` : ""}`);
 };
 
 export const createMarketEvent = (
-  data: Omit<MarketEvent, "id" | "createdAt" | "updatedAt">
-): Promise<MarketEvent> => {
-  return request<MarketEvent>("/market-events", {
+  data: Omit<Market, "id" | "createdAt" | "updatedAt">
+): Promise<Market> => {
+  return request<Market>("/market-events", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -430,9 +430,9 @@ export const createMarketEvent = (
 
 export const updateMarketEvent = (
   id: string,
-  updates: Partial<MarketEvent>
-): Promise<MarketEvent> => {
-  return request<MarketEvent>(`/market-events/${id}`, {
+  updates: Partial<Market>
+): Promise<Market> => {
+  return request<Market>(`/market-events/${id}`, {
     method: "PATCH",
     body: JSON.stringify(updates),
   });

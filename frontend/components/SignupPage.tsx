@@ -309,7 +309,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
         // Upload logo — blocks the "Go to Your Hub" button until complete
         if (logoFiles[0]) {
           const profileType = accountType === 'vendor' ? 'vendors' : 'markets';
-          const profileId = accountType === 'vendor' ? user.ownedVendorId : user.ownedMarketId;
+          const profileId = accountType === 'vendor' ? user.ownedVendorId : user.ownedOrganizerId;
           if (profileId) {
             setIsUploadingLogo(true);
             try {

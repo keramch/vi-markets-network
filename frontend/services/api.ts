@@ -1,8 +1,8 @@
-import type { Market, Vendor, User, Review, Application, NotificationSettings, MemberStatus } from '../types';
+import type { Organizer, Vendor, User, Review, Application, NotificationSettings, MemberStatus } from '../types';
 import { markets as mockMarkets, vendors as mockVendors, applications as mockApplications, users as mockUsers } from '../data/mockData';
 
 // --- SIMULATED DATABASE ---
-let markets: Market[] = JSON.parse(JSON.stringify(mockMarkets));
+let markets: Organizer[] = JSON.parse(JSON.stringify(mockMarkets));
 let vendors: Vendor[] = JSON.parse(JSON.stringify(mockVendors));
 let applications: Application[] = JSON.parse(JSON.stringify(mockApplications));
 let users: User[] = JSON.parse(JSON.stringify(mockUsers));
@@ -115,10 +115,10 @@ export const moderateReview = (entityId: string, reviewId: string, status: 'appr
     });
 };
 
-export const createMarket = (payload: { name: string; vendorId: string; city?: string; address?: string }): Promise<Market> => {
+export const createMarket = (payload: { name: string; vendorId: string; city?: string; address?: string }): Promise<Organizer> => {
     return new Promise(resolve => {
         setTimeout(() => {
-            const newMarket: Market = {
+            const newMarket: Organizer = {
                 id: `market-${Date.now()}`,
                 name: payload.name,
                 description: '',
@@ -142,7 +142,7 @@ export const createMarket = (payload: { name: string; vendorId: string; city?: s
     });
 };
 
-export const updateMarket = (marketId: string, updates: Partial<Market>): Promise<Market> => {
+export const updateMarket = (marketId: string, updates: Partial<Organizer>): Promise<Organizer> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             const index = markets.findIndex(m => m.id === marketId);

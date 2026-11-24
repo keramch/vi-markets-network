@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { Market, MarketEvent } from '../types';
+import type { Organizer, Market } from '../types';
 import { upcomingOccurrences, formatTime, eventPath, recurrenceSummary, shortSeriesRange } from '../utils';
 
 // "Coming up" on the home page banner (T122): the next three market dates,
@@ -9,8 +9,8 @@ import { upcomingOccurrences, formatTime, eventPath, recurrenceSummary, shortSer
 // upcoming means nothing is rendered.
 
 interface ComingUpProps {
-  events: MarketEvent[];
-  markets: Market[]; // active markets only
+  events: Market[];
+  markets: Organizer[]; // active markets only
 }
 
 // A simple calendar page in the brand colours, drawn from shapes: no dates,
@@ -43,7 +43,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
     const bySlug = new Map(markets.filter(m => m.slug).map(m => [m.id, m]));
     const seen = new Set<string>();
     return upcomingOccurrences(events, 120)
-      .map(o => ({ ...o, market: bySlug.get(o.event.marketPageId) }))
+      .map(o => ({ ...o, market: bySlug.get(o.event.organizerId) }))
       // Only markets with a public page; one row per event, so a weekly market doesn't fill the list
       .filter(o => {
         if (!o.market || seen.has(o.event.id)) return false;

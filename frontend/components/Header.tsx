@@ -64,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                         My Applications
                     </button>
                   )}
-                  {currentUser.ownedMarketId && (
+                  {currentUser.ownedOrganizerId && (
                     <button
                       onClick={() => onNavigate({ type: 'organizerHub' })}
                       className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
@@ -188,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     My Applications
                   </button>
                 )}
-                {currentUser.ownedMarketId && (
+                {currentUser.ownedOrganizerId && (
                   <button
                     onClick={() => { onNavigate({ type: 'organizerHub' }); setMenuOpen(false); }}
                     className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"

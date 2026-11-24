@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSpamGuard, type SpamGuardFields } from './components/SpamGuard';
-import type { View, Market, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, MarketEvent } from './types';
+import type { View, Organizer, Vendor, User, Review, NotificationSettings, Application, MemberStatus, SubscriptionTier, Market } from './types';
 import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
@@ -75,7 +75,7 @@ const viewToPath = (view: View): string => {
 // ── Route wrapper components (defined at module scope to keep stable references) ──
 
 interface MarketProfileRouteProps {
-  markets: Market[];
+  markets: Organizer[];
   vendors: Vendor[];
   applications: Application[];
   users: User[];
@@ -98,7 +98,7 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   const navigate = useNavigate();
   const market = markets.find(m => m.slug === slug);
 
-  const [upcomingEvents, setUpcomingEvents] = React.useState<MarketEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = React.useState<Market[]>([]);
 
   React.useEffect(() => {
     if (!market?.id) return;
@@ -153,7 +153,7 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
 };
 
 interface EventPageRouteProps {
-  markets: Market[];
+  markets: Organizer[];
   favoritedMarketIds: string[];
   currentUser: User | null;
   onToggleFavorite: (id: string) => void;
@@ -169,7 +169,7 @@ const EventPageRoute: React.FC<EventPageRouteProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const market = markets.find(m => m.slug === slug);
-  const [event, setEvent] = React.useState<MarketEvent | null | undefined>(undefined); // undefined = loading
+  const [event, setEvent] = React.useState<Market | null | undefined>(undefined); // undefined = loading
 
   React.useEffect(() => {
     if (!market?.id) return;
@@ -226,7 +226,7 @@ const EventPageRoute: React.FC<EventPageRouteProps> = ({
 
 interface VendorProfileRouteProps {
   vendors: Vendor[];
-  markets: Market[];
+  markets: Organizer[];
   users: User[];
   favoritedVendorIds: string[];
   currentUser: User | null;
@@ -286,15 +286,15 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
 };
 
 interface AdminEditProfileRouteProps {
-  markets: Market[];
+  markets: Organizer[];
   vendors: Vendor[];
   users: User[];
   currentUser: User | null;
-  onSaveChanges: (data: Market | Vendor, returnTo?: string) => Promise<void>;
+  onSaveChanges: (data: Organizer | Vendor, returnTo?: string) => Promise<void>;
 }
 // HQ › a market's Events (T124): the My Market events screen for any market,
 // so an admin can add and edit dates for unclaimed markets
-const AdminMarketEventsRoute: React.FC<{ markets: Market[]; currentUser: User | null }> = ({ markets, currentUser }) => {
+const AdminMarketEventsRoute: React.FC<{ markets: Organizer[]; currentUser: User | null }> = ({ markets, currentUser }) => {
   const { marketId } = useParams<{ marketId: string }>();
   const navigate = useNavigate();
   if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
@@ -328,7 +328,7 @@ const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
   return (
     <ProfileManager
       profileData={profileToEdit}
-      user={users.find(u => u.ownedMarketId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
+      user={users.find(u => u.ownedOrganizerId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
       allMarkets={markets}
       onSaveChanges={(data) => onSaveChanges(data, returnTo)}
       onBack={() => navigate(returnTo ?? '/hq')}
@@ -350,12 +350,12 @@ interface Promotion {
     onConfirm: () => void;
 }
 
-const isMarket = (profile: Market | Vendor): profile is Market => {
+const isMarket = (profile: Organizer | Vendor): profile is Organizer => {
     return 'location' in profile;
 };
 
 const App: React.FC = () => {
-  const [markets, setMarkets] = useState<Market[]>([]);
+  const [markets, setMarkets] = useState<Organizer[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -376,7 +376,7 @@ const App: React.FC = () => {
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   const [isFeatureMarketModalOpen, setFeatureMarketModalOpen] = useState(false);
-  const [marketToFeature, setMarketToFeature] = useState<Market | null>(null);
+  const [marketToFeature, setMarketToFeature] = useState<Organizer | null>(null);
 
   const [isFeatureVendorModalOpen, setFeatureVendorModalOpen] = useState(false);
   const [vendorToFeature, setVendorToFeature] = useState<Vendor | null>(null);
@@ -390,7 +390,7 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<string | null>(null);
 
   const [isApplicationFormOpen, setApplicationFormOpen] = useState(false);
-  const [marketToApplyTo, setMarketToApplyTo] = useState<Market | null>(null);
+  const [marketToApplyTo, setMarketToApplyTo] = useState<Organizer | null>(null);
 
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
@@ -539,14 +539,14 @@ const App: React.FC = () => {
   // Reviews about the member's own listing, for the profile editor's reviews tab
   const [ownListingReviews, setOwnListingReviews] = useState<Review[]>([]);
   useEffect(() => {
-    if (!currentUser?.ownedMarketId && !currentUser?.ownedVendorId) {
+    if (!currentUser?.ownedOrganizerId && !currentUser?.ownedVendorId) {
       setOwnListingReviews([]);
       return;
     }
     api.getMyListingReviews()
       .then(setOwnListingReviews)
       .catch((error) => console.error("Failed to fetch own listing reviews:", error));
-  }, [currentUser?.id, currentUser?.ownedMarketId, currentUser?.ownedVendorId]);
+  }, [currentUser?.id, currentUser?.ownedOrganizerId, currentUser?.ownedVendorId]);
 
   const handleCookieConsent = () => {
     localStorage.setItem('cookie_consent', 'true');
@@ -584,7 +584,7 @@ const App: React.FC = () => {
   };
 
   const ownedMarket = useMemo(() => 
-    currentUser ? markets.find(m => m.id === currentUser.ownedMarketId) : undefined
+    currentUser ? markets.find(m => m.id === currentUser.ownedOrganizerId) : undefined
   , [currentUser, markets]);
 
   const ownedVendor = useMemo(() =>
@@ -837,7 +837,7 @@ const App: React.FC = () => {
       }
   };
 
-  const handleUpdateProfile = async (updatedProfileData: Market | Vendor) => {
+  const handleUpdateProfile = async (updatedProfileData: Organizer | Vendor) => {
     try {
         if (isMarket(updatedProfileData)) {
             const updatedMarket = await api.updateMarket(updatedProfileData.id, updatedProfileData);
@@ -856,7 +856,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateProfileAsAdmin = async (updatedProfileData: Market | Vendor, returnTo?: string) => {
+  const handleUpdateProfileAsAdmin = async (updatedProfileData: Organizer | Vendor, returnTo?: string) => {
     try {
         if (isMarket(updatedProfileData)) {
             const updatedMarket = await api.updateMarket(updatedProfileData.id, updatedProfileData);
@@ -997,7 +997,7 @@ const App: React.FC = () => {
       } else {
         setVendors(prev => prev.filter(v => v.id !== memberId));
       }
-      setUsers(prev => prev.filter(u => u.ownedMarketId !== memberId && u.ownedVendorId !== memberId));
+      setUsers(prev => prev.filter(u => u.ownedOrganizerId !== memberId && u.ownedVendorId !== memberId));
       showNotification("Member and account permanently deleted.");
     } catch (error) {
       showNotification("Failed to delete member.");
@@ -1316,10 +1316,10 @@ const App: React.FC = () => {
             <Route path="/calendar" element={
               <CalendarView
                 currentUser={currentUser}
-                ownMarket={currentUser?.ownedMarketId ? markets.find(m => m.id === currentUser.ownedMarketId) : undefined}
+                ownMarket={currentUser?.ownedOrganizerId ? markets.find(m => m.id === currentUser.ownedOrganizerId) : undefined}
                 onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                 onSelectEvent={(event, date) => {
-                  const m = markets.find(m => m.id === event.marketPageId);
+                  const m = markets.find(m => m.id === event.organizerId);
                   if (m?.slug) navigate(eventPath(m.slug, event, date));
                 }}
                 onBack={() => navigate('/')}
@@ -1375,9 +1375,9 @@ const App: React.FC = () => {
               />
             } />
             <Route path="/dashboard/my-market" element={
-              currentUser && currentUser.ownedMarketId
+              currentUser && currentUser.ownedOrganizerId
                 ? (() => {
-                    const ownedMarket = markets.find(m => m.id === currentUser.ownedMarketId);
+                    const ownedMarket = markets.find(m => m.id === currentUser.ownedOrganizerId);
                     return ownedMarket ? (
                       <OrganizerHub
                         currentUser={currentUser}

@@ -1,18 +1,18 @@
 
 import React from 'react';
-import type { Market } from '../types';
+import type { Organizer } from '../types';
 import { MapPinIcon, CalendarIcon, AwardIcon, StarIcon } from './Icons';
 import { formatTime } from '../utils';
 
 interface MarketCardProps {
-  market: Market;
+  market: Organizer;
   onSelect: (id: string) => void;
   featured?: boolean;
   distance?: number;
   nextEventDate?: string; // YYYY-MM-DD of next upcoming event occurrence
 }
 
-const formatScheduleToString = (schedule?: Market['schedule']): string => {
+const formatScheduleToString = (schedule?: Organizer['schedule']): string => {
   if (!schedule || !Array.isArray(schedule.rules) || schedule.rules.length === 0) {
     return schedule?.notes || '';
   }

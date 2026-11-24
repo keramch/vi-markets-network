@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { getVendorTypes } from '../utils';
 import type { SpamGuardFields } from './SpamGuard';
-import type { Market, Vendor, User, Review, Application, MarketEvent } from '../types';
+import type { Organizer, Vendor, User, Review, Application, Market } from '../types';
 import { MapPinIcon, RibbonIcon, HeartIcon } from './Icons';
 import SocialLinks, { socialLinks } from './SocialLinks';
 import PhotoGallery from './PhotoGallery';
@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 import ShareButton from './ShareButton';
 
 interface MarketProfileProps {
-  market: Market;
+  market: Organizer;
   vendors: Vendor[];
   applications: Application[];
   owner?: User | null;
@@ -26,11 +26,11 @@ interface MarketProfileProps {
   onFeatureMarket: (marketId: string) => void;
   onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onApply: (marketId: string) => void;
-  upcomingEvents?: MarketEvent[];
+  upcomingEvents?: Market[];
   onOpenLoginModal: () => void;
 }
 
-const formatScheduleToString = (schedule: Market['schedule']): string => {
+const formatScheduleToString = (schedule: Organizer['schedule']): string => {
   if (!schedule || !schedule.rules || schedule.rules.length === 0) {
     return schedule?.notes || 'Schedule varies';
   }
@@ -131,7 +131,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   const hasGoodToKnow = !!market.accessibility || (market.paymentOptions?.length ?? 0) > 0 || (market.tags?.length ?? 0) > 0 || !!market.seasonalInfo;
   const hasSocials = socialLinks(market.contact).length > 0;
   const hasSidebar = hasInfo || hasSocials || hasGoodToKnow;
-  const isOwner = !!currentUser && (currentUser.ownedMarketId === market.id || currentUser.id === market.ownerId);
+  const isOwner = !!currentUser && (currentUser.ownedOrganizerId === market.id || currentUser.id === market.ownerId);
   const avgRating = approvedReviews.length
     ? (approvedReviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) / approvedReviews.length).toFixed(1)
     : null;

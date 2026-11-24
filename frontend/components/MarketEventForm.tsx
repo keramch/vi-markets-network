@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { Market, MarketEvent, MarketTag, User } from '../types';
+import type { Organizer, Market, MarketTag, User } from '../types';
 import { MarketTags, MarketCategories } from '../types';
 import * as api from '../services/api.live';
 import ImageUploader from './ImageUploader';
@@ -9,12 +9,12 @@ interface MarketEventFormProps {
   currentUser: User;
   // The market page these dates belong to: the owner's own market, or any
   // market when an admin manages it from HQ
-  market: Market;
+  market: Organizer;
   // All markets: lets an admin move an existing event to another market page
-  allMarkets?: Market[];
-  onSaved: (event: MarketEvent) => void;
+  allMarkets?: Organizer[];
+  onSaved: (event: Market) => void;
   onCancel: () => void;
-  existingEvent?: MarketEvent;
+  existingEvent?: Market;
   // Told whether anything differs from when the form opened, so a click
   // outside the window can ask before throwing changes away
   onDirtyChange?: (dirty: boolean) => void;
@@ -77,8 +77,8 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const [error, setError]             = useState('');
   // Admins only, editing an event: which market page it belongs to (T124)
   const canMove = !!existingEvent && !!currentUser.isAdmin && (allMarkets?.length ?? 0) > 1;
-  const [moveTo, setMoveTo] = useState(existingEvent?.marketPageId ?? market.id);
-  const moving = !!existingEvent && moveTo !== existingEvent.marketPageId;
+  const [moveTo, setMoveTo] = useState(existingEvent?.organizerId ?? market.id);
+  const moving = !!existingEvent && moveTo !== existingEvent.organizerId;
   // A live event gets Save Changes / Unpublish instead of Save Draft / Publish,
   // and Unpublish asks for confirmation because it hides every date (T093).
   const isLive = existingEvent?.status === 'published';
@@ -133,7 +133,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
     // Upload any newly chosen images into the market's own image folder
     // (storage.rules lets the market's owner write there)
-    const marketId = existingEvent?.marketPageId ?? market.id;
+    const marketId = existingEvent?.organizerId ?? market.id;
     let finalPosterUrl = posterUrl;
     let finalTileUrl = tileUrl;
     try {
@@ -151,7 +151,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       return;
     }
 
-    const schedule: MarketEvent['schedule'] = {
+    const schedule: Market['schedule'] = {
       startTime,
       endTime,
       ...(type === 'oneTime'
@@ -193,15 +193,15 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         : existingEvent?.description ? { description: '' } : {}),
       ...(finalPosterUrl ? { posterUrl: finalPosterUrl } : existingEvent?.posterUrl ? { posterUrl: '' } : {}),
       ...(finalTileUrl ? { tileUrl: finalTileUrl } : existingEvent?.tileUrl ? { tileUrl: '' } : {}),
-    } as Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt' | 'marketPageId' | 'organizerUid'>;
+    } as Omit<Market, 'id' | 'createdAt' | 'updatedAt' | 'marketPageId' | 'organizerUid'>;
 
     try {
       // A new event belongs to this market page. An edit never sends which
       // market it's on, so editing as an admin can't move it by accident.
       // organizerUid only records who added it; who can edit comes from the page.
       const saved = existingEvent
-        ? await api.updateMarketEvent(existingEvent.id, { ...payload, status, ...(moving ? { marketPageId: moveTo } : {}) })
-        : await api.createMarketEvent({ ...payload, marketPageId: market.id, organizerUid: market.ownerId || currentUser.id });
+        ? await api.updateMarketEvent(existingEvent.id, { ...payload, status, ...(moving ? { organizerId: moveTo } : {}) })
+        : await api.createMarketEvent({ ...payload, organizerId: market.id, organizerUid: market.ownerId || currentUser.id });
       onSaved(saved);
     } catch (e: any) {
       setError(e.message ?? 'Failed to save event');

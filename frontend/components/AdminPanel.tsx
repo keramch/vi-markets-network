@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Market, Vendor, Review, User, MemberStatus } from '../types';
+import type { Organizer, Vendor, Review, User, MemberStatus } from '../types';
 import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon, MapPinIcon, TagIcon, SearchIcon, XIcon } from './Icons';
 import UnclaimedMarkets from './UnclaimedMarkets';
 
 interface AdminPanelProps {
-  markets: Market[];
+  markets: Organizer[];
   vendors: Vendor[];
   users: User[];
   reviews: Review[]; // every review, any status (loaded for admins only)
@@ -104,7 +104,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // ── Data ─────────────────────────────────────────────────────────────────
 
-  const allReviews: { entityType: 'market' | 'vendor'; entity: Market | Vendor; review: Review }[] = [];
+  const allReviews: { entityType: 'market' | 'vendor'; entity: Organizer | Vendor; review: Review }[] = [];
   reviews.forEach(r => {
     const entity = r.entityType === 'vendor'
       ? vendors.find(v => v.id === r.entityId)
@@ -118,7 +118,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       : item.review.status === activeReviewTab)
     .sort((a, b) => new Date(b.review.date).getTime() - new Date(a.review.date).getTime());
 
-  const allMembers: ({ type: 'market'; data: Market } | { type: 'vendor'; data: Vendor })[] = [
+  const allMembers: ({ type: 'market'; data: Organizer } | { type: 'vendor'; data: Vendor })[] = [
     ...markets.map(m => ({ type: 'market' as const, data: m })),
     ...vendors.map(v => ({ type: 'vendor' as const, data: v })),
   ].sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
@@ -126,7 +126,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const filteredMembers = memberSearch.trim() === ''
     ? allMembers
     : allMembers.filter(member => {
-        const user = users.find(u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id);
+        const user = users.find(u => u.ownedOrganizerId === member.data.id || u.ownedVendorId === member.data.id);
         const q = memberSearch.toLowerCase();
         return (
           member.data.name.toLowerCase().includes(q) ||
@@ -355,7 +355,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* Rows */}
           <div className="divide-y divide-gray-100 px-6">
             {pagedMembers.map(member => {
-              const user = users.find(u => u.ownedMarketId === member.data.id || u.ownedVendorId === member.data.id);
+              const user = users.find(u => u.ownedOrganizerId === member.data.id || u.ownedVendorId === member.data.id);
               const isOpen = openDropdownId === member.data.id;
               const TypeIcon = member.type === 'market' ? MapPinIcon : TagIcon;
               const typeColor = member.type === 'market' ? 'text-brand-teal' : 'text-brand-violet';
