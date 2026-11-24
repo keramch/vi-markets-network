@@ -142,7 +142,7 @@ export function sanitizeMarketInput(body: unknown, opts: { isAdmin: boolean }): 
       if (!out.name) fail("Market name can't be empty.");
     }
     if ("type" in b) {
-      if (!TYPES.includes(b.type as string)) fail("Market type is not valid.");
+      if (!TYPES.includes(b.type as string)) fail('Please choose "On these dates" or "Repeats".');
       out.type = b.type;
     }
     if ("status" in b) {
