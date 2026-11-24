@@ -24,13 +24,14 @@ async function canManageMarketEvents(uid: string | undefined, marketPageId: stri
   return !!marketPageId && ownsListing(uid, "markets", marketPageId);
 }
 
-// Can the caller edit/archive this specific event?
+// Can the caller edit/archive this specific event? Access comes from the market
+// page it belongs to, not from who created it, so when a page changes hands
+// (claimed, or handed to a new organizer) its dates go with it.
 async function checkEventAccess(uid: string, eventId: string): Promise<"admin" | "owner" | "forbidden" | "not-found"> {
   const doc = await db.collection("marketEvents").doc(eventId).get();
   if (!doc.exists) return "not-found"; // never create an event by editing a missing one
   if (await isAdminUser(uid)) return "admin";
   const data = doc.data()!;
-  if (data.organizerUid === uid) return "owner";
   if (data.marketPageId && (await ownsListing(uid, "markets", data.marketPageId))) return "owner";
   return "forbidden";
 }
@@ -151,7 +152,7 @@ router.post("/", requireAuth, async (req, res) => {
 });
 
 // PATCH /market-events/:id → update an event
-// Organizer who created it, the market's owner, or an admin.
+// The market's owner, or an admin.
 router.patch("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
 
