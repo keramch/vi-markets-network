@@ -77,14 +77,15 @@ backend/src/
   firebase.ts           Admin SDK init
   middleware/           auth.ts, spamGuard.ts
   routes/               admin, applications, auth, brevo, contact, follows,
-                        marketApplications, marketEvents, markets,
-                        organizerAccounts, reviews, stripe, users,
-                        vendorApplications, vendors
+                        marketApplications, markets, organizers,
+                        organizerAccounts, reviews, sharePreview, stripe,
+                        users, vendorApplications, vendors
   utils/                brevoSync, emailBranding, escapeHtml, foundingMembers,
-                        listingAccess, reviews, urlSafety
+                        listingAccess, marketInput, reviews, slug, urlSafety
   types/models.ts       Backend-only types
   seed.ts               Out of date; doesn't match live registration
-backend/scripts/        One-off scripts
+backend/scripts/        One-off scripts (markets-stage1.ts = the T128 data
+                        conversion; inventory.ts = read-only field counts)
 scripts/add-slugs.js    One-off slug migration
 frontend/
   App.tsx               Routing, global state, inline login form, footer
@@ -98,7 +99,7 @@ frontend/
 firestore.rules, storage.rules
 ```
 
-**Main screens:** `HomePage`, `BrowsePage`, `MarketProfile`, `VendorProfile`, `CalendarView`, `Dashboard`, `ProfileManager` (shared vendor and market editor), `OrganizerHub` + `MarketEventForm` (`/dashboard/my-market`), `AdminPanel` (`/hq`), `SignupPage`, `NotificationSettings` (member settings).
+**Main screens:** `HomePage`, `BrowsePage`, `MarketPage` (`/markets/:slug`), `OrganizerProfile` (`/organizers/:slug`), `VendorProfile`, `CalendarView`, `Dashboard`, `ProfileManager` (shared vendor and organizer profile editor), `OrganizerHub` + `MarketEventForm` (My Markets, `/dashboard/my-markets`), `AdminPanel` (`/hq`, with `UnclaimedMarkets`), `SignupPage`, `NotificationSettings` (member settings).
 
 **Don't use or revive:**
 - `services/api.ts` + `data/mockData.ts`: unused mock API, out of sync.
@@ -110,13 +111,18 @@ firestore.rules, storage.rules
 
 ## How key parts work
 
-**Markets vs organizers (decided Nov 23, 2026; OD-16).** A *market* is the event people go to: one-off, seasonal or recurring. An *organizer* is the person or group who puts markets on. In the code, the `markets` collection and "market profile" pages are really **organizer** profiles, and `marketEvents` are the markets. The rebuild that fixes this is T128–T132. Until it ships, read "market" in the code as "organizer", and ask which one Kera means. Vendors get Saved; markets get Saved; organizers get Followed. Vendors never change a claimed market's dates.
+**Markets vs organizers (OD-16, Nov 23, 2026).** A *market* is the event people go to: on a list of dates (one-off, a weekend, irregular) or repeating. An *organizer* is the person or group who puts markets on. Stage 1 (T128, on `dev` from Nov 24) renamed the code to match:
+- `markets` holds markets;
+- `organizers` holds organizer profiles;
+- a market's `organizerId` is null when it's **unclaimed** (added by a vendor or HQ, managed from HQ).
 
-**Calendar and events.** A recurring series is one `marketEvents` document holding a rule. Dates are expanded in the browser by `expandOccurrences` in `frontend/utils.ts`, with `exceptions` able to cancel or change one date. No per-event pages or admin calendar screen exist. `GET /market-events/:id` has no caller.
+**Before the stage 1 switch-over goes live, the live data still has the old shape** (`markets` = organizers, `marketEvents` = markets); see `docs/markets-stage1-switchover.md`. Markets and vendors get Saved; organizers get Followed. Vendors never change a claimed market's dates. Who can edit a market comes from its organizer, never from who added it.
 
-**Reviews.** The `reviews` collection is the single source of truth. `GET /markets` and `GET /vendors` attach approved reviews (`utils/reviews.ts`), computed and never stored on the listing. Only admins approve or decline. Owners see their own listing's reviews through `GET /reviews/mine` and can request removal, but never remove a review themselves. One review per member per listing, and a declined one doesn't count. Owners can review their own listing (Kera's choice).
+**Calendar and markets.** A market is one `markets` document: `type: 'dates'` with `schedule.dates`, or `'recurring'` with a rule. Dates are expanded in the browser by `expandOccurrences` in `frontend/utils.ts`, with `exceptions` able to cancel or change one date. `dateSources` marks dates known only from a vendor ("Date from a vendor"). Times may be '' ("Times to be confirmed"). A market's page is `/markets/<slug>` (slugs unique across markets); `legacyPaths` lists old `/markets/<organizer>/<event>` links that forward to it.
 
-**Applications.** The legacy `applications` collection is live: vendors apply from market profiles and owners approve or reject in `ProfileManager`. `marketApplications`, `vendorApplications` and `organizerAccounts` have no frontend and are admin-only until Phase 2. Don't duplicate subscription fields from `users` into `organizerAccounts`.
+**Reviews.** The `reviews` collection is the single source of truth; `entityType` is market, vendor or organizer. `GET /markets`, `GET /organizers` and `GET /vendors` attach approved reviews (`utils/reviews.ts`), computed and never stored on the listing. Only admins approve or decline. Owners see their own listing's reviews through `GET /reviews/mine` and can request removal, but never remove a review themselves. One review per member per listing, and a declined one doesn't count. Owners can review their own listing (Kera's choice).
+
+**Applications.** The legacy `applications` collection is live: vendors apply from organizer profiles (`organizerId`) and owners approve or reject in `ProfileManager`. `marketApplications`, `vendorApplications` and `organizerAccounts` have no frontend and are admin-only until Phase 2. Don't duplicate subscription fields from `users` into `organizerAccounts`.
 
 **Passwords.** The policy lives in Firebase Console (Authentication → Settings): minimum 8 characters plus 1 special character. It's mirrored by hand in `PASSWORD_RULES` + `PASSWORD_POLICY_MESSAGE` (`frontend/utils.ts`) and the message in `/users/register`. **Update all of them if the policy changes.** A mismatch caused the Sept 29 "Registration failed" signups.
 
@@ -124,7 +130,7 @@ firestore.rules, storage.rules
 
 **Google sign-in.** `services/googleAuth.ts` uses **popup**, which works on iPhone without the `/__/auth` rewrite that redirect would need. `POST /users/register-oauth` creates the profile from the verified token. In-app browsers (Instagram, Facebook) get an "open in Safari or Chrome" note because Google blocks sign-in there. Decided: Facebook maybe later, Apple no, Instagram login impossible.
 
-**Images.** `resizeToWebP` in `ImageUploader.tsx` resizes client-side and converts HEIC/HEIF. `storage.rules` allows market and vendor image writes by the owner or an admin.
+**Images.** `resizeToWebP` in `ImageUploader.tsx` resizes client-side and converts HEIC/HEIF. `storage.rules` allows organizer and vendor image writes by the owner or an admin. Market posters go in the organizer's folder (`organizers/<id>/`), or `markets/<id>/` for unclaimed ones (admins only). Images saved before stage 1 stay under `markets/<organizer id>/`.
 
 **Signup timing hack.** `onSignupSuccess` in App.tsx has an intentional 4-second refetch delay so the logo upload can finish.
 
@@ -166,7 +172,7 @@ Source of truth: `frontend/types.ts` (`VendorTypes`, `VendorTags`, `MarketCatego
 
 ## Firestore collections
 
-`users`, `markets`, `vendors`, `marketEvents`, `reviews`, `follows`, `applications` (live, legacy) and, with no UI yet, `organizerAccounts`, `marketApplications`, `vendorApplications`.
+`users` (`ownedOrganizerId`, `ownedVendorId`, `accountType` organizer/vendor/community), `organizers`, `markets`, `vendors`, `reviews`, `follows`, `applications` (live, legacy) and, with no UI yet, `organizerAccounts`, `marketApplications`, `vendorApplications`. After the stage 1 conversion, `marketEvents` and `stage1Backup_*` are kept as backups until Kera agrees to delete them.
 
 ## Good to know
 
