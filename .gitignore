@@ -24,3 +24,6 @@ google labs mockup/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Stage 1 conversion output: reports, converted records and backups (hold member data)
+backend/stage1-output/

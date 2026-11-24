@@ -60,7 +60,7 @@ Background: OD-16 decides that a **market** is the event people go to (one-off, 
 
 ## What gets converted (live data, read Nov 23)
 
-**17 unclaimed "markets" become 17 unclaimed market listings** (16 if you delete the test entry first).
+**The unclaimed "markets" become unclaimed market listings**: 16 after Kera's tidy on Nov 23, which deleted the test entry. The table below is from before the tidy.
 
 | Market | Town | Known dates (from vendors) |
 |---|---|---|
@@ -82,7 +82,7 @@ Background: OD-16 decides that a **market** is the event people go to (one-off, 
 | Winter Bazaar In My Dreams *(test entry)* | — | Dec 24, 2026 |
 | Winterfaire | Courtenay | Nov 14, 2026 |
 
-**The 6 organizer profiles stay as organizers:** Vi Markets Guide Admin (to be hidden), Gather Comox, Cumberland Museum, Health Light & Love, École Robb Road Winter Fair, Elevate Arts Society. Their 5 published events become their claimed markets.
+**The 6 organizer profiles stay as organizers:** Vi Markets Guide Admin (to be hidden), Gather Comox, Cumberland Museum, Health Light & Love, École Robb Road Winter Fair, Elevate Arts Society. Their 13 events (5 published, 7 drafts, 1 archived) become their markets, keeping their status. The admin page's events become unclaimed markets.
 
 ### Tidy in HQ before the conversion (Kera)
 - **Delete "Winter Bazaar In My Dreams"**, the test entry.
@@ -112,7 +112,7 @@ The site is out of beta and the numbers are small, so the code's names get fixed
 | account type `market` | `organizer` |
 | API `/markets` and `/market-events` | `/organizers` and `/markets` |
 
-It's done in the same conversion, so there's one switch-over, not two. The conversion **copies** into the new collections and leaves the old ones untouched as a backup, which makes going back simple.
+It's done in the same conversion, so there's one switch-over, not two. Because the new `markets` collection has the same name as today's, it can't be copied to the side. Instead the conversion **first makes a complete backup copy** of every collection it touches, both inside Firestore and as a file on this computer. Then it converts. An **undo** mode puts everything back from that backup.
 
 **Brevo is the one outside system affected.** Its MEMBERTYPE field says "Market" for organizers, and becomes **"Organizer"** (Kera, Nov 23):
 - **Before the switch-over:** Kera changes any Brevo segment or automation that looks for "Market" to look for "Market *or* Organizer". This is harmless to do early.
@@ -123,14 +123,14 @@ It's done in the same conversion, so there's one switch-over, not two. The conve
 
 1. **Build everything on `dev`:** the server and the pages, using the new names. Nothing live changes while it's built.
 2. **Dry run.** A one-off script reads the live data and writes a report of every change it *would* make: each market converted, each save or review moved, each new web address, each near-duplicate. It changes nothing. You read the report.
-3. **Check against real data without going live.** I run the new server on this computer and read every page's data back, against a test copy of the converted data. It only reads.
-4. **Switch-over, at a quiet time and with your OK:**
-   1. The script copies everything into the new collections. The old collections are left exactly as they are.
-   2. You push `main`, and the new server and pages go live together (about 5 minutes on Render).
-   3. Until the new server is up, the live site keeps working on the old data.
-5. **Catch-up and check.** The script runs once more to pick up anything changed during those minutes. I read the live site back, and you click through it.
+3. **Checks on the dry run's output.** The dry run also saves the converted records to a file, without writing them anywhere. I check them automatically: every market has a unique web address, valid dates and a working organizer link; every save, review and vendor link points at something that exists; and every old link has a forward.
+4. **Switch-over, at a quiet hour and with your OK:**
+   1. You push `main`. The new pages (Vercel, about 2 minutes) and the new server (Render, about 5 minutes) go live.
+   2. As soon as Render shows the new server is live, the script backs everything up and converts it, which takes under a minute.
+   3. **From the push until the conversion finishes, pages may show errors**, because the new pages and server don't match the old data yet. Expect about 5–10 minutes. Nothing is lost: anything saved in that window by the old site is in the data the conversion reads.
+5. **Check.** I read the live site back (read-only), and you click through it.
 
-**Going back,** if something's badly wrong: put `main` back to the previous commit. The old collections are untouched, so the old site works as before. Anything entered after the switch-over would need copying back by hand.
+**Going back,** if something's badly wrong: run the undo (it restores every touched collection from the backup), then put `main` back to the previous commit. Anything entered after the switch-over would need re-entering.
 
 ---
 
@@ -146,7 +146,7 @@ It's done in the same conversion, so there's one switch-over, not two. The conve
 
 ## For developers
 
-- **Collections are renamed** (see the table above): `organizers` holds organizer profiles, `markets` holds markets. The rename is done by copying, so the old `markets` and `marketEvents` collections stay as a backup until Kera agrees to delete them.
+- **Collections are renamed** (see the table above): `organizers` holds organizer profiles, `markets` holds markets. Organizer profiles are copied to `organizers`. The `markets` collection is then rewritten with markets, and `marketEvents` is left as it was. Backups (`stage1Backup_*`) stay until Kera agrees to delete them.
 - **`markets` (new):**
   - `organizerId` (was `marketPageId`) becomes optional. Empty means unclaimed.
   - `organizerUid` stays as "who added it".
@@ -184,17 +184,15 @@ It's done in the same conversion, so there's one switch-over, not two. The conve
   - `/markets/:slug` with no matching market but a matching organizer → redirect to `/organizers/:slug`.
   - Link previews (`api/og` or equivalent) must follow the same rules. Check `frontend/vercel.json`.
 - **Follows:** `targetType` gains `'organizer'`. The migration moves organizer follows to the single market where there is exactly one, and otherwise sets `targetType: 'organizer'`. Reviews (`entityId`) follow the same rule.
-- **Script:** `backend/scripts/markets-stage1.ts`, safe to re-run. It writes a JSON log of every change. Three modes:
-  - `--dry-run` (default);
-  - `--apply`;
-  - `--catch-up`, which re-copies docs whose `updatedAt` changed since the first run.
+- **Script:** `backend/scripts/markets-stage1.ts`. Three modes:
+  - `--dry-run` (default): reads only. It writes a report and the converted records to `backend/stage1-output/`, which is git-ignored.
+  - `--apply`: refuses to run if the `organizers` collection already has documents. It backs up every touched collection to `stage1Backup_<name>` in Firestore and to a local JSON file, then converts.
+  - `--undo`: restores every touched collection from `stage1Backup_*` and deletes `organizers`.
 - **Order:**
   1. Build on dev.
-  2. Dry run.
-  3. Local read-only smoke test of the new backend against the converted data.
-  4. Apply.
-  5. Kera pushes main (backend and frontend together).
-  6. Catch-up.
-  7. Read-back check.
+  2. Dry run, and automatic checks on its output.
+  3. Kera pushes main.
+  4. When Render is live: `--apply`.
+  5. Read-back check.
 
-  Browsers with an old page open get errors until they reload, which is acceptable for a few minutes.
+  Expect 5–10 minutes of errors between the push and the apply. Browsers with an old page open get errors until they reload.
