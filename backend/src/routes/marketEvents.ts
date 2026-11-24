@@ -171,8 +171,22 @@ router.patch("/:id", requireAuth, async (req, res) => {
     // The link never changes after it's set, even if the event is renamed, so shared
     // links keep working. Events made before slugs existed get one on their next save.
     const current = (await docRef.get()).data()!;
-    if (!current.slug) {
-      const name = typeof updates.name === "string" && updates.name ? updates.name : current.name;
+    const name = typeof updates.name === "string" && updates.name ? updates.name : current.name;
+
+    // An admin moving the event to another market page (T124): the page must
+    // exist, and the event's link part must be free on its new page
+    if ("marketPageId" in updates && !updates.marketPageId) {
+      return res.status(400).json({ error: "An event must belong to a market." });
+    }
+    const movingTo = typeof updates.marketPageId === "string" && updates.marketPageId !== current.marketPageId
+      ? updates.marketPageId : null;
+    if (movingTo) {
+      const target = await db.collection("markets").doc(movingTo).get();
+      if (!target.exists) return res.status(400).json({ error: "That market no longer exists." });
+      const clash = current.slug && !(await db.collection("marketEvents")
+        .where("marketPageId", "==", movingTo).where("slug", "==", current.slug).limit(1).get()).empty;
+      if (!current.slug || clash) updates.slug = await uniqueEventSlug(String(name ?? ""), movingTo, id);
+    } else if (!current.slug) {
       updates.slug = await uniqueEventSlug(String(name ?? ""), current.marketPageId, id);
     }
 
