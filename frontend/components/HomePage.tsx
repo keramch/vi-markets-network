@@ -14,7 +14,7 @@ import OrganizerCard from "./OrganizerCard";
 import VendorCard from "./VendorCard";
 import ComingUp from "./ComingUp";
 import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
-import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
+import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState, nextOccurrence } from "../utils";
 
 interface HomePageProps {
   organizers: Organizer[];
@@ -274,10 +274,11 @@ const HomePage: React.FC<HomePageProps> = ({
     return uniqueItems.slice(0, FEATURED_COUNT);
   }, [activeOrganizers, activeVendors]);
 
-  // Newest markets and vendors (T128: markets, not organizer profiles)
+  // Newest markets and vendors (T128: markets, not organizer profiles). A market
+  // only shows while it has a date coming up, so past ones drop off (T134).
   const whatsNewItems = useMemo(() => {
     const allItems: { id: string; name: string; type: "market" | "vendor"; image?: string; added: string }[] = [
-      ...activeMarkets.map((m) => ({
+      ...activeMarkets.filter((m) => nextOccurrence(m) !== null).map((m) => ({
         id: m.id, name: m.name, type: "market" as const,
         image: m.posterUrl || m.logoUrl || (m.organizerId ? organizerById.get(m.organizerId)?.logoUrl : undefined),
         added: m.createdAt ?? "",
