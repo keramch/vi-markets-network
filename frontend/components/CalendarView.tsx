@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import type { MarketEvent, MarketTag, User } from '../types';
+import type { Market, MarketEvent, MarketTag, User } from '../types';
 import * as api from '../services/api.live';
 import {
   expandOccurrences,
@@ -24,6 +24,8 @@ import {
 
 interface CalendarViewProps {
   currentUser?: User | null;
+  // The signed-in member's own market, if they have one: Add Event puts dates there
+  ownMarket?: Market;
   onSelectMarket: (id: string) => void;
   onSelectEvent: (event: MarketEvent, date: string) => void;
   onBack: () => void;
@@ -61,7 +63,7 @@ const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket, onSelectEvent, onBack }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onSelectMarket, onSelectEvent, onBack }) => {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
@@ -126,7 +128,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
   const handlePrev = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNext = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  const isOrganizer = !!currentUser?.ownedMarketId;
+  const isOrganizer = !!ownMarket;
 
   // ── Grid cell helpers ──────────────────────────────────────────────────────
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
@@ -489,7 +491,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
       {renderEventDetail()}
 
       {/* Create event modal */}
-      {isFormOpen && currentUser && (
+      {isFormOpen && currentUser && ownMarket && (
         <Modal
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
@@ -497,11 +499,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, onSelectMarket
             if (formDirty.current) setConfirmingDiscard(true);
             else setIsFormOpen(false);
           }}
-          title="Create Market Event"
+          title={`Add an event to ${ownMarket.name}`}
           maxWidth="xl"
         >
           <MarketEventForm
             currentUser={currentUser}
+            market={ownMarket}
             onDirtyChange={trackDirty}
             onSaved={newEvent => {
               setEvents(prev => [...prev, newEvent]);

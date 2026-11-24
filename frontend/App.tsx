@@ -1296,6 +1296,7 @@ const App: React.FC = () => {
             <Route path="/calendar" element={
               <CalendarView
                 currentUser={currentUser}
+                ownMarket={currentUser?.ownedMarketId ? markets.find(m => m.id === currentUser.ownedMarketId) : undefined}
                 onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                 onSelectEvent={(event, date) => {
                   const m = markets.find(m => m.id === event.marketPageId);

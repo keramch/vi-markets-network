@@ -413,6 +413,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
       >
         <MarketEventForm
           currentUser={currentUser}
+          market={market}
           existingEvent={selectedEvent ?? undefined}
           onSaved={handleSaved}
           onCancel={closeEdit}

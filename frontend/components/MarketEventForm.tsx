@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { MarketEvent, MarketTag, User } from '../types';
+import type { Market, MarketEvent, MarketTag, User } from '../types';
 import { MarketTags, MarketCategories } from '../types';
 import * as api from '../services/api.live';
 import ImageUploader from './ImageUploader';
@@ -7,6 +7,9 @@ import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../servi
 
 interface MarketEventFormProps {
   currentUser: User;
+  // The market page these dates belong to: the owner's own market, or any
+  // market when an admin manages it from HQ
+  market: Market;
   onSaved: (event: MarketEvent) => void;
   onCancel: () => void;
   existingEvent?: MarketEvent;
@@ -29,6 +32,7 @@ const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
 
 const MarketEventForm: React.FC<MarketEventFormProps> = ({
   currentUser,
+  market,
   onSaved,
   onCancel,
   existingEvent,
@@ -122,7 +126,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
     // Upload any newly chosen images into the market's own image folder
     // (storage.rules lets the market's owner write there)
-    const marketId = existingEvent?.marketPageId ?? currentUser.ownedMarketId!;
+    const marketId = existingEvent?.marketPageId ?? market.id;
     let finalPosterUrl = posterUrl;
     let finalTileUrl = tileUrl;
     try {
@@ -156,8 +160,6 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     };
 
     const payload = {
-      marketPageId:  currentUser.ownedMarketId!,
-      organizerUid:  currentUser.id,
       name:          name.trim(),
       type,
       marketTags:    selectedTags as MarketTag[],
@@ -184,12 +186,15 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         : existingEvent?.description ? { description: '' } : {}),
       ...(finalPosterUrl ? { posterUrl: finalPosterUrl } : existingEvent?.posterUrl ? { posterUrl: '' } : {}),
       ...(finalTileUrl ? { tileUrl: finalTileUrl } : existingEvent?.tileUrl ? { tileUrl: '' } : {}),
-    } as Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt'>;
+    } as Omit<MarketEvent, 'id' | 'createdAt' | 'updatedAt' | 'marketPageId' | 'organizerUid'>;
 
     try {
+      // A new event belongs to this market page. An edit never sends which
+      // market it's on, so editing as an admin can't move it by accident.
+      // organizerUid only records who added it; who can edit comes from the page.
       const saved = existingEvent
         ? await api.updateMarketEvent(existingEvent.id, { ...payload, status })
-        : await api.createMarketEvent(payload);
+        : await api.createMarketEvent({ ...payload, marketPageId: market.id, organizerUid: market.ownerId || currentUser.id });
       onSaved(saved);
     } catch (e: any) {
       setError(e.message ?? 'Failed to save event');
