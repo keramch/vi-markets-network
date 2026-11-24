@@ -871,7 +871,7 @@ const App: React.FC = () => {
         if (returnTo) {
             navigate(returnTo);
         } else {
-            setAdminActiveTab('memberships');
+            // Back to whichever HQ tab the edit was opened from (adminActiveTab remembers it)
             navigate('/hq');
         }
         showNotification("Profile updated successfully!");
