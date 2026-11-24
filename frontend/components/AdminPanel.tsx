@@ -5,7 +5,7 @@ import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon, MapPinIco
 import UnclaimedMarkets from './UnclaimedMarkets';
 
 interface AdminPanelProps {
-  markets: Organizer[];
+  organizers: Organizer[];
   vendors: Vendor[];
   users: User[];
   reviews: Review[]; // every review, any status (loaded for admins only)
@@ -24,7 +24,7 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({
-  markets,
+  organizers,
   vendors,
   users,
   reviews,
@@ -108,7 +108,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   reviews.forEach(r => {
     const entity = r.entityType === 'vendor'
       ? vendors.find(v => v.id === r.entityId)
-      : markets.find(m => m.id === r.entityId);
+      : organizers.find(m => m.id === r.entityId);
     if (entity) allReviews.push({ entityType: r.entityType === 'vendor' ? 'vendor' : 'market', entity, review: r });
   });
 
@@ -119,7 +119,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     .sort((a, b) => new Date(b.review.date).getTime() - new Date(a.review.date).getTime());
 
   const allMembers: ({ type: 'market'; data: Organizer } | { type: 'vendor'; data: Vendor })[] = [
-    ...markets.map(m => ({ type: 'market' as const, data: m })),
+    ...organizers.map(m => ({ type: 'market' as const, data: m })),
     ...vendors.map(v => ({ type: 'vendor' as const, data: v })),
   ].sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
 
@@ -202,7 +202,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {activeMainTab === 'unclaimed' && (
         <UnclaimedMarkets
-          markets={markets}
+          markets={organizers}
           vendors={vendors}
           onEdit={(id) => onEditProfile(id, 'market')}
           onDelete={(id) => onHardDeleteMember(id, 'market')}

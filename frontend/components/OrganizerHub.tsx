@@ -9,14 +9,14 @@ import { eventUrl } from '../utils';
 
 interface OrganizerHubProps {
   currentUser: User;
-  market: Organizer;
+  organizer: Organizer;
   onNavigateToProfile: () => void;
   onBack: () => void;
   // HQ › a market's Events (T124): an admin managing any market's dates,
   // usually an unclaimed one. Hides the owner's plan and coming-soon sections.
   adminView?: boolean;
   // Every market, so an admin can move an event to another market page
-  allMarkets?: Organizer[];
+  allOrganizers?: Organizer[];
 }
 
 const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -55,11 +55,11 @@ function sortKey(event: Market): string {
 
 const OrganizerHub: React.FC<OrganizerHubProps> = ({
   currentUser,
-  market,
+  organizer,
   onNavigateToProfile,
   onBack,
   adminView = false,
-  allMarkets,
+  allOrganizers,
 }) => {
   // Shown after an admin moves an event to another market page
   const [movedNote, setMovedNote] = useState('');
@@ -74,13 +74,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   // Copies the public event page link for sharing (T013)
   const copyEventLink = async (event: Market) => {
-    if (!market.slug) return;
+    if (!organizer.slug) return;
     try {
-      await navigator.clipboard.writeText(eventUrl(market.slug, event));
+      await navigator.clipboard.writeText(eventUrl(organizer.slug, event));
       setCopiedId(event.id);
       setTimeout(() => setCopiedId(prev => (prev === event.id ? null : prev)), 2500);
     } catch {
-      window.prompt('Copy this link:', eventUrl(market.slug, event));
+      window.prompt('Copy this link:', eventUrl(organizer.slug, event));
     }
   };
 
@@ -92,7 +92,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   const loadEvents = async () => {
     setLoading(true);
     try {
-      const all = await api.getMarketEvents({ marketPageId: market.id });
+      const all = await api.getMarkets({ marketPageId: organizer.id });
       const visible = all
         .filter(e => e.status !== 'archived')
         .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
@@ -107,7 +107,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   useEffect(() => {
     loadEvents();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [market.id]);
+  }, [organizer.id]);
 
   // ── edit handlers ────────────────────────────────────────────────────────────
 
@@ -134,9 +134,9 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const handleSaved = (saved: Market) => {
     closeEdit();
-    if (saved.organizerId !== market.id) {
+    if (saved.organizerId !== organizer.id) {
       // Moved to another market page: it no longer belongs on this list
-      const to = allMarkets?.find(m => m.id === saved.organizerId)?.name ?? 'another market';
+      const to = allOrganizers?.find(m => m.id === saved.organizerId)?.name ?? 'another market';
       setMovedNote(`"${saved.name}" moved to ${to}.`);
       setEvents(prev => prev.filter(e => e.id !== saved.id));
       return;
@@ -157,7 +157,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const handleDeleteConfirm = async (id: string) => {
     try {
-      await api.archiveMarketEvent(id);
+      await api.archiveMarket(id);
       setEvents(prev => prev.filter(e => e.id !== id));
     } catch (err) {
       console.error('Archive failed:', err);
@@ -223,7 +223,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <div>
           <h1 className="text-3xl font-serif text-brand-blue">{adminView ? 'Market events' : 'Organizer Hub'}</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            {market.name}
+            {organizer.name}
             <span className="mx-2 text-gray-300">·</span>
             <button
               onClick={onNavigateToProfile}
@@ -235,7 +235,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         </div>
         {adminView ? (
           <span className="flex-shrink-0 mt-1 text-sm font-medium px-3 py-1 rounded-full bg-amber-100 text-amber-900">
-            {market.status === 'unclaimed' ? 'Unclaimed: managed from HQ' : 'Managing as admin'}
+            {organizer.status === 'unclaimed' ? 'Unclaimed: managed from HQ' : 'Managing as admin'}
           </span>
         ) : (
         <div className="flex items-center gap-2 flex-shrink-0 mt-1">
@@ -354,7 +354,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {event.status === 'published' && market.slug && (
+                      {event.status === 'published' && organizer.slug && (
                         <button
                           onClick={() => copyEventLink(event)}
                           className="text-brand-light-blue border border-brand-light-blue/40 rounded text-sm px-3 py-2 hover:bg-brand-cream transition-colors"
@@ -453,8 +453,8 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
       >
         <MarketEventForm
           currentUser={currentUser}
-          market={market}
-          allMarkets={allMarkets}
+          organizer={organizer}
+          allOrganizers={allOrganizers}
           existingEvent={selectedEvent ?? undefined}
           onSaved={handleSaved}
           onCancel={closeEdit}

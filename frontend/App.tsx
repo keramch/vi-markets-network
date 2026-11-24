@@ -14,7 +14,7 @@ import ProfileNav from './components/ProfileNav';
 import Header from './components/Header';
 import { CheckCircleIcon } from './components/Icons';
 import HomePage from './components/HomePage';
-import MarketProfile from './components/MarketProfile';
+import OrganizerProfile from './components/OrganizerProfile';
 import VendorProfile from './components/VendorProfile';
 import Modal from './components/Modal';
 import ImageUploader from './components/ImageUploader';
@@ -23,7 +23,7 @@ import Dashboard from './components/Dashboard';
 import StripePaymentForm from './components/StripePaymentForm';
 import PaymentSuccessModal from './components/PaymentSuccessModal';
 import CalendarView from './components/CalendarView';
-import EventPage from './components/EventPage';
+import MarketPage from './components/MarketPage';
 import NotificationToast from './components/NotificationToast';
 import AdminPanel from './components/AdminPanel';
 import Promotions from './components/Promotions';
@@ -74,8 +74,8 @@ const viewToPath = (view: View): string => {
 
 // ── Route wrapper components (defined at module scope to keep stable references) ──
 
-interface MarketProfileRouteProps {
-  markets: Organizer[];
+interface OrganizerProfileRouteProps {
+  organizers: Organizer[];
   vendors: Vendor[];
   applications: Application[];
   users: User[];
@@ -89,20 +89,20 @@ interface MarketProfileRouteProps {
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
 }
-const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
-  markets, vendors, applications, users, favoritedMarketIds, currentUser,
+const OrganizerProfileRoute: React.FC<OrganizerProfileRouteProps> = ({
+  organizers, vendors, applications, users, favoritedMarketIds, currentUser,
   onToggleFavorite, onAddReview, onFeatureMarket, onContactSubmit, onApply, onOpenLoginModal,
   isDataLoading,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const market = markets.find(m => m.slug === slug);
+  const market = organizers.find(m => m.slug === slug);
 
   const [upcomingEvents, setUpcomingEvents] = React.useState<Market[]>([]);
 
   React.useEffect(() => {
     if (!market?.id) return;
-    api.getMarketEvents({ marketPageId: market.id, status: 'published' })
+    api.getMarkets({ marketPageId: market.id, status: 'published' })
       .then(events => {
         // Keep events with a real date coming up (a running series counts),
         // soonest first (T001, T096).
@@ -127,9 +127,9 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   const marketOwner = users.find(u => u.id === market.ownerId);
   return (
     <>
-    <ProfileNav kind="markets" currentId={market.id} items={markets} />
-    <MarketProfile
-      market={market}
+    <ProfileNav kind="markets" currentId={market.id} items={organizers} />
+    <OrganizerProfile
+      organizer={market}
       vendors={vendors}
       applications={applications}
       owner={marketOwner}
@@ -152,8 +152,8 @@ const MarketProfileRoute: React.FC<MarketProfileRouteProps> = ({
   );
 };
 
-interface EventPageRouteProps {
-  markets: Organizer[];
+interface MarketPageRouteProps {
+  organizers: Organizer[];
   favoritedMarketIds: string[];
   currentUser: User | null;
   onToggleFavorite: (id: string) => void;
@@ -162,19 +162,19 @@ interface EventPageRouteProps {
 }
 // /markets/:slug/:eventSlug — the event part is the event's slug, or its ID for
 // events saved before slugs existed (T013). An ID link moves to the slug link.
-const EventPageRoute: React.FC<EventPageRouteProps> = ({
-  markets, favoritedMarketIds, currentUser, onToggleFavorite, onOpenLoginModal, isDataLoading,
+const MarketPageRoute: React.FC<MarketPageRouteProps> = ({
+  organizers, favoritedMarketIds, currentUser, onToggleFavorite, onOpenLoginModal, isDataLoading,
 }) => {
   const { slug, eventSlug } = useParams<{ slug: string; eventSlug: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const market = markets.find(m => m.slug === slug);
+  const market = organizers.find(m => m.slug === slug);
   const [event, setEvent] = React.useState<Market | null | undefined>(undefined); // undefined = loading
 
   React.useEffect(() => {
     if (!market?.id) return;
     setEvent(undefined);
-    api.getMarketEvents({ marketPageId: market.id, status: 'published' })
+    api.getMarkets({ marketPageId: market.id, status: 'published' })
       .then(events => {
         const found = events.find(e => e.slug === eventSlug) ?? events.find(e => e.id === eventSlug) ?? null;
         if (found?.slug && found.slug !== eventSlug) {
@@ -211,8 +211,8 @@ const EventPageRoute: React.FC<EventPageRouteProps> = ({
 
   const dateParam = new URLSearchParams(location.search).get('date') ?? undefined;
   return (
-    <EventPage
-      market={market}
+    <MarketPage
+      organizer={market}
       event={event}
       selectedDate={dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined}
       currentUser={currentUser}
@@ -286,7 +286,7 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
 };
 
 interface AdminEditProfileRouteProps {
-  markets: Organizer[];
+  organizers: Organizer[];
   vendors: Vendor[];
   users: User[];
   currentUser: User | null;
@@ -303,8 +303,8 @@ const AdminMarketEventsRoute: React.FC<{ markets: Organizer[]; currentUser: User
   return (
     <OrganizerHub
       currentUser={currentUser}
-      market={market}
-      allMarkets={markets}
+      organizer={market}
+      allOrganizers={markets}
       adminView
       onNavigateToProfile={() => navigate(`/hq/edit/market/${market.id}`)}
       onBack={() => navigate('/hq')}
@@ -313,7 +313,7 @@ const AdminMarketEventsRoute: React.FC<{ markets: Organizer[]; currentUser: User
 };
 
 const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
-  markets, vendors, users, currentUser, onSaveChanges,
+  organizers, vendors, users, currentUser, onSaveChanges,
 }) => {
   const { profileType, profileId } = useParams<{ profileType: string; profileId: string }>();
   const navigate = useNavigate();
@@ -322,14 +322,14 @@ const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
   const returnTo = typeof requested === 'string' && /^\/(markets|vendors)\/[\w-]+$/.test(requested) ? requested : undefined;
   if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
   const profileToEdit = profileType === 'market'
-    ? markets.find(m => m.id === profileId)
+    ? organizers.find(m => m.id === profileId)
     : vendors.find(v => v.id === profileId);
   if (!profileToEdit) return <Navigate to="/hq" replace />;
   return (
     <ProfileManager
       profileData={profileToEdit}
       user={users.find(u => u.ownedOrganizerId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
-      allMarkets={markets}
+      allMarkets={organizers}
       onSaveChanges={(data) => onSaveChanges(data, returnTo)}
       onBack={() => navigate(returnTo ?? '/hq')}
       isAdmin={true}
@@ -350,12 +350,12 @@ interface Promotion {
     onConfirm: () => void;
 }
 
-const isMarket = (profile: Organizer | Vendor): profile is Organizer => {
+const isOrganizer = (profile: Organizer | Vendor): profile is Organizer => {
     return 'location' in profile;
 };
 
 const App: React.FC = () => {
-  const [markets, setMarkets] = useState<Organizer[]>([]);
+  const [organizers, setOrganizers] = useState<Organizer[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -376,7 +376,7 @@ const App: React.FC = () => {
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   const [isFeatureMarketModalOpen, setFeatureMarketModalOpen] = useState(false);
-  const [marketToFeature, setMarketToFeature] = useState<Organizer | null>(null);
+  const [organizerToFeature, setOrganizerToFeature] = useState<Organizer | null>(null);
 
   const [isFeatureVendorModalOpen, setFeatureVendorModalOpen] = useState(false);
   const [vendorToFeature, setVendorToFeature] = useState<Vendor | null>(null);
@@ -390,7 +390,7 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<string | null>(null);
 
   const [isApplicationFormOpen, setApplicationFormOpen] = useState(false);
-  const [marketToApplyTo, setMarketToApplyTo] = useState<Organizer | null>(null);
+  const [organizerToApplyTo, setOrganizerToApplyTo] = useState<Organizer | null>(null);
 
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showCookieBanner, setShowCookieBanner] = useState(false);
@@ -485,10 +485,10 @@ const App: React.FC = () => {
     const fetchPublicData = async () => {
       try {
         const [marketsData, vendorsData] = await Promise.all([
-          api.getMarkets(),
+          api.getOrganizers(),
           api.getVendors(),
         ]);
-        setMarkets(marketsData);
+        setOrganizers(marketsData);
         setVendors(vendorsData);
       } catch (error) {
         console.error("Failed to fetch markets/vendors:", error);
@@ -583,9 +583,9 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  const ownedMarket = useMemo(() => 
-    currentUser ? markets.find(m => m.id === currentUser.ownedOrganizerId) : undefined
-  , [currentUser, markets]);
+  const ownedOrganizer = useMemo(() => 
+    currentUser ? organizers.find(m => m.id === currentUser.ownedOrganizerId) : undefined
+  , [currentUser, organizers]);
 
   const ownedVendor = useMemo(() =>
     currentUser ? vendors.find(v => v.id === currentUser.ownedVendorId) : undefined
@@ -691,9 +691,9 @@ const App: React.FC = () => {
   };
 
   const handleOpenFeatureMarketModal = (marketId: string) => {
-    const market = markets.find(m => m.id === marketId);
+    const market = organizers.find(m => m.id === marketId);
     if (market) {
-      setMarketToFeature(market);
+      setOrganizerToFeature(market);
       setFeatureMarketModalOpen(true);
     }
   };
@@ -707,12 +707,12 @@ const App: React.FC = () => {
   };
 
   const handleConfirmFeatureMarket = async () => {
-    if (!marketToFeature) return;
+    if (!organizerToFeature) return;
     try {
-        const updatedMarket = await api.updateMarket(marketToFeature.id, { isFeatured: true });
-        setMarkets(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
+        const updatedMarket = await api.updateOrganizer(organizerToFeature.id, { isFeatured: true });
+        setOrganizers(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
         setFeatureMarketModalOpen(false);
-        setMarketToFeature(null);
+        setOrganizerToFeature(null);
         showNotification(`Successfully featured ${updatedMarket.name}!`);
     } catch (error) {
         showNotification("Failed to feature market.");
@@ -772,7 +772,7 @@ const App: React.FC = () => {
       if (!currentUser) return;
       try {
           const newReview = await api.addReview(entityType, entityId, { ...reviewData, author: currentUser.firstName && currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName.charAt(0)}.` : currentUser.email.split('@')[0], userId: currentUser?.id, reviewerAccountType: currentUser?.accountType });
-          const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
+          const collectionSetter = entityType === 'market' ? setOrganizers : setVendors;
           collectionSetter(prev => 
               prev.map(item => 
                   item.id === entityId 
@@ -801,7 +801,7 @@ const App: React.FC = () => {
           const updated = await api.resolveReviewRemoval(reviewId, action);
           setAdminReviews(prev => prev.map(r => r.id === reviewId ? { ...r, ...updated } : r));
           if (action === 'remove') {
-              const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
+              const collectionSetter = entityType === 'market' ? setOrganizers : setVendors;
               collectionSetter(prev => prev.map(item =>
                   item.id === entityId ? { ...item, reviews: item.reviews.filter(r => r.id !== reviewId) } : item
               ));
@@ -820,7 +820,7 @@ const App: React.FC = () => {
 
           // Public listings only ever hold approved reviews: add it when approved,
           // remove it when declined
-          const collectionSetter = entityType === 'market' ? setMarkets : setVendors;
+          const collectionSetter = entityType === 'market' ? setOrganizers : setVendors;
           collectionSetter(prev => prev.map(item => {
               if (item.id !== entityId) return item;
               const others = item.reviews.filter(review => review.id !== reviewId);
@@ -839,15 +839,15 @@ const App: React.FC = () => {
 
   const handleUpdateProfile = async (updatedProfileData: Organizer | Vendor) => {
     try {
-        if (isMarket(updatedProfileData)) {
-            const updatedMarket = await api.updateMarket(updatedProfileData.id, updatedProfileData);
-            setMarkets(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
+        if (isOrganizer(updatedProfileData)) {
+            const updatedMarket = await api.updateOrganizer(updatedProfileData.id, updatedProfileData);
+            setOrganizers(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
             // Refetch markets so any placeholder markets created during save appear immediately
-            const freshMarkets = await api.getMarkets();
-            setMarkets(freshMarkets);
+            const freshMarkets = await api.getOrganizers();
+            setOrganizers(freshMarkets);
         }
         showNotification("Your profile has been updated successfully!");
         navigate('/');
@@ -858,15 +858,15 @@ const App: React.FC = () => {
 
   const handleUpdateProfileAsAdmin = async (updatedProfileData: Organizer | Vendor, returnTo?: string) => {
     try {
-        if (isMarket(updatedProfileData)) {
-            const updatedMarket = await api.updateMarket(updatedProfileData.id, updatedProfileData);
-            setMarkets(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
+        if (isOrganizer(updatedProfileData)) {
+            const updatedMarket = await api.updateOrganizer(updatedProfileData.id, updatedProfileData);
+            setOrganizers(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
             // Refetch markets so any placeholder markets created during save appear immediately
-            const freshMarkets = await api.getMarkets();
-            setMarkets(freshMarkets);
+            const freshMarkets = await api.getOrganizers();
+            setOrganizers(freshMarkets);
         }
         if (returnTo) {
             navigate(returnTo);
@@ -918,9 +918,9 @@ const App: React.FC = () => {
   };
 
   const handleOpenApplicationForm = (marketId: string) => {
-    const market = markets.find(m => m.id === marketId);
+    const market = organizers.find(m => m.id === marketId);
     if (market && ownedVendor) {
-        setMarketToApplyTo(market);
+        setOrganizerToApplyTo(market);
         setApplicationFormOpen(true);
     }
   };
@@ -931,7 +931,7 @@ const App: React.FC = () => {
         const newApplication = await api.createApplication(ownedVendor.id, marketId, customResponses);
         setApplications(prev => [...prev, newApplication]);
         setApplicationFormOpen(false);
-        setMarketToApplyTo(null);
+        setOrganizerToApplyTo(null);
         showNotification("Application submitted successfully!");
     } catch (error) {
         showNotification("Failed to submit application.");
@@ -951,19 +951,19 @@ const App: React.FC = () => {
   const handleUpdateMemberStatus = async (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => {
     // Capture original status for rollback, then apply optimistic update immediately
     const originalStatus = type === 'market'
-      ? markets.find(m => m.id === memberId)?.status
+      ? organizers.find(m => m.id === memberId)?.status
       : vendors.find(v => v.id === memberId)?.status;
 
     if (type === 'market') {
-      setMarkets(prev => prev.map(m => m.id === memberId ? { ...m, status } : m));
+      setOrganizers(prev => prev.map(m => m.id === memberId ? { ...m, status } : m));
     } else {
       setVendors(prev => prev.map(v => v.id === memberId ? { ...v, status } : v));
     }
 
     try {
       if (type === 'market') {
-        const updatedMarket = await api.updateMarket(memberId, { status });
-        setMarkets(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
+        const updatedMarket = await api.updateOrganizer(memberId, { status });
+        setOrganizers(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
       } else {
         const updatedVendor = await api.updateVendor(memberId, { status });
         setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
@@ -973,7 +973,7 @@ const App: React.FC = () => {
       // Revert to original status on failure
       if (originalStatus !== undefined) {
         if (type === 'market') {
-          setMarkets(prev => prev.map(m => m.id === memberId ? { ...m, status: originalStatus } : m));
+          setOrganizers(prev => prev.map(m => m.id === memberId ? { ...m, status: originalStatus } : m));
         } else {
           setVendors(prev => prev.map(v => v.id === memberId ? { ...v, status: originalStatus } : v));
         }
@@ -984,8 +984,8 @@ const App: React.FC = () => {
 
   // HQ › Unclaimed markets › Add a market (T105). Throws so the form can show an error.
   const handleCreateMarketAsAdmin = async (data: { name: string; city: string; address: string; marketTypes: string[] }) => {
-    const created = await api.createMarket(data);
-    setMarkets(prev => [...prev, created]);
+    const created = await api.createMarketOld(data);
+    setOrganizers(prev => [...prev, created]);
     showNotification(`Added ${created.name}.`);
   };
 
@@ -993,7 +993,7 @@ const App: React.FC = () => {
     try {
       await api.hardDeleteMember(memberId, type);
       if (type === 'market') {
-        setMarkets(prev => prev.filter(m => m.id !== memberId));
+        setOrganizers(prev => prev.filter(m => m.id !== memberId));
       } else {
         setVendors(prev => prev.filter(v => v.id !== memberId));
       }
@@ -1033,20 +1033,20 @@ const App: React.FC = () => {
   const handleToggleFeatured = async (type: 'market' | 'vendor', id: string, currentValue: boolean) => {
     const newValue = !currentValue;
     if (type === 'market') {
-      setMarkets(prev => prev.map(m => m.id === id ? { ...m, isFeatured: newValue } : m));
+      setOrganizers(prev => prev.map(m => m.id === id ? { ...m, isFeatured: newValue } : m));
     } else {
       setVendors(prev => prev.map(v => v.id === id ? { ...v, isFeatured: newValue } : v));
     }
     try {
       if (type === 'market') {
-        await api.updateMarket(id, { isFeatured: newValue });
+        await api.updateOrganizer(id, { isFeatured: newValue });
       } else {
         await api.updateVendor(id, { isFeatured: newValue });
       }
       showNotification(newValue ? 'Featured!' : 'Removed from featured');
     } catch {
       if (type === 'market') {
-        setMarkets(prev => prev.map(m => m.id === id ? { ...m, isFeatured: currentValue } : m));
+        setOrganizers(prev => prev.map(m => m.id === id ? { ...m, isFeatured: currentValue } : m));
       } else {
         setVendors(prev => prev.map(v => v.id === id ? { ...v, isFeatured: currentValue } : v));
       }
@@ -1244,10 +1244,10 @@ const App: React.FC = () => {
           ) : <Routes>
             <Route path="/" element={
               <HomePage
-                markets={markets}
+                organizers={organizers}
                 vendors={vendors}
                 isLoading={isDataLoading}
-                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                 onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
                 onViewAllMarkets={() => navigate('/markets')}
                 onViewAllVendors={() => navigate('/vendors')}
@@ -1256,8 +1256,8 @@ const App: React.FC = () => {
             <Route path="/markets" element={
               <BrowsePage
                 mode="markets"
-                items={markets.filter(m => m.status === 'active')}
-                onSelect={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                items={organizers.filter(m => m.status === 'active')}
+                onSelect={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                 onBack={() => navigate('/')}
                 onSwitchMode={() => navigate('/vendors')}
               />
@@ -1272,8 +1272,8 @@ const App: React.FC = () => {
               />
             } />
             <Route path="/markets/:slug" element={
-              <MarketProfileRoute
-                markets={markets}
+              <OrganizerProfileRoute
+                organizers={organizers}
                 vendors={vendors}
                 applications={applications}
                 users={users}
@@ -1289,8 +1289,8 @@ const App: React.FC = () => {
               />
             } />
             <Route path="/markets/:slug/:eventSlug" element={
-              <EventPageRoute
-                markets={markets}
+              <MarketPageRoute
+                organizers={organizers}
                 favoritedMarketIds={favoritedMarketIds}
                 currentUser={currentUser}
                 onToggleFavorite={handleToggleMarketFavorite}
@@ -1301,7 +1301,7 @@ const App: React.FC = () => {
             <Route path="/vendors/:slug" element={
               <VendorProfileRoute
                 vendors={vendors}
-                markets={markets}
+                markets={organizers}
                 users={users}
                 favoritedVendorIds={favoritedVendorIds}
                 currentUser={currentUser}
@@ -1316,10 +1316,10 @@ const App: React.FC = () => {
             <Route path="/calendar" element={
               <CalendarView
                 currentUser={currentUser}
-                ownMarket={currentUser?.ownedOrganizerId ? markets.find(m => m.id === currentUser.ownedOrganizerId) : undefined}
-                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                ownOrganizer={currentUser?.ownedOrganizerId ? organizers.find(m => m.id === currentUser.ownedOrganizerId) : undefined}
+                onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                 onSelectEvent={(event, date) => {
-                  const m = markets.find(m => m.id === event.organizerId);
+                  const m = organizers.find(m => m.id === event.organizerId);
                   if (m?.slug) navigate(eventPath(m.slug, event, date));
                 }}
                 onBack={() => navigate('/')}
@@ -1345,10 +1345,10 @@ const App: React.FC = () => {
                   setTimeout(async () => {
                     try {
                       const [marketsData, vendorsData] = await Promise.all([
-                        api.getMarkets(),
+                        api.getOrganizers(),
                         api.getVendors(),
                       ]);
-                      setMarkets(marketsData);
+                      setOrganizers(marketsData);
                       setVendors(vendorsData);
                     } catch {
                       // non-fatal
@@ -1359,11 +1359,11 @@ const App: React.FC = () => {
             } />
             <Route path="/dashboard" element={
               <Dashboard
-                markets={markets.filter(m => favoritedMarketIds.includes(m.id))}
+                markets={organizers.filter(m => favoritedMarketIds.includes(m.id))}
                 vendors={vendors.filter(v => favoritedVendorIds.includes(v.id))}
                 onSelectMarket={(id) => {
-                  const m = markets.find(m => m.id === id); if (!m?.slug) return;
-                  rememberBrowseList('markets', markets.filter(m => favoritedMarketIds.includes(m.id)).map(m => m.id), 'Back to Saved');
+                  const m = organizers.find(m => m.id === id); if (!m?.slug) return;
+                  rememberBrowseList('markets', organizers.filter(m => favoritedMarketIds.includes(m.id)).map(m => m.id), 'Back to Saved');
                   navigate(`/markets/${m.slug}`);
                 }}
                 onSelectVendor={(id) => {
@@ -1377,12 +1377,12 @@ const App: React.FC = () => {
             <Route path="/dashboard/my-market" element={
               currentUser && currentUser.ownedOrganizerId
                 ? (() => {
-                    const ownedMarket = markets.find(m => m.id === currentUser.ownedOrganizerId);
+                    const ownedMarket = organizers.find(m => m.id === currentUser.ownedOrganizerId);
                     return ownedMarket ? (
                       <OrganizerHub
                         currentUser={currentUser}
-                        market={ownedMarket}
-                        allMarkets={currentUser.isAdmin ? markets : undefined}
+                        organizer={ownedMarket}
+                        allOrganizers={currentUser.isAdmin ? organizers : undefined}
                         onNavigateToProfile={() => navigate('/dashboard/profile')}
                         onBack={() => navigate('/')}
                       />
@@ -1391,14 +1391,14 @@ const App: React.FC = () => {
                 : <Navigate to="/" replace />
             } />
             <Route path="/dashboard/profile" element={(() => {
-              const profileData = ownedMarket || ownedVendor;
+              const profileData = ownedOrganizer || ownedVendor;
               if (!currentUser || !profileData) return <Navigate to="/" replace />;
-              const marketApplications = isMarket(profileData) ? applications.filter(app => app.marketId === profileData.id) : [];
+              const marketApplications = isOrganizer(profileData) ? applications.filter(app => app.marketId === profileData.id) : [];
               return (
                 <ProfileManager
                   profileData={profileData}
                   user={currentUser}
-                  allMarkets={markets}
+                  allMarkets={organizers}
                   applications={marketApplications}
                   vendors={vendors}
                   listingReviews={ownListingReviews}
@@ -1407,7 +1407,7 @@ const App: React.FC = () => {
                   onSaveChanges={handleUpdateProfile}
                   onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
                   onOpenUpgradeModal={() => setMembershipModalOpen(true)}
-                  onBack={() => navigate(isMarket(profileData) ? '/dashboard/my-market' : '/')}
+                  onBack={() => navigate(isOrganizer(profileData) ? '/dashboard/my-market' : '/')}
                   isAdmin={false}
                 />
               );
@@ -1433,18 +1433,18 @@ const App: React.FC = () => {
               return (
                 <MyApplications
                   applications={vendorApps}
-                  markets={markets}
-                  onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                  organizers={organizers}
+                  onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
                   onBack={() => navigate('/')}
                 />
               );
             })()} />
             <Route path="/dashboard/promotions" element={
-              !currentUser || (!ownedMarket && !ownedVendor) || !isProAccess(currentUser) ? (
+              !currentUser || (!ownedOrganizer && !ownedVendor) || !isProAccess(currentUser) ? (
                 <Navigate to="/" replace />
               ) : (
                 <Promotions
-                  ownedMarket={ownedMarket}
+                  ownedOrganizer={ownedOrganizer}
                   ownedVendor={ownedVendor}
                   onPurchasePromotion={handlePurchasePromotion}
                   onBack={() => navigate('/')}
@@ -1454,7 +1454,7 @@ const App: React.FC = () => {
             <Route path="/hq" element={
               !currentUser?.isAdmin ? <Navigate to="/" replace /> : (
                 <AdminPanel
-                  markets={markets}
+                  organizers={organizers}
                   vendors={vendors}
                   users={users}
                   reviews={adminReviews}
@@ -1474,11 +1474,11 @@ const App: React.FC = () => {
               )
             } />
             <Route path="/hq/market/:marketId/events" element={
-              <AdminMarketEventsRoute markets={markets} currentUser={currentUser} />
+              <AdminMarketEventsRoute markets={organizers} currentUser={currentUser} />
             } />
             <Route path="/hq/edit/:profileType/:profileId" element={
               <AdminEditProfileRoute
-                markets={markets}
+                organizers={organizers}
                 vendors={vendors}
                 users={users}
                 currentUser={currentUser}
@@ -1637,7 +1637,7 @@ const App: React.FC = () => {
         )}
       </Modal>
       {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 */}
-      {false && <Modal isOpen={isFeatureMarketModalOpen} onClose={() => setFeatureMarketModalOpen(false)} title={`Feature ${marketToFeature?.name}`}>
+      {false && <Modal isOpen={isFeatureMarketModalOpen} onClose={() => setFeatureMarketModalOpen(false)} title={`Feature ${organizerToFeature?.name}`}>
         <p className="text-gray-500 text-sm text-center py-4">Payment flow — Phase 2.</p>
       </Modal>}
       {false && <Modal isOpen={isFeatureVendorModalOpen} onClose={() => setFeatureVendorModalOpen(false)} title={`Feature ${vendorToFeature?.name}`}>
@@ -1646,10 +1646,10 @@ const App: React.FC = () => {
       <Modal isOpen={isPromotionModalOpen} onClose={() => setPromotionModalOpen(false)} title={`Purchase: ${selectedPromotion?.title}`}>
         <p className="text-gray-500 text-sm text-center py-4">Payment flow — coming in Phase 2.</p>
       </Modal>
-      <Modal isOpen={isApplicationFormOpen} onClose={() => setApplicationFormOpen(false)} title={`Apply to ${marketToApplyTo?.name}`}>
-        {marketToApplyTo && ownedVendor && (
+      <Modal isOpen={isApplicationFormOpen} onClose={() => setApplicationFormOpen(false)} title={`Apply to ${organizerToApplyTo?.name}`}>
+        {organizerToApplyTo && ownedVendor && (
             <ApplicationForm
-                market={marketToApplyTo}
+                organizer={organizerToApplyTo}
                 vendor={ownedVendor}
                 onSubmit={handleApplyToMarket}
             />

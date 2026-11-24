@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import type { Organizer, Vendor } from '../types';
 
 interface ApplicationFormProps {
-  market: Organizer;
+  organizer: Organizer;
   vendor: Vendor;
   onSubmit: (marketId: string, customResponses: { question: string; answer: string }[]) => void;
 }
 
-const ApplicationForm: React.FC<ApplicationFormProps> = ({ market, vendor, onSubmit }) => {
+const ApplicationForm: React.FC<ApplicationFormProps> = ({ organizer, vendor, onSubmit }) => {
   const [customResponses, setCustomResponses] = useState<{ question: string; answer: string }[]>(
-    (market.applicationFormQuestions || []).map(q => ({ question: q, answer: '' }))
+    (organizer.applicationFormQuestions || []).map(q => ({ question: q, answer: '' }))
   );
 
   const handleResponseChange = (question: string, answer: string) => {
@@ -20,7 +20,7 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({ market, vendor, onSub
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(market.id, customResponses);
+    onSubmit(organizer.id, customResponses);
   };
 
   return (

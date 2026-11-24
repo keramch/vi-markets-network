@@ -12,8 +12,8 @@ import { formatTime, upcomingOccurrences, recurrenceSummary, eventPath } from '.
 import { Link } from 'react-router-dom';
 import ShareButton from './ShareButton';
 
-interface MarketProfileProps {
-  market: Organizer;
+interface OrganizerProfileProps {
+  organizer: Organizer;
   vendors: Vendor[];
   applications: Application[];
   owner?: User | null;
@@ -41,8 +41,8 @@ const formatScheduleToString = (schedule: Organizer['schedule']): string => {
   return `${day}, ${time}${noteText}`;
 };
 
-const MarketProfile: React.FC<MarketProfileProps> = ({
-  market, vendors, applications, owner,
+const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
+  organizer, vendors, applications, owner,
   isFavorited, onToggleFavorite, currentUser,
   onAddReview, onFeatureMarket, onContactSubmit, onApply,
   upcomingEvents = [], onOpenLoginModal,
@@ -57,34 +57,34 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
     || currentUser?.subscription?.tier === 'superPro'
     || currentUser?.subscription?.foundingMember === true;
   const hasApplied = applications.some(
-    app => app.vendorId === currentUserVendor?.id && app.marketId === market.id
+    app => app.vendorId === currentUserVendor?.id && app.marketId === organizer.id
   );
 
   let canApply = true;
   let applicationDisabledReason = '';
-  if (market.allowedVendorCategories && market.allowedVendorCategories.length > 0) {
+  if (organizer.allowedVendorCategories && organizer.allowedVendorCategories.length > 0) {
     // Allowed types are chosen from the vendor types list, so compare with the vendor's real types
     const vendorMatchesCategory = !!currentUserVendor &&
-      getVendorTypes(currentUserVendor).some(type => market.allowedVendorCategories!.includes(type));
+      getVendorTypes(currentUserVendor).some(type => organizer.allowedVendorCategories!.includes(type));
     if (!vendorMatchesCategory) {
       canApply = false;
-      applicationDisabledReason = `This market only accepts these vendor types: ${market.allowedVendorCategories.join(', ')}.`;
+      applicationDisabledReason = `This market only accepts these vendor types: ${organizer.allowedVendorCategories.join(', ')}.`;
     }
   }
 
-  const isFoundingMember = market.ownerFoundingMember ?? owner?.subscription?.foundingMember;
-  const heroObjPosition = market.headerPhotoPosition === 'top' ? 'center 25%'
-    : market.headerPhotoPosition === 'bottom' ? 'center 75%'
+  const isFoundingMember = organizer.ownerFoundingMember ?? owner?.subscription?.foundingMember;
+  const heroObjPosition = organizer.headerPhotoPosition === 'top' ? 'center 25%'
+    : organizer.headerPhotoPosition === 'bottom' ? 'center 75%'
     : 'center 50%';
-  const approvedReviews = market.reviews.filter(r => r.status === 'approved');
+  const approvedReviews = organizer.reviews.filter(r => r.status === 'approved');
   const displayedReviews = approvedReviews.slice(0, 12);
   const hasAlreadyReviewed = currentUser
-    ? market.reviews.some(r => r.userId === currentUser.id)
+    ? organizer.reviews.some(r => r.userId === currentUser.id)
     : false;
 
   const followButton = currentUser ? (
     <button
-      onClick={() => onToggleFavorite(market.id)}
+      onClick={() => onToggleFavorite(organizer.id)}
       className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
         isFavorited ? 'bg-white text-brand-blue' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
       }`}
@@ -105,7 +105,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
     </button>
   );
 
-  const emailButton = market.contact?.email ? (
+  const emailButton = organizer.contact?.email ? (
     <button
       type="button"
       onClick={() => setContactOpen(o => !o)}
@@ -120,33 +120,33 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   ) : null;
 
   // ── What this profile has (T119): empty sections are left out, not shown blank
-  const heroPhoto = market.headerPhotoUrl || market.photos?.[0];
-  const hasAbout = !!market.description?.trim();
-  const hasPhotos = (market.photos?.length ?? 0) > 0;
+  const heroPhoto = organizer.headerPhotoUrl || organizer.photos?.[0];
+  const hasAbout = !!organizer.description?.trim();
+  const hasPhotos = (organizer.photos?.length ?? 0) > 0;
   const hasDates = upcomingDates.length > 0;
-  const place = market.location?.city || market.location?.address;
-  const hasSchedule = (market.schedule?.rules?.length ?? 0) > 0 || !!market.schedule?.notes?.trim();
-  const showApply = !!currentUserVendor && isProVendor && !!market.applicationFormQuestions;
-  const hasInfo = !!market.location?.address || hasSchedule || showApply;
-  const hasGoodToKnow = !!market.accessibility || (market.paymentOptions?.length ?? 0) > 0 || (market.tags?.length ?? 0) > 0 || !!market.seasonalInfo;
-  const hasSocials = socialLinks(market.contact).length > 0;
+  const place = organizer.location?.city || organizer.location?.address;
+  const hasSchedule = (organizer.schedule?.rules?.length ?? 0) > 0 || !!organizer.schedule?.notes?.trim();
+  const showApply = !!currentUserVendor && isProVendor && !!organizer.applicationFormQuestions;
+  const hasInfo = !!organizer.location?.address || hasSchedule || showApply;
+  const hasGoodToKnow = !!organizer.accessibility || (organizer.paymentOptions?.length ?? 0) > 0 || (organizer.tags?.length ?? 0) > 0 || !!organizer.seasonalInfo;
+  const hasSocials = socialLinks(organizer.contact).length > 0;
   const hasSidebar = hasInfo || hasSocials || hasGoodToKnow;
-  const isOwner = !!currentUser && (currentUser.ownedOrganizerId === market.id || currentUser.id === market.ownerId);
+  const isOwner = !!currentUser && (currentUser.ownedOrganizerId === organizer.id || currentUser.id === organizer.ownerId);
   const avgRating = approvedReviews.length
     ? (approvedReviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) / approvedReviews.length).toFixed(1)
     : null;
 
   // Owner checklist, most valuable first
-  const socials = market.contact?.socials ?? {};
+  const socials = organizer.contact?.socials ?? {};
   const checklist: ChecklistItem[] = [
     { key: 'dates', done: hasDates, title: 'Add your market dates', short: 'market dates', why: 'Your dates appear here, on the calendar, and each gets a page you can share.', action: 'Add dates', to: '/dashboard/my-market' },
-    { key: 'photos', done: (market.photos?.length ?? 0) >= 3, title: 'Add 3 or more photos of your market', short: 'photos', why: 'Photos fill your gallery and the banner at the top of your profile.', action: 'Add photos' },
-    { key: 'about', done: (market.description?.trim().length ?? 0) >= 100, title: 'Describe your market in About us', short: 'About us', why: 'What makes it special, and what shoppers can expect when they visit.', action: 'Write About us' },
+    { key: 'photos', done: (organizer.photos?.length ?? 0) >= 3, title: 'Add 3 or more photos of your market', short: 'photos', why: 'Photos fill your gallery and the banner at the top of your profile.', action: 'Add photos' },
+    { key: 'about', done: (organizer.description?.trim().length ?? 0) >= 100, title: 'Describe your market in About us', short: 'About us', why: 'What makes it special, and what shoppers can expect when they visit.', action: 'Write About us' },
     { key: 'place', done: !!place, title: 'Add your location', short: 'location', why: 'Shown under your name, so shoppers know where to find you.', action: 'Add location' },
-    { key: 'logo', done: !!market.logoUrl, title: 'Add your logo', short: 'logo', why: 'It shows on your profile and on your card in search results.', action: 'Add logo' },
+    { key: 'logo', done: !!organizer.logoUrl, title: 'Add your logo', short: 'logo', why: 'It shows on your profile and on your card in search results.', action: 'Add logo' },
     { key: 'socials', done: !!(socials.instagram || socials.facebook || socials.tiktok || socials.pinterest || socials.etsy), title: 'Add your Instagram or Facebook', short: 'social links', why: 'One more way for shoppers and vendors to keep up with you.', action: 'Add links' },
     { key: 'goodToKnow', done: hasGoodToKnow, title: 'Add a few Good to know details', short: 'Good to know', why: 'Payment options, accessibility and tags help shoppers plan their visit.', action: 'Add details' },
-    { key: 'website', done: !!(market.contact?.website || socials.website), title: 'Add your website', short: 'website', why: 'Send shoppers and vendors to your own site.', action: 'Add website' },
+    { key: 'website', done: !!(organizer.contact?.website || socials.website), title: 'Add your website', short: 'website', why: 'Send shoppers and vendors to your own site.', action: 'Add website' },
   ];
 
   const sectionTitle = 'text-2xl text-brand-blue font-serif mb-3';
@@ -178,7 +178,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {isOwner && <ProfileChecklist profileId={market.id} items={checklist} />}
+      {isOwner && <ProfileChecklist profileId={organizer.id} items={checklist} />}
 
       <div className="bg-white rounded-lg shadow-xl overflow-hidden">
 
@@ -200,12 +200,12 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <div className="flex flex-col items-start gap-2 flex-shrink-0">
                 <div className={`relative flex-shrink-0 z-10 ${heroPhoto ? 'md:-mt-10' : ''}`}>
-                  {market.logoUrl
+                  {organizer.logoUrl
                     ? <div className="w-20 h-20 md:w-32 md:h-32 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                        <img className="w-full h-full object-contain" src={market.logoUrl} alt={`${market.name} logo`} />
+                        <img className="w-full h-full object-contain" src={organizer.logoUrl} alt={`${organizer.name} logo`} />
                       </div>
                     : <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
-                        <span className="text-brand-light-blue text-4xl font-serif">{market.name[0]}</span>
+                        <span className="text-brand-light-blue text-4xl font-serif">{organizer.name[0]}</span>
                       </div>
                   }
                 </div>
@@ -224,11 +224,11 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                       <RibbonIcon className="w-5 h-5" />
                     </span>
                   )}
-                  <h1 className="text-3xl font-serif font-extrabold text-brand-blue">{market.name}</h1>
+                  <h1 className="text-3xl font-serif font-extrabold text-brand-blue">{organizer.name}</h1>
                 </div>
-                {((market.marketTypes?.length ?? 0) > 0 || place) && (
+                {((organizer.marketTypes?.length ?? 0) > 0 || place) && (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 justify-start">
-                    {market.marketTypes?.map(t => (
+                    {organizer.marketTypes?.map(t => (
                       <span key={t} className="text-sm bg-white border border-gray-200 text-brand-blue px-2.5 py-0.5 rounded-full">
                         {t}
                       </span>
@@ -254,8 +254,8 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
               {/* Admins only: jump straight to editing this profile, and come back here after saving */}
               {currentUser?.isAdmin && (
                 <Link
-                  to={`/hq/edit/market/${market.id}`}
-                  state={{ returnTo: `/markets/${market.slug}` }}
+                  to={`/hq/edit/market/${organizer.id}`}
+                  state={{ returnTo: `/markets/${organizer.slug}` }}
                   className="text-sm font-medium text-brand-light-blue hover:underline px-2 py-1"
                 >
                   Edit profile
@@ -267,12 +267,12 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
           </div>
 
           {/* Inline contact form — only mounted in the DOM when open */}
-          {contactOpen && market.contact?.email && (
+          {contactOpen && organizer.contact?.email && (
             <div id="market-contact-disclosure" className="mt-5 pt-5 border-t border-gray-200">
               <ContactForm
-                recipientEmail={market.contact.email}
+                recipientEmail={organizer.contact.email}
                 currentUser={currentUser}
-                onSend={(params) => onContactSubmit({ ...params, recipientName: market.name })}
+                onSend={(params) => onContactSubmit({ ...params, recipientName: organizer.name })}
               />
             </div>
           )}
@@ -300,9 +300,9 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                           </div>
                           <div className="min-w-0">
                             {/* Opens the event page on this date; its own website is linked from there (T013) */}
-                            {market.slug ? (
+                            {organizer.slug ? (
                               <Link
-                                to={eventPath(market.slug, event, date)}
+                                to={eventPath(organizer.slug, event, date)}
                                 className="text-base font-semibold text-brand-light-blue hover:underline"
                               >
                                 {event.name}
@@ -326,14 +326,14 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
               {hasAbout && (
                 <section>
                   <h2 className={sectionTitle}>About us</h2>
-                  <p className="text-brand-text text-base leading-relaxed whitespace-pre-line">{market.description}</p>
+                  <p className="text-brand-text text-base leading-relaxed whitespace-pre-line">{organizer.description}</p>
                 </section>
               )}
 
               {hasPhotos && (
                 <section>
                   <h2 className={sectionTitle}>Gallery</h2>
-                  <PhotoGallery photos={market.photos} altPrefix={market.name} />
+                  <PhotoGallery photos={organizer.photos} altPrefix={organizer.name} />
                 </section>
               )}
             </div>
@@ -344,29 +344,29 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                   <div className={sideCard}>
                     <h2 className={sideTitle}>Market info</h2>
                     <dl className="space-y-3">
-                      {market.location?.address && (
+                      {organizer.location?.address && (
                         <div>
                           <dt className={label}>Location</dt>
-                          <dd className="text-sm text-brand-text">{market.location.address}</dd>
+                          <dd className="text-sm text-brand-text">{organizer.location.address}</dd>
                         </div>
                       )}
                       {hasSchedule && (
                         <div>
                           <dt className={label}>Schedule</dt>
-                          <dd className="text-sm text-brand-text">{formatScheduleToString(market.schedule)}</dd>
+                          <dd className="text-sm text-brand-text">{formatScheduleToString(organizer.schedule)}</dd>
                         </div>
                       )}
                     </dl>
 
                     {showApply && (
-                      <div className={hasSchedule || market.location?.address ? 'mt-5 pt-5 border-t border-gray-200' : ''}>
+                      <div className={hasSchedule || organizer.location?.address ? 'mt-5 pt-5 border-t border-gray-200' : ''}>
                         {hasApplied ? (
                           <button disabled className="w-full bg-green-200 text-green-800 font-semibold py-3 px-4 rounded-md cursor-not-allowed">
                             Application Submitted
                           </button>
                         ) : canApply ? (
                           <button
-                            onClick={() => onApply(market.id)}
+                            onClick={() => onApply(organizer.id)}
                             className="w-full bg-brand-blue text-white font-semibold py-3 px-4 rounded-md hover:bg-opacity-80 transition-colors"
                           >
                             Apply to this Market
@@ -383,10 +383,10 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                     )}
 
                     {/* HIDDEN: Featured listings — not yet implemented, see Phase 3 (T021) */}
-                    {false && currentUser && !market.isFeatured && (
+                    {false && currentUser && !organizer.isFeatured && (
                       <div className="mt-5 pt-5 border-t border-gray-200">
                         <button
-                          onClick={() => onFeatureMarket(market.id)}
+                          onClick={() => onFeatureMarket(organizer.id)}
                           className="w-full bg-brand-gold text-white font-semibold py-2 px-4 rounded-md hover:bg-opacity-80 transition-colors"
                         >
                           ⭐️ Feature this Market
@@ -399,7 +399,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                 {hasSocials && (
                   <div className={sideCard}>
                     <h2 className="text-xl text-brand-blue font-serif mb-4">Follow along</h2>
-                    <SocialLinks contact={market.contact} />
+                    <SocialLinks contact={organizer.contact} />
                   </div>
                 )}
 
@@ -407,31 +407,31 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
                   <div className={sideCard}>
                     <h2 className={sideTitle}>Good to know</h2>
                     <div className="space-y-4">
-                      {market.accessibility && (
+                      {organizer.accessibility && (
                         <div>
                           <p className={label}>Accessibility</p>
-                          <p className="text-sm text-brand-text">{market.accessibility}</p>
+                          <p className="text-sm text-brand-text">{organizer.accessibility}</p>
                         </div>
                       )}
-                      {market.paymentOptions && market.paymentOptions.length > 0 && (
+                      {organizer.paymentOptions && organizer.paymentOptions.length > 0 && (
                         <div>
                           <p className={label}>Payments</p>
                           <div className="flex flex-wrap gap-2">
-                            {market.paymentOptions.map(opt => (
+                            {organizer.paymentOptions.map(opt => (
                               <span key={opt} className="bg-white border border-gray-200 text-sm text-brand-text px-3 py-1 rounded-full">{opt}</span>
                             ))}
                           </div>
                         </div>
                       )}
-                      {market.seasonalInfo && (
+                      {organizer.seasonalInfo && (
                         <div>
                           <p className={label}>Seasonal</p>
-                          <p className="text-sm text-brand-text">{market.seasonalInfo}</p>
+                          <p className="text-sm text-brand-text">{organizer.seasonalInfo}</p>
                         </div>
                       )}
-                      {market.tags && market.tags.length > 0 && (
+                      {organizer.tags && organizer.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                          {market.tags.map(tag => (
+                          {organizer.tags.map(tag => (
                             <span key={tag} className="bg-white border border-gray-200 text-sm text-brand-text px-3 py-1 rounded-full">{tag}</span>
                           ))}
                         </div>
@@ -450,7 +450,7 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
             <div className="bg-brand-cream rounded-xl px-5 py-4 flex flex-wrap items-center gap-4">
               <svg className="w-7 h-7 text-brand-light-blue flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
               <p className="flex-1 min-w-[14rem] text-base text-brand-text">
-                <strong className="font-semibold">No reviews yet.</strong> Been to {market.name}? Be the first to share how it went.
+                <strong className="font-semibold">No reviews yet.</strong> Been to {organizer.name}? Be the first to share how it went.
               </p>
               {reviewAction}
             </div>
@@ -496,4 +496,4 @@ const MarketProfile: React.FC<MarketProfileProps> = ({
   );
 };
 
-export default MarketProfile;
+export default OrganizerProfile;

@@ -4,12 +4,12 @@ import { FileTextIcon } from './Icons';
 
 interface MyApplicationsProps {
   applications: Application[];
-  markets: Organizer[];
+  organizers: Organizer[];
   onSelectMarket: (id: string) => void;
   onBack: () => void;
 }
 
-const MyApplications: React.FC<MyApplicationsProps> = ({ applications, markets, onSelectMarket, onBack }) => {
+const MyApplications: React.FC<MyApplicationsProps> = ({ applications, organizers, onSelectMarket, onBack }) => {
   const getStatusChip = (status: Application['status']) => {
     switch (status) {
       case 'approved':
@@ -38,7 +38,7 @@ const MyApplications: React.FC<MyApplicationsProps> = ({ applications, markets, 
         {applications.length > 0 ? (
           <div className="space-y-4">
             {applications.map(app => {
-              const market = markets.find(m => m.id === app.marketId);
+              const market = organizers.find(m => m.id === app.marketId);
               if (!market) return null;
               return (
                 <div key={app.id} className="p-4 border rounded-md flex justify-between items-center">

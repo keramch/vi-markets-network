@@ -17,7 +17,7 @@ import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
 import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
 
 interface HomePageProps {
-  markets: Organizer[];
+  organizers: Organizer[];
   vendors: Vendor[];
   isLoading: boolean;
   onSelectMarket: (id: string) => void;
@@ -132,7 +132,7 @@ const SkeletonCard = () => (
 );
 
 const HomePage: React.FC<HomePageProps> = ({
-  markets,
+  organizers,
   vendors,
   isLoading,
   onSelectMarket,
@@ -185,7 +185,7 @@ const HomePage: React.FC<HomePageProps> = ({
   // Published market events for the Coming up panel (T122); non-fatal if it fails
   const [upcomingEvents, setUpcomingEvents] = useState<Market[]>([]);
   useEffect(() => {
-    api.getMarketEvents({ status: "published" }).then(setUpcomingEvents).catch(() => {});
+    api.getMarkets({ status: "published" }).then(setUpcomingEvents).catch(() => {});
   }, []);
 
   // What's New carousel
@@ -219,8 +219,8 @@ const HomePage: React.FC<HomePageProps> = ({
   };
 
   const activeMarkets = useMemo(
-    () => markets.filter((m) => m.status === "active"),
-    [markets]
+    () => organizers.filter((m) => m.status === "active"),
+    [organizers]
   );
   const activeVendors = useMemo(
     () => vendors.filter((v) => v.status === "active"),
@@ -442,8 +442,8 @@ const HomePage: React.FC<HomePageProps> = ({
 
   // Back from a profile: return to where the visitor was (T118)
   useEffect(() => {
-    if (!isLoading && (markets.length > 0 || vendors.length > 0)) applyScrollRestore();
-  }, [isLoading, markets.length, vendors.length]);
+    if (!isLoading && (organizers.length > 0 || vendors.length > 0)) applyScrollRestore();
+  }, [isLoading, organizers.length, vendors.length]);
 
   const showSearchResults =
     searchTerm.trim().length > 0 ||

@@ -25,7 +25,7 @@ import {
 interface CalendarViewProps {
   currentUser?: User | null;
   // The signed-in member's own market, if they have one: Add Event puts dates there
-  ownMarket?: Organizer;
+  ownOrganizer?: Organizer;
   onSelectMarket: (id: string) => void;
   onSelectEvent: (event: Market, date: string) => void;
   onBack: () => void;
@@ -63,7 +63,7 @@ const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onSelectMarket, onSelectEvent, onBack }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, onSelectMarket, onSelectEvent, onBack }) => {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
@@ -86,7 +86,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onS
   useEffect(() => {
     setLoading(true);
     api
-      .getMarketEvents({ status: 'published', year, month: month + 1 })
+      .getMarkets({ status: 'published', year, month: month + 1 })
       .then(setEvents)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -128,7 +128,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onS
   const handlePrev = () => setCurrentDate(new Date(year, month - 1, 1));
   const handleNext = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  const isOrganizer = !!ownMarket;
+  const isOrganizer = !!ownOrganizer;
 
   // ── Grid cell helpers ──────────────────────────────────────────────────────
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
@@ -491,7 +491,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onS
       {renderEventDetail()}
 
       {/* Create event modal */}
-      {isFormOpen && currentUser && ownMarket && (
+      {isFormOpen && currentUser && ownOrganizer && (
         <Modal
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
@@ -499,12 +499,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownMarket, onS
             if (formDirty.current) setConfirmingDiscard(true);
             else setIsFormOpen(false);
           }}
-          title={`Add an event to ${ownMarket.name}`}
+          title={`Add an event to ${ownOrganizer.name}`}
           maxWidth="xl"
         >
           <MarketEventForm
             currentUser={currentUser}
-            market={ownMarket}
+            organizer={ownOrganizer}
             onDirtyChange={trackDirty}
             onSaved={newEvent => {
               setEvents(prev => [...prev, newEvent]);

@@ -77,7 +77,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 // -------- NORMALIZERS --------
 
-function normalizeMarket(raw: any): Organizer {
+function normalizeOrganizer(raw: any): Organizer {
   return {
     ...raw,
     reviews: raw.reviews || [],
@@ -127,9 +127,9 @@ function normalizeApplication(raw: any): Application {
 
 // LISTS
 
-export const getMarkets = async (): Promise<Organizer[]> => {
+export const getOrganizers = async (): Promise<Organizer[]> => {
   const raw = await request<any[]>("/markets");
-  return raw.map(normalizeMarket);
+  return raw.map(normalizeOrganizer);
 };
 
 export const getVendors = async (): Promise<Vendor[]> => {
@@ -223,17 +223,17 @@ export const setFoundingMember = (userId: string, currentSub: User['subscription
 
 // MARKETS
 
-export const createMarket = (
+export const createMarketOld = (
   // vendorId: a vendor adding a market to their profile; admins may leave it out (T105)
   payload: { name: string; vendorId?: string; city?: string; address?: string; marketTypes?: string[] }
 ): Promise<Organizer> => {
   return request<any>("/markets", {
     method: "POST",
     body: JSON.stringify(payload),
-  }).then(normalizeMarket);
+  }).then(normalizeOrganizer);
 };
 
-export const updateMarket = (
+export const updateOrganizer = (
   marketId: string,
   updates: Partial<Organizer>
 ): Promise<Organizer> => {
@@ -404,7 +404,7 @@ export const sendContactMessage = (params: {
 
 // MARKET EVENTS
 
-export const getMarketEvents = async (params: {
+export const getMarkets = async (params: {
   marketPageId?: string;
   status?: string;
   month?: number;
@@ -419,7 +419,7 @@ export const getMarketEvents = async (params: {
   return request<Market[]>(`/market-events${query ? `?${query}` : ""}`);
 };
 
-export const createMarketEvent = (
+export const createMarket = (
   data: Omit<Market, "id" | "createdAt" | "updatedAt">
 ): Promise<Market> => {
   return request<Market>("/market-events", {
@@ -428,7 +428,7 @@ export const createMarketEvent = (
   });
 };
 
-export const updateMarketEvent = (
+export const updateMarket = (
   id: string,
   updates: Partial<Market>
 ): Promise<Market> => {
@@ -438,7 +438,7 @@ export const updateMarketEvent = (
   });
 };
 
-export const archiveMarketEvent = (id: string): Promise<void> => {
+export const archiveMarket = (id: string): Promise<void> => {
   return request<void>(`/market-events/${id}`, { method: "DELETE" });
 };
 

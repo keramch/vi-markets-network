@@ -319,7 +319,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
               if (accountType === 'vendor') {
                 await api.updateVendor(profileId, { logoUrl });
               } else {
-                await api.updateMarket(profileId, { logoUrl });
+                await api.updateOrganizer(profileId, { logoUrl });
               }
             } catch (err) {
               console.error('Logo upload failed after signup:', err);

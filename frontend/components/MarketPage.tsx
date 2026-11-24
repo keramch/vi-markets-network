@@ -19,8 +19,8 @@ const TAG_LABELS: Record<string, string> = {
   juried:         'Juried',
 };
 
-interface EventPageProps {
-  market: Organizer;
+interface MarketPageProps {
+  organizer: Organizer;
   event: Market;
   selectedDate?: string; // from ?date= on a shared link
   currentUser: User | null;
@@ -37,8 +37,8 @@ const hours = (o: { startTime: string; endTime: string }) => `${formatTime(o.sta
 const card = 'bg-white rounded-2xl shadow-sm p-6 sm:p-7';
 const h2 = 'font-serif text-xl sm:text-2xl text-brand-blue mb-3';
 
-const EventPage: React.FC<EventPageProps> = ({
-  market, event, selectedDate, currentUser, isFollowing, onToggleFollow, onOpenLoginModal, onBack,
+const MarketPage: React.FC<MarketPageProps> = ({
+  organizer, event, selectedDate, currentUser, isFollowing, onToggleFollow, onOpenLoginModal, onBack,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -62,11 +62,11 @@ const EventPage: React.FC<EventPageProps> = ({
 
   const repeats = recurrenceSummary(event);
   const marketType: string[] = (event as any).marketType ?? [];
-  const about = event.description?.trim() || market.description?.trim() || '';
+  const about = event.description?.trim() || organizer.description?.trim() || '';
   const { venueName, address, city, province } = event.location;
 
   const handleShare = async () => {
-    const url = eventUrl(market.slug ?? '', event, selectedDate);
+    const url = eventUrl(organizer.slug ?? '', event, selectedDate);
     if (prefersShareSheet()) {
       try { await navigator.share({ title: event.name, text: `${event.name} on VI Markets`, url }); } catch { /* closed */ }
       return;
@@ -81,7 +81,7 @@ const EventPage: React.FC<EventPageProps> = ({
   const followButton = (
     <button
       type="button"
-      onClick={() => (currentUser ? onToggleFollow(market.id) : onOpenLoginModal())}
+      onClick={() => (currentUser ? onToggleFollow(organizer.id) : onOpenLoginModal())}
       className={`mt-4 w-full min-h-[2.75rem] rounded-lg border-2 border-brand-light-blue font-semibold transition-colors ${
         isFollowing ? 'bg-brand-light-blue text-white' : 'bg-white text-brand-light-blue hover:bg-brand-cream'
       }`}
@@ -113,8 +113,8 @@ const EventPage: React.FC<EventPageProps> = ({
               <h1 className="font-serif text-3xl sm:text-4xl text-brand-blue leading-tight break-words">{event.name}</h1>
               <p className="mt-2 text-base text-brand-text">
                 Hosted by{' '}
-                <Link to={`/markets/${market.slug}`} className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
-                  {market.name}
+                <Link to={`/markets/${organizer.slug}`} className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
+                  {organizer.name}
                 </Link>
               </p>
             </div>
@@ -273,12 +273,12 @@ const EventPage: React.FC<EventPageProps> = ({
             <section className={card}>
               <h2 className={h2}>Hosted by</h2>
               <div className="flex items-center gap-3">
-                {market.logoUrl && (
-                  <img src={market.logoUrl} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                {organizer.logoUrl && (
+                  <img src={organizer.logoUrl} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
                 )}
                 <div className="min-w-0">
-                  <p className="font-semibold text-brand-text break-words">{market.name}</p>
-                  <Link to={`/markets/${market.slug}`} className="text-brand-light-blue underline hover:text-brand-blue">
+                  <p className="font-semibold text-brand-text break-words">{organizer.name}</p>
+                  <Link to={`/markets/${organizer.slug}`} className="text-brand-light-blue underline hover:text-brand-blue">
                     View market profile
                   </Link>
                 </div>
@@ -292,4 +292,4 @@ const EventPage: React.FC<EventPageProps> = ({
   );
 };
 
-export default EventPage;
+export default MarketPage;

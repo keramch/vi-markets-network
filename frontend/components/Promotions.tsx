@@ -11,13 +11,13 @@ interface Promotion {
 }
 
 interface PromotionsProps {
-  ownedMarket?: Organizer;
+  ownedOrganizer?: Organizer;
   ownedVendor?: Vendor;
   onPurchasePromotion: (promotion: Promotion) => void;
   onBack: () => void;
 }
 
-const Promotions: React.FC<PromotionsProps> = ({ ownedMarket, ownedVendor, onPurchasePromotion, onBack }) => {
+const Promotions: React.FC<PromotionsProps> = ({ ownedOrganizer, ownedVendor, onPurchasePromotion, onBack }) => {
   const [marketPromoDate, setMarketPromoDate] = useState('');
   const [vendorPromoOffer, setVendorPromoOffer] = useState('');
 
@@ -29,9 +29,9 @@ const Promotions: React.FC<PromotionsProps> = ({ ownedMarket, ownedVendor, onPur
     onPurchasePromotion({
       title: 'Priority Email Placement',
       price: 5,
-      description: `Featuring ${ownedMarket?.name} for the market on ${marketPromoDate}.`,
+      description: `Featuring ${ownedOrganizer?.name} for the market on ${marketPromoDate}.`,
       onConfirm: () => {
-        console.log(`Market promotion purchased for ${ownedMarket?.id} on ${marketPromoDate}`);
+        console.log(`Market promotion purchased for ${ownedOrganizer?.id} on ${marketPromoDate}`);
         setMarketPromoDate('');
       }
     });
@@ -69,9 +69,9 @@ const Promotions: React.FC<PromotionsProps> = ({ ownedMarket, ownedVendor, onPur
       </p>
 
       <div className="space-y-12">
-        {ownedMarket && (
+        {ownedOrganizer && (
           <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-serif text-brand-blue mb-2">For Your Market: <span className="text-brand-light-blue">{ownedMarket.name}</span></h2>
+            <h2 className="text-2xl font-serif text-brand-blue mb-2">For Your Market: <span className="text-brand-light-blue">{ownedOrganizer.name}</span></h2>
             <p className="text-gray-600 mb-6">Get top billing in our newsletter to attract more visitors to your market.</p>
             <div className="border-t pt-6">
               <h3 className="text-xl font-semibold text-brand-blue">Priority Email Placement</h3>

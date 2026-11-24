@@ -9,9 +9,9 @@ interface MarketEventFormProps {
   currentUser: User;
   // The market page these dates belong to: the owner's own market, or any
   // market when an admin manages it from HQ
-  market: Organizer;
+  organizer: Organizer;
   // All markets: lets an admin move an existing event to another market page
-  allMarkets?: Organizer[];
+  allOrganizers?: Organizer[];
   onSaved: (event: Market) => void;
   onCancel: () => void;
   existingEvent?: Market;
@@ -34,8 +34,8 @@ const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
 
 const MarketEventForm: React.FC<MarketEventFormProps> = ({
   currentUser,
-  market,
-  allMarkets,
+  organizer,
+  allOrganizers,
   onSaved,
   onCancel,
   existingEvent,
@@ -76,8 +76,8 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
   // Admins only, editing an event: which market page it belongs to (T124)
-  const canMove = !!existingEvent && !!currentUser.isAdmin && (allMarkets?.length ?? 0) > 1;
-  const [moveTo, setMoveTo] = useState(existingEvent?.organizerId ?? market.id);
+  const canMove = !!existingEvent && !!currentUser.isAdmin && (allOrganizers?.length ?? 0) > 1;
+  const [moveTo, setMoveTo] = useState(existingEvent?.organizerId ?? organizer.id);
   const moving = !!existingEvent && moveTo !== existingEvent.organizerId;
   // A live event gets Save Changes / Unpublish instead of Save Draft / Publish,
   // and Unpublish asks for confirmation because it hides every date (T093).
@@ -133,7 +133,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
     // Upload any newly chosen images into the market's own image folder
     // (storage.rules lets the market's owner write there)
-    const marketId = existingEvent?.organizerId ?? market.id;
+    const marketId = existingEvent?.organizerId ?? organizer.id;
     let finalPosterUrl = posterUrl;
     let finalTileUrl = tileUrl;
     try {
@@ -200,8 +200,8 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       // market it's on, so editing as an admin can't move it by accident.
       // organizerUid only records who added it; who can edit comes from the page.
       const saved = existingEvent
-        ? await api.updateMarketEvent(existingEvent.id, { ...payload, status, ...(moving ? { organizerId: moveTo } : {}) })
-        : await api.createMarketEvent({ ...payload, organizerId: market.id, organizerUid: market.ownerId || currentUser.id });
+        ? await api.updateMarket(existingEvent.id, { ...payload, status, ...(moving ? { organizerId: moveTo } : {}) })
+        : await api.createMarket({ ...payload, organizerId: organizer.id, organizerUid: organizer.ownerId || currentUser.id });
       onSaved(saved);
     } catch (e: any) {
       setError(e.message ?? 'Failed to save event');
@@ -481,7 +481,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
             onChange={e => setMoveTo(e.target.value)}
             className={inputCls + ' bg-white'}
           >
-            {[...allMarkets!]
+            {[...allOrganizers!]
               .sort((a, b) => a.name.localeCompare(b.name))
               .map(m => (
                 <option key={m.id} value={m.id}>

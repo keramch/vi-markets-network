@@ -28,7 +28,7 @@ interface ProfileManagerProps {
   onOpenUpgradeModal?: () => void;
 }
 
-const isMarket = (profile: Organizer | Vendor): profile is Organizer => {
+const isOrganizer = (profile: Organizer | Vendor): profile is Organizer => {
   return 'location' in profile;
 };
 
@@ -92,7 +92,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const isFreeUser = !user?.subscription?.foundingMember && (user?.subscription?.tier === 'free' || !user?.subscription?.tier);
 
   useEffect(() => {
-    if (!isMarket(formData)) return;
+    if (!isOrganizer(formData)) return;
 
     const conflicts: string[] = [];
     const currentMarket = formData;
@@ -160,7 +160,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   ) => {
     const { value, checked } = e.target;
 
-    if ((group === 'tags' || group === 'vendorTypes') && !isMarket(formData)) {
+    if ((group === 'tags' || group === 'vendorTypes') && !isOrganizer(formData)) {
         const currentValues = (formData[group] as string[]) || [];
         const newValues = checked
             ? [...currentValues, value]
@@ -169,7 +169,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         return;
     }
 
-    if (!isMarket(formData)) return;
+    if (!isOrganizer(formData)) return;
 
     const currentValues = formData[group as 'amenities'] || [];
     const newValues = checked
@@ -179,7 +179,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     setFormData({ ...formData, [group]: newValues });
   };
   
-  const profileType = isMarket(formData) ? 'markets' : 'vendors';
+  const profileType = isOrganizer(formData) ? 'markets' : 'vendors';
 
   const saveWithUploads = async () => {
     setIsSaving(true);
@@ -227,13 +227,13 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     }
 
     try {
-      if (!isMarket(updatedData)) {
+      if (!isOrganizer(updatedData)) {
         const vendor = updatedData;
         const linkedEntries = pendingLinks.map(pl => ({ marketId: pl.marketId, date: pl.date, source: 'self' as const }));
         const newMarketEntries: { marketId: string; date: string; source: 'self' }[] = [];
         for (const pm of pendingNewMarkets) {
           try {
-            const created = await api.createMarket({ name: pm.name, vendorId: vendor.id, city: pm.city, address: pm.address });
+            const created = await api.createMarketOld({ name: pm.name, vendorId: vendor.id, city: pm.city, address: pm.address });
             newMarketEntries.push({ marketId: created.id, date: pm.date, source: 'self' });
           } catch {
             setUploadError('One or more markets could not be created. Your other changes will still be saved.');
@@ -448,7 +448,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-8 overflow-x-hidden">
-        {isMarket(formData) && !isAdmin && (
+        {isOrganizer(formData) && !isAdmin && (
           <button onClick={onBack} className="mb-4 text-brand-light-blue hover:text-brand-blue font-semibold">
             &larr; Back to My Market
           </button>
@@ -463,14 +463,14 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         )}
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-3xl font-serif text-brand-blue mb-2">{isMarket(formData) ? 'Market Profile' : 'Vendor Profile'}</h2>
+            <h2 className="text-3xl font-serif text-brand-blue mb-2">{isOrganizer(formData) ? 'Market Profile' : 'Vendor Profile'}</h2>
             <p className="text-gray-600">Edit your public profile and settings.</p>
           </div>
           {/* Opens in a new tab so unsaved edits here aren't lost. Owners also
               see their "Help shoppers find you" checklist there (T119). */}
           {profileData.slug && (
             <a
-              href={`/${isMarket(profileData) ? 'markets' : 'vendors'}/${profileData.slug}`}
+              href={`/${isOrganizer(profileData) ? 'markets' : 'vendors'}/${profileData.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 min-h-[3rem] px-5 rounded-full border-2 border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream"
@@ -485,7 +485,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         <div className="border-b mb-6">
             <div className="flex space-x-2 flex-wrap">
                 <TabButton tab="details" label="Profile Details" />
-                 {isMarket(formData) && isProMember && (
+                 {isOrganizer(formData) && isProMember && (
                     <>
                         <TabButton tab="settings" label="Application Settings" />
                         <TabButton tab="applications" label="Manage Applications" />
@@ -507,7 +507,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                         <label className="block text-sm font-medium text-gray-700">Name</label>
                         <input type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
                     </div>
-                    {!isMarket(formData) && (
+                    {!isOrganizer(formData) && (
                         <div>
                             <label htmlFor="vendor-city" className="block text-sm font-medium text-gray-700">Town or area</label>
                             <input id="vendor-city" type="text" name="city" maxLength={60} autoComplete="address-level2" value={(formData as Vendor).city ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
@@ -549,7 +549,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                         </div>
                     </div>
 
-                    {isMarket(formData) ? (
+                    {isOrganizer(formData) ? (
                         <>
                            <div className="border-t pt-6">
                                 <h3 className="text-lg font-semibold text-brand-blue mb-2">About Us</h3>
@@ -1150,13 +1150,13 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                 </>
             )}
 
-            {activeTab === 'settings' && isMarket(formData) && (
+            {activeTab === 'settings' && isOrganizer(formData) && (
                 // Called as a function (not <ApplicationSettings />): it's defined inside this component,
                 // so rendering it as a component remounts it on every keystroke and the textarea loses focus
                 ApplicationSettings({ marketData: formData })
             )}
 
-             {activeTab === 'applications' && isMarket(formData) && (
+             {activeTab === 'applications' && isOrganizer(formData) && (
                 <ManageApplications marketData={formData} />
             )}
 
