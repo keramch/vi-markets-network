@@ -6,10 +6,13 @@ import type {
   MarketCategory,
   VendorType,
   Review,
+  MarketEvent,
 } from "../types";
 import { MarketCategories, VendorTypes } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
+import ComingUp from "./ComingUp";
+import * as api from "../services/api.live";
 import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
 import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
 
@@ -178,6 +181,12 @@ const HomePage: React.FC<HomePageProps> = ({
   const [sortBy, setSortBy] = useState<"match" | "distance">("match");
 
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+
+  // Published market events for the Coming up panel (T122); non-fatal if it fails
+  const [upcomingEvents, setUpcomingEvents] = useState<MarketEvent[]>([]);
+  useEffect(() => {
+    api.getMarketEvents({ status: "published" }).then(setUpcomingEvents).catch(() => {});
+  }, []);
 
   // What's New carousel
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -475,7 +484,8 @@ const HomePage: React.FC<HomePageProps> = ({
     <main>
       {/* Hero section */}
       <div id="pagetop-header" className={`relative bg-brand-light-blue text-white px-4 text-center transition-all ${showSearchResults ? "py-6 md:py-16" : "py-16"}`}>
-        <div className="relative z-10">
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12">
+        <div className="flex-1 min-w-0">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 font-serif">
             Your Guide to Island Markets
           </h1>
@@ -629,6 +639,9 @@ const HomePage: React.FC<HomePageProps> = ({
               )}
             </div>
           </div>
+        </div>
+          {/* Next market dates, live (T122); hidden while search results are showing */}
+          {!showSearchResults && <ComingUp events={upcomingEvents} markets={activeMarkets} />}
         </div>
       </div>
 
