@@ -42,7 +42,7 @@ Background: OD-16 decides that a **market** is the event people go to (one-off, 
 - **Times are optional for unclaimed markets.** Without them, the page says *"Times to be confirmed"*. Vendors never gave times.
 - **A market with no dates at all still gets a page** saying *"No dates announced yet"*. It shows in Browse and search, but not on the calendar.
 - **Past dates aren't shown.** This is a new site and doesn't need to look historical. A market whose known dates have all passed keeps its page, saying *"No upcoming dates announced"*. That suits yearly markets, which shoppers will search for again next year. Past dates stay in the record but aren't displayed.
-- **Market names shouldn't include a year or dates.** "Cumberland Winterfaire" can hold this year's dates and next year's. Foggy Mountain Fall Fair already has vendors for both 2026 and 2027.
+- **A year in a market's name is fine** ("Foggy Mountain Fall Fair 2026"): it's common, and it's the organizer's choice. One listing can also hold several years' dates. Only dates or days written into a name ("(Fri 10-Sun 12)") are better moved into the dates.
 
 ---
 
