@@ -10,6 +10,8 @@ interface MarketEventFormProps {
   // The market page these dates belong to: the owner's own market, or any
   // market when an admin manages it from HQ
   market: Market;
+  // All markets: lets an admin move an existing event to another market page
+  allMarkets?: Market[];
   onSaved: (event: MarketEvent) => void;
   onCancel: () => void;
   existingEvent?: MarketEvent;
@@ -33,6 +35,7 @@ const labelCls = 'block text-sm font-medium text-gray-700 mb-1';
 const MarketEventForm: React.FC<MarketEventFormProps> = ({
   currentUser,
   market,
+  allMarkets,
   onSaved,
   onCancel,
   existingEvent,
@@ -72,6 +75,10 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const [tileFile, setTileFile]       = useState<File | null>(null);
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
+  // Admins only, editing an event: which market page it belongs to (T124)
+  const canMove = !!existingEvent && !!currentUser.isAdmin && (allMarkets?.length ?? 0) > 1;
+  const [moveTo, setMoveTo] = useState(existingEvent?.marketPageId ?? market.id);
+  const moving = !!existingEvent && moveTo !== existingEvent.marketPageId;
   // A live event gets Save Changes / Unpublish instead of Save Draft / Publish,
   // and Unpublish asks for confirmation because it hides every date (T093).
   const isLive = existingEvent?.status === 'published';
@@ -86,7 +93,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const snapshot = JSON.stringify([
     type, name, venueName, address, city, province, startTime, endTime, date, startDate, endDate,
     recurrenceDays, recurrenceFrequency, selectedTags, marketType, externalUrl, description,
-    posterUrl, tileUrl, posterFile?.name ?? '', tileFile?.name ?? '',
+    posterUrl, tileUrl, posterFile?.name ?? '', tileFile?.name ?? '', moveTo,
   ]);
   const initialSnapshot = useRef(snapshot);
   useEffect(() => {
@@ -193,7 +200,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       // market it's on, so editing as an admin can't move it by accident.
       // organizerUid only records who added it; who can edit comes from the page.
       const saved = existingEvent
-        ? await api.updateMarketEvent(existingEvent.id, { ...payload, status })
+        ? await api.updateMarketEvent(existingEvent.id, { ...payload, status, ...(moving ? { marketPageId: moveTo } : {}) })
         : await api.createMarketEvent({ ...payload, marketPageId: market.id, organizerUid: market.ownerId || currentUser.id });
       onSaved(saved);
     } catch (e: any) {
@@ -464,6 +471,31 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           type="url"
         />
       </div>
+
+      {canMove && (
+        <div className="p-4 rounded-lg bg-brand-cream">
+          <label htmlFor="event-market-page" className={labelCls}>Market page (admin)</label>
+          <select
+            id="event-market-page"
+            value={moveTo}
+            onChange={e => setMoveTo(e.target.value)}
+            className={inputCls + ' bg-white'}
+          >
+            {[...allMarkets!]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(m => (
+                <option key={m.id} value={m.id}>
+                  {m.name}{m.status === 'unclaimed' ? ' (unclaimed)' : ''}
+                </option>
+              ))}
+          </select>
+          <p className="mt-2 text-sm text-gray-600">
+            {moving
+              ? "Saving moves this event to that market's page. Its web address changes, so links shared before won't work."
+              : 'To move this event to another market, choose it here.'}
+          </p>
+        </div>
+      )}
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 

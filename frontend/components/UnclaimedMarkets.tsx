@@ -11,6 +11,7 @@ interface UnclaimedMarketsProps {
   markets: Market[];   // all markets
   vendors: Vendor[];
   onEdit: (id: string) => void;
+  onEvents: (id: string) => void;   // that market's dates (T124)
   onDelete: (id: string) => void;
   onCreate: (data: { name: string; city: string; address: string; marketTypes: string[] }) => Promise<void>;
 }
@@ -18,7 +19,7 @@ interface UnclaimedMarketsProps {
 // "St. Mary's Christmas Market" and "St Marys christmas market" compare equal
 const normalize = (name: string) => name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
 
-const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, onEdit, onDelete, onCreate }) => {
+const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, onEdit, onEvents, onDelete, onCreate }) => {
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
@@ -128,7 +129,7 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
             <button type="submit" disabled={saving} className="min-h-[2.75rem] px-5 rounded-md bg-brand-light-blue text-white text-sm font-semibold disabled:opacity-60">
               {saving ? 'Adding…' : 'Add market'}
             </button>
-            <p className="text-sm text-gray-600">You can add a description, photos and events after, with Edit.</p>
+            <p className="text-sm text-gray-600">You can add a description and photos after, with Edit, and dates with Events.</p>
           </div>
         </form>
       )}
@@ -171,6 +172,9 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => onEdit(m.id)} className="min-h-[2.75rem] px-4 rounded-md border border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream">
                     Edit
+                  </button>
+                  <button type="button" onClick={() => onEvents(m.id)} className="min-h-[2.75rem] px-4 rounded-md border border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream">
+                    Events
                   </button>
                   <button
                     type="button"

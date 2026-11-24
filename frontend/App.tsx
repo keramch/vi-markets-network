@@ -292,6 +292,26 @@ interface AdminEditProfileRouteProps {
   currentUser: User | null;
   onSaveChanges: (data: Market | Vendor, returnTo?: string) => Promise<void>;
 }
+// HQ › a market's Events (T124): the My Market events screen for any market,
+// so an admin can add and edit dates for unclaimed markets
+const AdminMarketEventsRoute: React.FC<{ markets: Market[]; currentUser: User | null }> = ({ markets, currentUser }) => {
+  const { marketId } = useParams<{ marketId: string }>();
+  const navigate = useNavigate();
+  if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
+  const market = markets.find(m => m.id === marketId);
+  if (!market) return <Navigate to="/hq" replace />;
+  return (
+    <OrganizerHub
+      currentUser={currentUser}
+      market={market}
+      allMarkets={markets}
+      adminView
+      onNavigateToProfile={() => navigate(`/hq/edit/market/${market.id}`)}
+      onBack={() => navigate('/hq')}
+    />
+  );
+};
+
 const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
   markets, vendors, users, currentUser, onSaveChanges,
 }) => {
@@ -1362,6 +1382,7 @@ const App: React.FC = () => {
                       <OrganizerHub
                         currentUser={currentUser}
                         market={ownedMarket}
+                        allMarkets={currentUser.isAdmin ? markets : undefined}
                         onNavigateToProfile={() => navigate('/dashboard/profile')}
                         onBack={() => navigate('/')}
                       />
@@ -1446,10 +1467,14 @@ const App: React.FC = () => {
                   onToggleFeatured={handleToggleFeatured}
                   onSendMessage={handleSendAdminMessage}
                   onCreateMarket={handleCreateMarketAsAdmin}
+                  onOpenMarketEvents={(id) => navigate(`/hq/market/${id}/events`)}
                   initialTab={adminActiveTab}
                   onTabChange={setAdminActiveTab}
                 />
               )
+            } />
+            <Route path="/hq/market/:marketId/events" element={
+              <AdminMarketEventsRoute markets={markets} currentUser={currentUser} />
             } />
             <Route path="/hq/edit/:profileType/:profileId" element={
               <AdminEditProfileRoute

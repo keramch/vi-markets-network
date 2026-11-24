@@ -18,6 +18,7 @@ interface AdminPanelProps {
   onToggleFeatured: (type: 'market' | 'vendor', id: string, currentValue: boolean) => void;
   onSendMessage: (to: string, subject: string, body: string) => Promise<void>;
   onCreateMarket: (data: { name: string; city: string; address: string; marketTypes: string[] }) => Promise<void>;
+  onOpenMarketEvents: (marketId: string) => void;
   initialTab?: 'reviews' | 'memberships' | 'unclaimed';
   onTabChange?: (tab: 'reviews' | 'memberships' | 'unclaimed') => void;
 }
@@ -36,6 +37,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onToggleFeatured,
   onSendMessage,
   onCreateMarket,
+  onOpenMarketEvents,
   initialTab = 'reviews',
   onTabChange,
 }) => {
@@ -205,6 +207,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           onEdit={(id) => onEditProfile(id, 'market')}
           onDelete={(id) => onHardDeleteMember(id, 'market')}
           onCreate={onCreateMarket}
+          onEvents={onOpenMarketEvents}
         />
       )}
 

@@ -12,6 +12,11 @@ interface OrganizerHubProps {
   market: Market;
   onNavigateToProfile: () => void;
   onBack: () => void;
+  // HQ › a market's Events (T124): an admin managing any market's dates,
+  // usually an unclaimed one. Hides the owner's plan and coming-soon sections.
+  adminView?: boolean;
+  // Every market, so an admin can move an event to another market page
+  allMarkets?: Market[];
 }
 
 const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -53,7 +58,11 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   market,
   onNavigateToProfile,
   onBack,
+  adminView = false,
+  allMarkets,
 }) => {
+  // Shown after an admin moves an event to another market page
+  const [movedNote, setMovedNote] = useState('');
   const [events, setEvents] = useState<MarketEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -125,6 +134,14 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const handleSaved = (saved: MarketEvent) => {
     closeEdit();
+    if (saved.marketPageId !== market.id) {
+      // Moved to another market page: it no longer belongs on this list
+      const to = allMarkets?.find(m => m.id === saved.marketPageId)?.name ?? 'another market';
+      setMovedNote(`"${saved.name}" moved to ${to}.`);
+      setEvents(prev => prev.filter(e => e.id !== saved.id));
+      return;
+    }
+    setMovedNote('');
     setEvents(prev => {
       const exists = prev.some(e => e.id === saved.id);
       const updated = exists
@@ -191,10 +208,20 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
 
+      {adminView && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-4 min-h-[2.75rem] text-sm font-semibold text-brand-light-blue hover:underline"
+        >
+          ← Back to HQ
+        </button>
+      )}
+
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-serif text-brand-blue">Organizer Hub</h1>
+          <h1 className="text-3xl font-serif text-brand-blue">{adminView ? 'Market events' : 'Organizer Hub'}</h1>
           <p className="text-gray-500 mt-1 text-sm">
             {market.name}
             <span className="mx-2 text-gray-300">·</span>
@@ -206,13 +233,23 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
             </button>
           </p>
         </div>
+        {adminView ? (
+          <span className="flex-shrink-0 mt-1 text-sm font-medium px-3 py-1 rounded-full bg-amber-100 text-amber-900">
+            {market.status === 'unclaimed' ? 'Unclaimed: managed from HQ' : 'Managing as admin'}
+          </span>
+        ) : (
         <div className="flex items-center gap-2 flex-shrink-0 mt-1">
           <TierPill />
           <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700">
             Active
           </span>
         </div>
+        )}
       </div>
+
+      {movedNote && (
+        <p role="status" className="mb-4 px-4 py-3 rounded-lg bg-brand-cream text-brand-text text-sm">{movedNote}</p>
+      )}
 
       {/* ── SECTION 1: Event Manager ─────────────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
@@ -347,6 +384,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         </div>
       </div>
 
+      {!adminView && (<>
       {/* ── SECTION 2: Application Manager (Phase 2) ────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6 opacity-80">
 
@@ -403,6 +441,8 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         </div>
       </div>
 
+      </>)}
+
       {/* ── Edit / Add Event Modal ───────────────────────────────────────────── */}
       <Modal
         isOpen={editModalOpen}
@@ -414,6 +454,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <MarketEventForm
           currentUser={currentUser}
           market={market}
+          allMarkets={allMarkets}
           existingEvent={selectedEvent ?? undefined}
           onSaved={handleSaved}
           onCancel={closeEdit}
