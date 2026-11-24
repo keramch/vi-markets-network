@@ -57,16 +57,21 @@ export interface EventException {
   note?: string;
 }
 
-export interface MarketEvent {
+// A market: the event people go to (OD-16). Stored in `markets` since stage 1
+// (T128); before that in `marketEvents`, under the name MarketEvent.
+export interface Market {
   id: string;
-  marketPageId: string;
-  organizerUid: string;
+  organizerId: string | null;   // null = unclaimed (added by a vendor or HQ)
+  organizerUid?: string;        // before stage 1: who created it
+  addedBy?: { uid?: string | null; vendorId?: string | null };
+  hqCheckedAt?: string;         // last saved by an admin (locks the adding vendor out, stage 3)
+  legacyPaths?: string[];       // old /markets/<organizer>/<event> links that forward here
   name: string;
-  slug?: string; // readable link part, unique within the market, never changes once set
+  slug?: string; // readable link part, unique across markets, never changes once set
   description?: string; // optional; the event page falls back to the market's description
   posterUrl?: string;   // vertical poster, shown on the event page
   tileUrl?: string;     // horizontal share image (1200 × 628), used for link previews
-  type: 'recurring' | 'oneTime' | 'specialEdition';
+  type: 'recurring' | 'dates';
   marketTags: MarketTag[];
   location: {
     venueName: string;
@@ -77,14 +82,16 @@ export interface MarketEvent {
     lng?: number;
   };
   schedule: {
-    date?: string;
+    dates?: string[];             // type 'dates': each day it's on
+    date?: string;                // before stage 1: a one-time market's date
     startDate?: string;
     endDate?: string;
     recurrenceDays?: number[];    // 0=Sun … 6=Sat
     recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly';
-    startTime: string;            // "HH:MM"
-    endTime: string;              // "HH:MM"
+    startTime: string;            // "HH:MM", or '' = to be confirmed
+    endTime: string;              // "HH:MM", or '' = to be confirmed
   };
+  dateSources?: Record<string, 'vendor'>; // dates known only from a vendor
   exceptions: EventException[];
   status: 'draft' | 'published' | 'cancelled' | 'archived';
   photos: string[];

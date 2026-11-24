@@ -23,8 +23,8 @@ router.get("/", async (req, res) => {
     if (user.ownedVendorId) {
       queries.push(db.collection("applications").where("vendorId", "==", user.ownedVendorId).get());
     }
-    if (user.ownedMarketId) {
-      queries.push(db.collection("applications").where("marketId", "==", user.ownedMarketId).get());
+    if (user.ownedOrganizerId) {
+      queries.push(db.collection("applications").where("organizerId", "==", user.ownedOrganizerId).get());
     }
 
     const byId = new Map<string, Record<string, unknown>>();
@@ -38,17 +38,18 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /applications → a vendor applies to a market (own vendor profile only)
-// body: { vendorId, marketId, customResponses }
+// POST /applications → a vendor applies to an organizer (own vendor profile only).
+// Legacy flow from the organizer profile, until the organizer tools (T022).
+// body: { vendorId, organizerId, customResponses } (marketId accepted as the old name)
 router.post("/", requireAuth, async (req, res) => {
-  const { vendorId, marketId, customResponses } = req.body as {
+  const { vendorId, customResponses } = req.body as {
     vendorId: string;
-    marketId: string;
     customResponses: { question: string; answer: string }[];
   };
+  const organizerId = req.body?.organizerId ?? req.body?.marketId;
 
-  if (typeof vendorId !== "string" || !vendorId || typeof marketId !== "string" || !marketId) {
-    return res.status(400).json({ error: "vendorId and marketId are required" });
+  if (typeof vendorId !== "string" || !vendorId || typeof organizerId !== "string" || !organizerId) {
+    return res.status(400).json({ error: "vendorId and organizerId are required" });
   }
   // Answers are question/answer text pairs of a sensible size (T101)
   const responses = customResponses ?? [];
@@ -62,15 +63,15 @@ router.post("/", requireAuth, async (req, res) => {
     if (!(await ownsListing(req.user!.uid, "vendors", vendorId))) {
       return res.status(403).json({ error: "You can only apply with your own vendor profile." });
     }
-    const market = await db.collection("markets").doc(marketId).get();
-    if (!market.exists || market.data()?.status !== "active") {
-      return res.status(404).json({ error: "This market isn't taking applications right now." });
+    const organizer = await db.collection("organizers").doc(organizerId).get();
+    if (!organizer.exists || organizer.data()?.status !== "active") {
+      return res.status(404).json({ error: "This organizer isn't taking applications right now." });
     }
 
     const now = new Date();
     const newApplication = {
       vendorId,
-      marketId,
+      organizerId,
       customResponses: responses.map(r => ({ question: r.question, answer: r.answer })),
       status: "pending",
       date: now.toISOString().split("T")[0], // YYYY-MM-DD like your mock
@@ -99,8 +100,8 @@ router.patch("/:id", requireAuth, async (req, res) => {
 
     let updates = (req.body ?? {}) as Record<string, unknown>;
     if (!(await isAdminUser(req.user!.uid))) {
-      if (!(await ownsListing(req.user!.uid, "markets", existing.data()?.marketId))) {
-        return res.status(403).json({ error: "Only the market that received this application can update it." });
+      if (!(await ownsListing(req.user!.uid, "organizers", existing.data()?.organizerId))) {
+        return res.status(403).json({ error: "Only the organizer that received this application can update it." });
       }
       if (updates.status !== "approved" && updates.status !== "rejected") {
         return res.status(400).json({ error: "status must be 'approved' or 'rejected'" });

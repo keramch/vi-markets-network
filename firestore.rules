@@ -46,14 +46,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── markets ─────────────────────────────────────────────────────────────
-    // Public data — all reads are open so the homepage/search can work
-    // directly if the frontend ever uses the client SDK. The backend already
-    // filters by status == 'active'; we don't repeat that here so that
-    // market owners can also read their own suspended/archived market.
-    // All writes go through the backend (Admin SDK).
+    // ── organizers ──────────────────────────────────────────────────────────
+    // The people or groups who run markets (OD-16, T128). Public data — the
+    // backend filters out hidden ones. All writes go through the backend.
 
-    match /markets/{marketId} {
+    match /organizers/{organizerId} {
       allow read:  if true;
       allow write: if false;
     }
@@ -65,24 +62,28 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── marketEvents ────────────────────────────────────────────────────────
-    // Published events are public (shown on the calendar).
-    // Draft / cancelled / archived events are visible only to the organizer
-    // who created them and to admins.
-    // Queries that filter by status == 'published' are allowed for everyone;
-    // unfiltered list queries are blocked for non-organizers.
+    // ── markets ─────────────────────────────────────────────────────────────
+    // The markets themselves (events people go to). Published ones are public;
+    // drafts, cancelled and archived ones only for admins and the owner of the
+    // market's organizer. Unclaimed markets have no organizer (organizerId null).
+
+    function ownsMarketOrganizer(data) {
+      return isSignedIn()
+          && data.get('organizerId', null) != null
+          && get(/databases/$(database)/documents/organizers/$(data.organizerId)).data.ownerId == request.auth.uid;
+    }
+
+    match /markets/{marketId} {
+      allow get:  if resource.data.status == 'published' || isAdmin() || ownsMarketOrganizer(resource.data);
+      allow list: if resource.data.status == 'published' || isAdmin() || ownsMarketOrganizer(resource.data);
+      allow write: if false;
+    }
+
+    // ── marketEvents (before stage 1) ───────────────────────────────────────
+    // Kept untouched after the T128 conversion as a record; admins only.
 
     match /marketEvents/{eventId} {
-      allow get:  if resource.data.status == 'published'
-                  || isAdmin()
-                  || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
-
-      // list: allow queries filtered to published status; organizers/admins
-      // can query broader (Firestore will evaluate per-document).
-      allow list: if resource.data.status == 'published'
-                  || isAdmin()
-                  || (isSignedIn() && request.auth.uid == resource.data.organizerUid);
-
+      allow read:  if isAdmin();
       allow write: if false;
     }
 
@@ -129,7 +130,7 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── applications (legacy vendor↔market applications) ────────────────────
+    // ── applications (legacy vendor↔organizer applications) ─────────────────
     // Kept for backward compatibility. Access through backend only.
 
     match /applications/{appId} {
@@ -139,7 +140,7 @@ service cloud.firestore {
 
     // ── reviews ─────────────────────────────────────────────────────────────
     // Approved reviews are intentionally public — no auth required.
-    // They appear on market and vendor profile pages visible to all visitors.
+    // They appear on market, organizer and vendor pages visible to all visitors.
     // Pending and declined reviews are visible to admins only.
 
     match /reviews/{reviewId} {

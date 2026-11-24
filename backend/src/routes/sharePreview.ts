@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { db } from "../firebase";
 
-// GET /share-preview?path=/markets/<slug>[/<event>] or /vendors/<slug>
+// GET /share-preview?path=/markets/<slug>, /organizers/<slug> or /vendors/<slug>
 // What a link preview card needs (title, description, image) for one public
 // page. Used by the Vercel link-preview function when Facebook, iMessage etc.
-// read a shared link (T097). Only public information: active markets and
-// vendors, published events. Anything else gets 404 and the site-wide card.
+// read a shared link (T097). Only public information: published markets,
+// active organizers and vendors. Anything else gets 404 and the site-wide card.
+// Links from before stage 1 (T128) still get the right card: /markets/<organizer>
+// and /markets/<organizer>/<event>.
 
 const router = Router();
 
@@ -39,7 +41,7 @@ function shortSeriesRange(event: FirebaseFirestore.DocumentData): string {
   const { startDate, endDate } = event.schedule ?? {};
   const days: unknown[] = event.schedule?.recurrenceDays ?? [];
   const iso = /^\d{4}-\d{2}-\d{2}$/;
-  if (event.type === "oneTime" || typeof startDate !== "string" || typeof endDate !== "string") return "";
+  if (event.type !== "recurring" || typeof startDate !== "string" || typeof endDate !== "string") return "";
   if (!iso.test(startDate) || !iso.test(endDate)) return "";
   const start = new Date(`${startDate}T12:00:00Z`);
   const end = new Date(`${endDate}T12:00:00Z`);
@@ -58,7 +60,7 @@ function shortSeriesRange(event: FirebaseFirestore.DocumentData): string {
 
 // "Every Sat", "Every other Sat/Sun", "Monthly, Wed" (Monday first, like the site)
 function repeats(event: FirebaseFirestore.DocumentData): string {
-  if (event.type === "oneTime") return "";
+  if (event.type !== "recurring") return "";
   const range = shortSeriesRange(event);
   if (range) return range;
   const days = [...(event.schedule?.recurrenceDays ?? [])]
@@ -71,11 +73,43 @@ function repeats(event: FirebaseFirestore.DocumentData): string {
   return freq === "biweekly" ? `Every other ${days}` : freq === "monthly" ? `Monthly, ${days}` : `Every ${days}`;
 }
 
-async function activeListing(collection: "markets" | "vendors", slug: string) {
+// "Sat, Nov 28", or "Sat, Nov 28 + 2 more dates" for a market on a list of dates:
+// the next date to come, else the last one
+function nextListedDate(event: FirebaseFirestore.DocumentData): string {
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  const dates: string[] = (event.schedule?.dates ?? []).filter((d: unknown) => typeof d === "string" && iso.test(d)).sort();
+  if (event.type !== "dates" || dates.length === 0) return "";
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Vancouver" });
+  const upcoming = dates.filter(d => d >= today);
+  const first = upcoming[0] ?? dates[dates.length - 1];
+  const label = new Date(`${first}T12:00:00Z`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+  const more = upcoming.length - 1;
+  return more > 0 ? `${label} + ${more} more date${more === 1 ? "" : "s"}` : label;
+}
+
+async function publishedMarket(field: "slug" | "legacyPaths", value: string) {
+  const query = field === "slug"
+    ? db.collection("markets").where("slug", "==", value)
+    : db.collection("markets").where("legacyPaths", "array-contains", value);
+  const snap = await query.limit(1).get();
+  const doc = snap.docs[0];
+  if (!doc || doc.data().status !== "published") return null;
+  return { id: doc.id, ...doc.data() } as FirebaseFirestore.DocumentData & { id: string };
+}
+
+async function activeListing(collection: "organizers" | "vendors", slug: string) {
   const snap = await db.collection(collection).where("slug", "==", slug).limit(1).get();
   const doc = snap.docs[0];
   if (!doc || doc.data().status !== "active") return null;
   return { id: doc.id, ...doc.data() } as FirebaseFirestore.DocumentData & { id: string };
+}
+
+function organizerPreview(organizer: FirebaseFirestore.DocumentData) {
+  return {
+    title: String(organizer.name ?? "VI Markets organizer"),
+    description: clip(organizer.description),
+    image: httpsUrl(organizer.headerPhotoUrl) ?? httpsUrl(organizer.logoUrl),
+  };
 }
 
 router.get("/", async (req, res) => {
@@ -104,38 +138,35 @@ router.get("/", async (req, res) => {
           image: httpsUrl(vendor.headerPhotoUrl) ?? httpsUrl(vendor.logoUrl),
         };
       }
+    } else if (section === "organizers" && !eventSlug) {
+      const organizer = await activeListing("organizers", slug);
+      if (organizer) preview = organizerPreview(organizer);
     } else if (section === "markets") {
-      const market = await activeListing("markets", slug);
-      if (market && !eventSlug) {
+      // /markets/<slug>, or an old /markets/<organizer>/<event> link
+      const market = eventSlug
+        ? await publishedMarket("legacyPaths", `${slug}/${eventSlug}`)
+        : (await publishedMarket("slug", slug)) ?? (await publishedMarket("legacyPaths", slug));
+      if (market) {
+        const organizer = market.organizerId
+          ? (await db.collection("organizers").doc(market.organizerId).get()).data()
+          : undefined;
+        const every = repeats(market) || nextListedDate(market);
+        const hours = [shortTime(market.schedule?.startTime), shortTime(market.schedule?.endTime)].filter(Boolean).join(" – ");
+        const when = [every, hours].filter(Boolean).join(", ");
+        const where = [market.location?.venueName, market.location?.city].filter(Boolean).join(", ");
+        const lead = [when, where && `at ${where}`].filter(Boolean).join(" ");
         preview = {
-          title: String(market.name ?? "VI Markets market"),
-          description: clip(market.description),
-          image: httpsUrl(market.headerPhotoUrl) ?? httpsUrl(market.logoUrl),
+          title: every ? `${market.name} · ${every}` : String(market.name ?? "VI Markets market"),
+          // e.g. "Every Sat, 9am – 2pm at Waterfront Park, Nanaimo. Run by Harbourside Market Society."
+          description: clip(
+            `${lead}${lead ? ". " : ""}${organizer?.name ? `Run by ${organizer.name}.` : ""}`.trim() || market.description
+          ),
+          image: httpsUrl(market.tileUrl) ?? httpsUrl(organizer?.headerPhotoUrl) ?? httpsUrl(organizer?.logoUrl) ?? httpsUrl(market.logoUrl),
         };
-      } else if (market && eventSlug) {
-        const events = await db.collection("marketEvents")
-          .where("marketPageId", "==", market.id)
-          .where("status", "==", "published")
-          .get();
-        const doc = events.docs.find(d => d.data().slug === eventSlug) ?? events.docs.find(d => d.id === eventSlug);
-        if (doc) {
-          const e = doc.data();
-          const every = repeats(e);
-          const hours = [shortTime(e.schedule?.startTime), shortTime(e.schedule?.endTime)].filter(Boolean).join(" – ");
-          const oneDate = e.type === "oneTime" && typeof e.schedule?.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.schedule.date)
-            ? new Date(`${e.schedule.date}T12:00:00Z`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })
-            : "";
-          const when = [every || oneDate, hours].filter(Boolean).join(", ");
-          const where = [e.location?.venueName, e.location?.city].filter(Boolean).join(", ");
-          preview = {
-            title: every ? `${e.name} · ${every}` : String(e.name ?? "Market event"),
-            // e.g. "Every Sat, 9am – 2pm at Waterfront Park, Nanaimo. Hosted by Harbourside Market Society."
-            description: clip(
-              `${[when, where && `at ${where}`].filter(Boolean).join(" ")}${when || where ? ". " : ""}Hosted by ${market.name}.`
-            ),
-            image: httpsUrl(e.tileUrl) ?? httpsUrl(market.headerPhotoUrl) ?? httpsUrl(market.logoUrl),
-          };
-        }
+      } else if (!eventSlug) {
+        // An old link to an organizer's page, from when organizers were /markets/<slug>
+        const organizer = await activeListing("organizers", slug);
+        if (organizer) preview = organizerPreview(organizer);
       }
     }
 

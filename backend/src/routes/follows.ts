@@ -11,7 +11,7 @@ router.use(requireAuth);
 // GET /follows?targetType=market
 // Returns all of the caller's follows, optionally filtered by targetType.
 router.get("/", async (req, res) => {
-  const { targetType } = req.query as { targetType?: "market" | "vendor" };
+  const { targetType } = req.query as { targetType?: "market" | "vendor" | "organizer" };
   const followerUid = req.user!.uid;
 
   try {
@@ -37,15 +37,16 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const { targetId, targetType } = req.body as {
     targetId: string;
-    targetType: "market" | "vendor";
+    targetType: "market" | "vendor" | "organizer";
   };
   const followerUid = req.user!.uid;
 
   if (!targetId || !targetType) {
     return res.status(400).json({ error: "targetId and targetType are required" });
   }
-  if (targetType !== "market" && targetType !== "vendor") {
-    return res.status(400).json({ error: "targetType must be 'market' or 'vendor'" });
+  // Markets and vendors are Saved; organizers are Followed (OD-16)
+  if (targetType !== "market" && targetType !== "vendor" && targetType !== "organizer") {
+    return res.status(400).json({ error: "targetType must be 'market', 'vendor' or 'organizer'" });
   }
 
   try {

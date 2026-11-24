@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import organizersRouter from "./routes/organizers";
 import marketsRouter from "./routes/markets";
 import vendorsRouter from "./routes/vendors";
 import usersRouter from "./routes/users";
@@ -10,7 +11,6 @@ import reviewsRouter from "./routes/reviews";
 import adminRouter from "./routes/admin";
 // Phase 2A routes
 import organizerAccountsRouter from "./routes/organizerAccounts";
-import marketEventsRouter from "./routes/marketEvents";
 import marketApplicationsRouter from "./routes/marketApplications";
 import vendorApplicationsRouter from "./routes/vendorApplications";
 import followsRouter from "./routes/follows";
@@ -78,6 +78,8 @@ app.get("/", (_req, res) => {
   res.json({ ok: true, message: "VI Markets backend is running 🎉" });
 });
 
+// Organizers run markets; markets are the events people go to (OD-16, T128)
+app.use("/organizers", organizersRouter);
 app.use("/markets", marketsRouter);
 app.use("/vendors", vendorsRouter);
 app.use("/users", usersRouter);
@@ -87,7 +89,6 @@ app.use("/reviews", reviewsRouter);
 app.use("/admin", adminRouter);
 // Phase 2A routes
 app.use("/organizer-accounts", organizerAccountsRouter);
-app.use("/market-events", marketEventsRouter);
 app.use("/market-applications", marketApplicationsRouter);
 app.use("/vendor-applications", vendorApplicationsRouter);
 app.use("/follows", followsRouter);

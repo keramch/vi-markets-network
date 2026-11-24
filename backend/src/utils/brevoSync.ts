@@ -15,7 +15,7 @@ type UserDoc = FirebaseFirestore.DocumentData;
 // Settings (older docs have no newsletterOptIn field — treated as in).
 // Shoppers are in only if they opted in.
 export function wantsNewsletter(user: UserDoc): boolean {
-  if (user.accountType === "vendor" || user.accountType === "market") return user.newsletterOptIn !== false;
+  if (user.accountType === "vendor" || user.accountType === "organizer") return user.newsletterOptIn !== false;
   return user.newsletterOptIn === true;
 }
 
@@ -43,7 +43,7 @@ export async function syncMemberToBrevo(userId: string, options: { explicitOptIn
       FIRSTNAME: user.firstName ?? "",
       LASTNAME: user.lastName ?? "",
       CITY: user.city ?? "",
-      MEMBERTYPE: accountType === "vendor" ? "Vendor" : accountType === "market" ? "Market" : "Community",
+      MEMBERTYPE: accountType === "vendor" ? "Vendor" : accountType === "organizer" ? "Organizer" : "Community",
       IS_MEMBER: true,
       SUBSCRIPTION_TIER: user.subscription?.tier ?? "free",
       FOUNDING_MEMBER: user.subscription?.foundingMember === true,
@@ -55,8 +55,8 @@ export async function syncMemberToBrevo(userId: string, options: { explicitOptIn
       const types = (await db.collection("vendors").doc(user.ownedVendorId).get()).data()?.vendorTypes;
       if (Array.isArray(types) && types.length > 0) attributes.VENDOR_TYPES = types.join("|");
     }
-    if (accountType === "market" && user.ownedMarketId) {
-      const types = (await db.collection("markets").doc(user.ownedMarketId).get()).data()?.marketTypes;
+    if (accountType === "organizer" && user.ownedOrganizerId) {
+      const types = (await db.collection("organizers").doc(user.ownedOrganizerId).get()).data()?.marketTypes;
       if (Array.isArray(types) && types.length > 0) attributes.MARKET_TYPES = types.join("|");
     }
 

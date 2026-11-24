@@ -1,10 +1,10 @@
 import { db } from "../firebase";
 
-// ── Ownership checks for markets, vendors and their events ────────────────────
+// ── Ownership checks for organizers, vendors and their markets ────────────────
 
-export type ListingCollection = "markets" | "vendors";
+export type ListingCollection = "organizers" | "vendors";
 
-// True if `uid` owns the market/vendor doc (its ownerId field)
+// True if `uid` owns the organizer/vendor doc (its ownerId field)
 export async function ownsListing(uid: string, collection: ListingCollection, id: string): Promise<boolean> {
   if (!id) return false;
   const doc = await db.collection(collection).doc(id).get();
@@ -12,15 +12,15 @@ export async function ownsListing(uid: string, collection: ListingCollection, id
 }
 
 // Never stored — computed on read (id is the doc ID; ownerFoundingMember and
-// reviews are added by GET /markets and GET /vendors from other collections)
+// reviews are added by GET /organizers and GET /vendors from other collections)
 const COMPUTED_LISTING_FIELDS = ["id", "ownerFoundingMember", "reviews"];
 
 // The only fields an owner may change on their own listing (T101). Everything
 // else is admin-only: ownership (ownerId, organizerUid, coManagerUids), status,
-// Featured placement, joinDate, slug, a market's vendorIds, and any made-up
+// Featured placement, joinDate, slug, an organizer's vendorIds, and any made-up
 // field. The profile editor sends the whole listing back on save, so other
 // fields are silently dropped rather than rejected.
-// Taken from Market and Vendor in frontend/types.ts plus the fields live
+// Taken from Organizer and Vendor in frontend/types.ts plus the fields live
 // listings hold (category, categories and attendingMarketIds are legacy).
 const SHARED_OWNER_FIELDS = [
   "name",
@@ -35,7 +35,7 @@ const SHARED_OWNER_FIELDS = [
   "updatedAt",
 ];
 const OWNER_EDITABLE_FIELDS: Record<ListingCollection, Set<string>> = {
-  markets: new Set([
+  organizers: new Set([
     ...SHARED_OWNER_FIELDS,
     "marketTypes",
     "location",

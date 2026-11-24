@@ -15,11 +15,11 @@ const contactRateLimiter = rateLimit({
   message: { error: "Too many messages sent — please try again later" },
 });
 
-// Returns the name of the active market/vendor whose public contact email is
+// Returns the name of the active organizer/vendor whose public contact email is
 // `email`, or null. The contact form may only send to listed members — never
 // to an arbitrary address.
 async function findListingNameByContactEmail(email: string): Promise<string | null> {
-  for (const col of ["markets", "vendors"]) {
+  for (const col of ["organizers", "vendors"]) {
     const snap = await db.collection(col).where("contact.email", "==", email).limit(1).get();
     if (!snap.empty) {
       const data = snap.docs[0].data();

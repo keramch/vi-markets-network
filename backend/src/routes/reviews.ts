@@ -3,6 +3,29 @@ import { db } from "../firebase";
 import { requireAuth, requireAdmin } from "../middleware/auth";
 import { toPublicReview } from "../utils/reviews";
 import { ownsListing } from "../utils/listingAccess";
+
+// What can be reviewed: a market (the event), a vendor, or an organizer.
+// Reviews of markets were reviews of organizer profiles before stage 1 (T128).
+type EntityType = "market" | "vendor" | "organizer";
+const ENTITY_TYPES: EntityType[] = ["market", "vendor", "organizer"];
+
+// Is it public (so it can be reviewed)?
+async function isPublicEntity(entityType: EntityType, id: string): Promise<boolean> {
+  const col = entityType === "market" ? "markets" : entityType === "vendor" ? "vendors" : "organizers";
+  const doc = await db.collection(col).doc(id).get();
+  if (!doc.exists) return false;
+  const status = doc.data()?.status;
+  return entityType === "market" ? status === "published" : !status || status === "active";
+}
+
+// Does `uid` own what the review is about? A market belongs to its organizer's owner.
+async function ownsEntity(uid: string, entityType: EntityType, id: string): Promise<boolean> {
+  if (entityType === "vendor") return ownsListing(uid, "vendors", id);
+  if (entityType === "organizer") return ownsListing(uid, "organizers", id);
+  const market = await db.collection("markets").doc(id).get();
+  const organizerId = market.data()?.organizerId;
+  return !!organizerId && ownsListing(uid, "organizers", organizerId);
+}
 import { escapeHtml } from "../utils/escapeHtml";
 
 const router = Router();
@@ -22,13 +45,18 @@ router.get("/", requireAdmin, async (_req, res) => {
   }
 });
 
-// GET /reviews/mine → reviews about the caller's own market/vendor listing,
+// GET /reviews/mine → reviews about the caller's own vendor or organizer profile
+// and the organizer's markets,
 // pending and approved (declined ones are hidden). Read-only for owners —
 // only admins approve/decline.
 router.get("/mine", requireAuth, async (req, res) => {
   try {
     const user = (await db.collection("users").doc(req.user!.uid).get()).data() ?? {};
-    const listingIds = [user.ownedMarketId, user.ownedVendorId].filter(Boolean) as string[];
+    const listingIds = [user.ownedOrganizerId, user.ownedVendorId].filter(Boolean) as string[];
+    if (user.ownedOrganizerId) {
+      const mine = await db.collection("markets").where("organizerId", "==", user.ownedOrganizerId).get();
+      listingIds.push(...mine.docs.map(d => d.id));
+    }
     const snaps = await Promise.all(
       listingIds.map(id => db.collection("reviews").where("entityId", "==", id).get())
     );
@@ -56,12 +84,12 @@ router.get("/mine", requireAuth, async (req, res) => {
 });
 
 // POST /reviews → create a new review (signed-in members only)
-// expected body: { entityType: 'market' | 'vendor', entityId, rating, comment }
+// expected body: { entityType: 'market' | 'vendor' | 'organizer', entityId, rating, comment }
 // The author name, userId and account type come from the reviewer's own
 // account, so nobody can post a review under someone else's name.
 router.post("/", requireAuth, async (req, res) => {
   const { entityType, entityId, comment } = req.body as {
-    entityType: "market" | "vendor";
+    entityType: EntityType;
     entityId: string;
     comment: string;
   };
@@ -70,8 +98,8 @@ router.post("/", requireAuth, async (req, res) => {
   if (!entityType || !entityId || !comment) {
     return res.status(400).json({ error: "Missing required review fields" });
   }
-  if (entityType !== "market" && entityType !== "vendor") {
-    return res.status(400).json({ error: "entityType must be 'market' or 'vendor'" });
+  if (!ENTITY_TYPES.includes(entityType)) {
+    return res.status(400).json({ error: "entityType must be 'market', 'vendor' or 'organizer'" });
   }
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return res.status(400).json({ error: "Rating must be a whole number from 1 to 5" });
@@ -84,8 +112,7 @@ router.post("/", requireAuth, async (req, res) => {
     const userId = req.user!.uid;
 
     // The listing must exist and be public
-    const listing = await db.collection(entityType === "market" ? "markets" : "vendors").doc(entityId).get();
-    if (!listing.exists || (listing.data()?.status && listing.data()?.status !== "active")) {
+    if (!(await isPublicEntity(entityType, entityId))) {
       return res.status(404).json({ error: "This listing can't be reviewed right now." });
     }
 
@@ -147,8 +174,7 @@ router.post("/:id/removal-request", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Review not found" });
     }
     const review = doc.data()!;
-    const collection = review.entityType === "vendor" ? "vendors" : "markets";
-    if (!(await ownsListing(req.user!.uid, collection, review.entityId))) {
+    if (!(await ownsEntity(req.user!.uid, review.entityType as EntityType, review.entityId))) {
       return res.status(403).json({ error: "You can only request removal of reviews of your own listing." });
     }
     if (review.removalRequest?.status === "open") {
@@ -165,6 +191,7 @@ router.post("/:id/removal-request", requireAuth, async (req, res) => {
 
     // Let the admin know (non-fatal)
     try {
+      const collection = review.entityType === "vendor" ? "vendors" : review.entityType === "organizer" ? "organizers" : "markets";
       const listingName = (await db.collection(collection).doc(review.entityId).get()).data()?.name ?? "a listing";
       const lines = [
         `${listingName} has asked for a review to be removed.`,

@@ -104,17 +104,17 @@ router.post("/message", async (req, res) => {
   }
 });
 
-// DELETE /admin/members/:type/:id → hard-delete a market/vendor + its owner user
+// DELETE /admin/members/:type/:id → hard-delete an organizer/vendor profile + its owner user
 router.delete("/members/:type/:id", async (req, res) => {
   const { type, id } = req.params;
 
-  if (type !== "market" && type !== "vendor") {
-    return res.status(400).json({ error: "type must be 'market' or 'vendor'" });
+  if (type !== "organizer" && type !== "vendor") {
+    return res.status(400).json({ error: "type must be 'organizer' or 'vendor'" });
   }
 
   try {
-    const collection = type === "market" ? "markets" : "vendors";
-    const ownerField = type === "market" ? "ownedMarketId" : "ownedVendorId";
+    const collection = type === "organizer" ? "organizers" : "vendors";
+    const ownerField = type === "organizer" ? "ownedOrganizerId" : "ownedVendorId";
 
     // 1. Find the owner's Firestore user document
     const userSnap = await db
@@ -123,7 +123,7 @@ router.delete("/members/:type/:id", async (req, res) => {
       .limit(1)
       .get();
 
-    // 2. Delete the market/vendor document
+    // 2. Delete the organizer/vendor document
     await db.collection(collection).doc(id).delete();
 
     if (!userSnap.empty) {

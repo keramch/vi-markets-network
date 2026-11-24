@@ -1,13 +1,16 @@
 import { isSafeWebUrl } from "./urlSafety";
 
-// Checks and cleans what the event form sends to POST and PATCH /market-events.
+// Checks and cleans what the market form sends to POST and PATCH /markets.
 // Only the form's own fields get through, each in the shape the app expects.
 // Anything else (slug, createdAt, made-up fields) is dropped, and wrong shapes
 // are refused with a message instead of being saved.
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^\d{2}:\d{2}$/;
-const TYPES = ["recurring", "oneTime", "specialEdition"];
+// "dates": on a list of dates (one-off, multi-day or irregular); "recurring": a
+// repeating rule. One-time markets became a list of one in stage 1 (T128).
+const TYPES = ["recurring", "dates"];
+const MAX_DATES = 366;
 const FREQUENCIES = ["weekly", "biweekly", "monthly"];
 const OWNER_STATUSES = ["draft", "published"];
 const ADMIN_STATUSES = ["draft", "published", "cancelled", "archived"];
@@ -40,7 +43,9 @@ function dateOrEmpty(value: unknown, label: string): string {
   return value as string;
 }
 
+// '' means "times to be confirmed" (markets added from vendors' information)
 function time(value: unknown, label: string): string {
+  if (value === "") return "";
   if (typeof value !== "string" || !TIME.test(value)) fail(`${label} must be a time.`);
   return value as string;
 }
@@ -68,6 +73,14 @@ function schedule(value: unknown): Record<string, unknown> {
   const v = value as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   if ("date" in v) out.date = dateOrEmpty(v.date, "Date");
+  if ("dates" in v) {
+    if (!Array.isArray(v.dates) || v.dates.length > MAX_DATES) fail("Dates must be a list.");
+    const list = (v.dates as unknown[]).map(d => {
+      if (typeof d !== "string" || !DATE.test(d)) fail("Each date must be a date.");
+      return d as string;
+    });
+    out.dates = [...new Set(list)].sort();
+  }
   if ("startDate" in v) out.startDate = dateOrEmpty(v.startDate, "Start date");
   if ("endDate" in v) out.endDate = dateOrEmpty(v.endDate, "End date");
   if ("startTime" in v) out.startTime = time(v.startTime, "Start time");
@@ -108,17 +121,28 @@ function imageList(value: unknown): string[] {
   });
 }
 
-export function sanitizeEventInput(body: unknown, opts: { isAdmin: boolean }): Result {
+// Which dates came from a vendor rather than the organizer or HQ: { "2026-12-12": "vendor" }
+function dateSources(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) fail("Date sources must be an object.");
+  const out: Record<string, string> = {};
+  for (const [d, src] of Object.entries(value as Record<string, unknown>)) {
+    if (!DATE.test(d) || src !== "vendor") fail("Date sources are not valid.");
+    out[d] = "vendor";
+  }
+  return out;
+}
+
+export function sanitizeMarketInput(body: unknown, opts: { isAdmin: boolean }): Result {
   if (!body || typeof body !== "object" || Array.isArray(body)) return { error: "Nothing to save." };
   const b = body as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   try {
     if ("name" in b) {
-      out.name = text(b.name, "Event name");
-      if (!out.name) fail("Event name can't be empty.");
+      out.name = text(b.name, "Market name");
+      if (!out.name) fail("Market name can't be empty.");
     }
     if ("type" in b) {
-      if (!TYPES.includes(b.type as string)) fail("Event type is not valid.");
+      if (!TYPES.includes(b.type as string)) fail("Market type is not valid.");
       out.type = b.type;
     }
     if ("status" in b) {
@@ -130,12 +154,13 @@ export function sanitizeEventInput(body: unknown, opts: { isAdmin: boolean }): R
     if ("marketType" in b) out.marketType = textList(b.marketType, "Market type");
     if ("location" in b) out.location = location(b.location);
     if ("schedule" in b) out.schedule = schedule(b.schedule);
+    if ("dateSources" in b) out.dateSources = dateSources(b.dateSources);
     if ("exceptions" in b) out.exceptions = exceptions(b.exceptions);
     if ("photos" in b) out.photos = imageList(b.photos);
     if ("externalEventUrl" in b) {
       const url = b.externalEventUrl;
       if (url !== "" && (typeof url !== "string" || !isSafeWebUrl(url))) {
-        fail("Please enter a normal web address for the event link, like https://mysite.ca/event");
+        fail("Please enter a normal web address for the market link, like https://mysite.ca/market");
       }
       out.externalEventUrl = url;
     }
@@ -145,15 +170,14 @@ export function sanitizeEventInput(body: unknown, opts: { isAdmin: boolean }): R
         const url = b[key];
         // '' clears it
         if (url !== "" && (typeof url !== "string" || !url.startsWith(OUR_STORAGE) || !isSafeWebUrl(url))) {
-          fail("Images must be uploaded through the event form.");
+          fail("Images must be uploaded through the market form.");
         }
         out[key] = url;
       }
     }
-    // Moving an event to another market or organizer is admin-only
-    if (opts.isAdmin) {
-      if ("marketPageId" in b) out.marketPageId = text(b.marketPageId, "Market");
-      if ("organizerUid" in b) out.organizerUid = text(b.organizerUid, "Organizer");
+    // Which organizer runs it is admin-only (null or '' = unclaimed)
+    if (opts.isAdmin && "organizerId" in b) {
+      out.organizerId = b.organizerId === null || b.organizerId === "" ? null : text(b.organizerId, "Organizer");
     }
   } catch (err) {
     if (err instanceof InputError) return { error: err.message };

@@ -19,7 +19,7 @@ const accountCreationRateLimiter = rateLimit({
 });
 
 // Fields a member may change on their own users doc. Everything else
-// (isAdmin, subscription, email, ownedMarketId, ...) is admin-only.
+// (isAdmin, subscription, email, ownedOrganizerId, ...) is admin-only.
 const SELF_EDITABLE_USER_FIELDS = new Set([
   "firstName",
   "lastName",
@@ -34,7 +34,7 @@ const SELF_EDITABLE_USER_FIELDS = new Set([
 
 async function generateUniqueSlug(
   name: string,
-  col: 'markets' | 'vendors',
+  col: 'organizers' | 'vendors',
 ): Promise<string> {
   const base = slugify(name);
   let candidate = base;
@@ -64,10 +64,14 @@ router.get("/", requireAdmin, async (_req, res) => {
 
 // ── Shared member creation ────────────────────────────────────────────────────
 // Used by both email/password signup (/register) and social sign-in signup
-// (/register-oauth). Writes the users doc, the vendor or market profile, and
+// (/register-oauth). Writes the users doc, the vendor or organizer profile, and
 // syncs the contact to Brevo. The Firebase Auth user must already exist.
 
-type AccountType = "vendor" | "market" | "community";
+// "market" is the old name for "organizer" (before stage 1, T128), still
+// accepted from pages a browser had open at the switch-over
+type AccountType = "vendor" | "organizer" | "market" | "community";
+const isAccountType = (t: unknown): t is AccountType =>
+  t === "vendor" || t === "organizer" || t === "market" || t === "community";
 
 interface MemberProfileInput {
   firstName: string;
@@ -90,10 +94,10 @@ async function createMemberRecords(
   input: MemberProfileInput,
   authProvider: string,
 ): Promise<{ status: number; body: Record<string, unknown> }> {
+  const accountType = input.accountType === "market" ? "organizer" : input.accountType;
   const {
     firstName,
     lastName,
-    accountType,
     businessName,
     city,
     description,
@@ -122,7 +126,7 @@ async function createMemberRecords(
       stripeCustomerId: null,
       stripePaymentId: null,
     },
-    ownedMarketId: "",
+    ownedOrganizerId: "",
     ownedVendorId: "",
     isAdmin: false,
     autoRenew: false,
@@ -143,20 +147,20 @@ async function createMemberRecords(
 
   await db.collection("users").doc(userId).set(newUser);
 
-  // Create the vendor or market profile document
+  // Create the vendor or organizer profile document
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-  let ownedMarketId = "";
+  let ownedOrganizerId = "";
   let ownedVendorId = "";
 
   if (accountType !== "community") {
-    if (accountType === "market") {
-      const existingMarket = await db.collection("markets").where("ownerId", "==", userId).limit(1).get();
-      if (!existingMarket.empty) {
+    if (accountType === "organizer") {
+      const existingOrganizer = await db.collection("organizers").where("ownerId", "==", userId).limit(1).get();
+      if (!existingOrganizer.empty) {
         const userDoc = await db.collection("users").doc(userId).get();
-        return { status: 200, body: { id: userId, ...userDoc.data(), ownedMarketId: existingMarket.docs[0].id } };
+        return { status: 200, body: { id: userId, ...userDoc.data(), ownedOrganizerId: existingOrganizer.docs[0].id } };
       }
-      const slug = await generateUniqueSlug(businessName!, "markets");
-      const marketDoc = {
+      const slug = await generateUniqueSlug(businessName!, "organizers");
+      const organizerDoc = {
         ownerId: userId,
         name: businessName,
         slug,
@@ -175,8 +179,8 @@ async function createMemberRecords(
         joinDate: today,
         status: "active",
       };
-      const marketRef = await db.collection("markets").add(marketDoc);
-      ownedMarketId = marketRef.id;
+      const organizerRef = await db.collection("organizers").add(organizerDoc);
+      ownedOrganizerId = organizerRef.id;
     } else {
       const existingVendor = await db.collection("vendors").where("ownerId", "==", userId).limit(1).get();
       if (!existingVendor.empty) {
@@ -207,7 +211,7 @@ async function createMemberRecords(
   }
 
   // Update the user document with the new profile ID
-  await db.collection("users").doc(userId).update({ ownedMarketId, ownedVendorId });
+  await db.collection("users").doc(userId).update({ ownedOrganizerId, ownedVendorId });
 
   // ── Brevo list ──────────────────────────────────────────────────────────────
   // Members join the Brevo (newsletter) list only once their email is verified
@@ -223,7 +227,7 @@ async function createMemberRecords(
     body: {
       id: userId,
       ...newUser,
-      ownedMarketId,
+      ownedOrganizerId,
       ownedVendorId,
     },
   };
@@ -244,7 +248,7 @@ router.post("/register", accountCreationRateLimiter, spamGuard({ status: 400, bo
   }
   // Checked before the login account is created, so a bad request can't leave
   // a login with no profile behind (T101)
-  if (accountType !== "vendor" && accountType !== "market" && accountType !== "community") {
+  if (!isAccountType(accountType)) {
     return res.status(400).json({ error: "Missing required fields" });
   }
   if (accountType !== "community" && !String(profile.businessName ?? "").trim()) {
@@ -335,7 +339,7 @@ router.post("/register-oauth", accountCreationRateLimiter, async (req, res) => {
 
   const body = (req.body ?? {}) as Partial<MemberProfileInput>;
   const accountType = body.accountType;
-  if (accountType !== "vendor" && accountType !== "market" && accountType !== "community") {
+  if (!isAccountType(accountType)) {
     return res.status(400).json({ error: "Missing required fields" });
   }
   if (accountType !== "community" && !body.businessName?.trim()) {
