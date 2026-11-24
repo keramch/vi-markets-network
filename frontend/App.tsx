@@ -1474,7 +1474,11 @@ const App: React.FC = () => {
             } />
             <Route path="/dashboard/my-market" element={<Navigate to="/dashboard/my-markets" replace />} />
             <Route path="/dashboard/my-markets" element={
-              currentUser && currentUser.ownedOrganizerId && ownedOrganizer ? (
+              isDataLoading && currentUser?.ownedOrganizerId ? (
+                <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+                  <div className="text-brand-blue text-sm">Loading...</div>
+                </div>
+              ) : currentUser && currentUser.ownedOrganizerId && ownedOrganizer ? (
                 <OrganizerHub
                   currentUser={currentUser}
                   organizer={ownedOrganizer}
