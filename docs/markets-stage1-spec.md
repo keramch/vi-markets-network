@@ -1,6 +1,6 @@
 # Stage 1 (T128): markets stand on their own
 
-Written Nov 23, 2026. Status: **draft for Kera's approval.** Nothing in this plan has been built or run yet.
+Written Nov 23, 2026. Status: **approved by Kera Nov 23**, with her changes: past dates, names, duplicates, and renaming the collections. Nothing has been built or run yet.
 
 Background: OD-16 decides that a **market** is the event people go to (one-off, seasonal or recurring), and an **organizer** is who puts it on. The code was built the other way round: what it calls "market profiles" are really organizer profiles. Stage 1 makes markets the main listing. Stages 2–5 (T129–T132) follow.
 
@@ -41,6 +41,7 @@ Background: OD-16 decides that a **market** is the event people go to (one-off, 
 - **For an unclaimed market, the vendors' dates are the dates we know.** The page marks them *"Date from a vendor"* until Kera or the organizer confirms them.
 - **Times are optional for unclaimed markets.** Without them, the page says *"Times to be confirmed"*. Vendors never gave times.
 - **A market with no dates at all still gets a page** saying *"No dates announced yet"*. It shows in Browse and search, but not on the calendar.
+- **Past dates aren't shown.** This is a new site and doesn't need to look historical. A market whose known dates have all passed keeps its page, saying *"No upcoming dates announced"*. That suits yearly markets, which shoppers will search for again next year. Past dates stay in the record but aren't displayed.
 - **Market names shouldn't include a year or dates.** "Cumberland Winterfaire" can hold this year's dates and next year's. Foggy Mountain Fall Fair already has vendors for both 2026 and 2027.
 
 ---
@@ -91,22 +92,42 @@ Background: OD-16 decides that a **market** is the event people go to (one-off, 
   - "Summer by the Sea (Every Tuesday till August 25)"
 
   Put those details into dates instead, once there's somewhere to enter them (stage 2), or tell me and I'll add them during the conversion.
-- **"CVHBBA  Witches High Tea"** has a double space and an abbreviation shoppers may not know.
+- **Names stay as entered otherwise**, abbreviations included ("CVHBBA"). Local shoppers know them, and a claiming organizer can adjust. The conversion only trims stray spaces.
 
-### One question for you
-**Is "Winterfaire" (Courtenay Legion, Nov 14, added by Jams Jellies and More) the same market as Cumberland Museum's "Cumberland Winterfaire 2026"?** If it is, the conversion merges them: the vendor's link moves to the museum's market, and the duplicate goes. If not, it stays separate.
+### Duplicates
+**Markets are merged only when the name, dates and location all match.** Anything else is treated as a different market. "Winterfaire" (Courtenay Legion) and Cumberland Museum's "Cumberland Winterfaire 2026" are different markets, and both stay. The dry run lists near-matches for Kera to look at; it never merges them by itself.
 
 ---
 
+## Renaming the collections now (Kera, Nov 23)
+
+The site is out of beta and the numbers are small, so the code's names get fixed now rather than later. The current mismatch is what caused the confusion over HQ's Edit button.
+
+| Today | After stage 1 |
+|---|---|
+| `markets` collection (organizer profiles) | `organizers` |
+| `marketEvents` collection (the markets) | `markets` |
+| an event's `marketPageId` | `organizerId` |
+| a member's `ownedMarketId` | `ownedOrganizerId` |
+| account type `market` | `organizer` |
+| API `/markets` and `/market-events` | `/organizers` and `/markets` |
+
+It's done in the same conversion, so there's one switch-over, not two. The conversion **copies** into the new collections and leaves the old ones untouched as a backup, which makes going back simple.
+
+**Brevo is the one outside system affected.** Its MEMBERTYPE field says "Market" for organizers. It keeps receiving "Market" unless Kera changes the Brevo segments to "Organizer" first.
+
 ## How it's done safely
 
-1. **The server learns both shapes first.** It accepts markets with or without an organizer, but nothing changes for visitors yet. Merged to `main`, because the server only runs from `main`.
-2. **Dry run.** A one-off script reads the live data and writes a report of every change it *would* make: each market converted, each save or review moved, each new web address. It changes nothing. You read the report.
-3. **With your OK, the real run.** It's the same script, and it keeps a record of everything it changed. The old unclaimed records are kept, hidden, not deleted, so the conversion can be undone.
-4. **The new pages go live** in the same push, so the site never shows half the change.
-5. **Check.** I read the live site back (read-only) and you click through it.
+1. **Build everything on `dev`:** the server and the pages, using the new names. Nothing live changes while it's built.
+2. **Dry run.** A one-off script reads the live data and writes a report of every change it *would* make: each market converted, each save or review moved, each new web address, each near-duplicate. It changes nothing. You read the report.
+3. **Check against real data without going live.** I run the new server on this computer and read every page's data back, against a test copy of the converted data. It only reads.
+4. **Switch-over, at a quiet time and with your OK:**
+   1. The script copies everything into the new collections. The old collections are left exactly as they are.
+   2. You push `main`, and the new server and pages go live together (about 5 minutes on Render).
+   3. Until the new server is up, the live site keeps working on the old data.
+5. **Catch-up and check.** The script runs once more to pick up anything changed during those minutes. I read the live site back, and you click through it.
 
-You test the new pages on the dev preview between steps 3 and 4. The preview uses the live server, so it shows the converted data.
+**Going back,** if something's badly wrong: put `main` back to the previous commit. The old collections are untouched, so the old site works as before. Anything entered after the switch-over would need copying back by hand.
 
 ---
 
@@ -122,9 +143,9 @@ You test the new pages on the dev preview between steps 3 and 4. The preview use
 
 ## For developers
 
-- **Collection names stay** (`markets` = organizers, `marketEvents` = markets) to avoid a risky rename; the UI and the docs use the new words. A rename can come with post-beta cleanup.
-- **`marketEvents`:**
-  - `marketPageId` becomes optional. Empty means unclaimed; set means it's the organizer.
+- **Collections are renamed** (see the table above): `organizers` holds organizer profiles, `markets` holds markets. The rename is done by copying, so the old `markets` and `marketEvents` collections stay as a backup until Kera agrees to delete them.
+- **`markets` (new):**
+  - `organizerId` (was `marketPageId`) becomes optional. Empty means unclaimed.
   - `organizerUid` stays as "who added it".
   - New fields:
     - `slug`, unique across all markets, not per organizer;
@@ -133,10 +154,25 @@ You test the new pages on the dev preview between steps 3 and 4. The preview use
     - `schedule.dates: string[]` and `dateSources?: Record<date, 'vendor'>`.
   - `startTime` and `endTime` become optional.
   - `type: 'oneTime'` with `schedule.date` is converted to `schedule.dates: [date]`.
-- **Converted unclaimed markets get the same document ID as their old `markets` doc**, so `vendor.attendingMarkets[].marketId` resolves without touching vendors until stage 3. The old docs get `status: 'converted'` and are hidden from all lists.
+- **IDs are kept:**
+  - Converted unclaimed markets keep the same document ID as their old `markets` doc, so `vendor.attendingMarkets[].marketId` now points straight at the real market, and vendors aren't touched until stage 3.
+  - Organizer profiles keep their IDs in `organizers`.
+  - Every market (old `marketEvents`) keeps its ID too.
+- **Also renamed:**
+  - `applications.marketId` → `organizerId`;
+  - `users.ownedMarketId` → `ownedOrganizerId`;
+  - `accountType: 'market'` → `'organizer'`;
+  - the follows and reviews `targetType`/`entityType` values.
+
+  `marketApplications` and `organizerAccounts` (no UI) are copied unchanged.
+- **Storage:**
+  - Existing image URLs keep working, because the files don't move.
+  - New uploads go to `organizers/{id}/` and `markets/{id}/`.
+  - `storage.rules` looks up ownership in `organizers`, and for a market, through its `organizerId`.
+  - `firestore.rules` gets the new collection names.
 - **Access:**
-  - An unclaimed market (no `marketPageId`) is editable by admins only.
-  - `checkEventAccess` and `canManageMarketEvents` treat a missing `marketPageId` as admin-only.
+  - An unclaimed market (no `organizerId`) is editable by admins only.
+  - The market access checks treat a missing `organizerId` as admin-only.
   - Public GETs return published markets regardless of claim state.
 - **Routes:**
   - `/markets/:slug` → market page (today's EventPage, extended).
@@ -145,5 +181,17 @@ You test the new pages on the dev preview between steps 3 and 4. The preview use
   - `/markets/:slug` with no matching market but a matching organizer → redirect to `/organizers/:slug`.
   - Link previews (`api/og` or equivalent) must follow the same rules. Check `frontend/vercel.json`.
 - **Follows:** `targetType` gains `'organizer'`. The migration moves organizer follows to the single market where there is exactly one, and otherwise sets `targetType: 'organizer'`. Reviews (`entityId`) follow the same rule.
-- **Script:** `backend/scripts/markets-stage1.ts`, with `--dry-run` (default) and `--apply`. It writes a JSON log of every change, and an undo script reads that log.
-- **Order of deploys:** backend (both shapes) → dry run → apply → frontend. Never apply while the live frontend still expects the old shape for follows.
+- **Script:** `backend/scripts/markets-stage1.ts`, safe to re-run. It writes a JSON log of every change. Three modes:
+  - `--dry-run` (default);
+  - `--apply`;
+  - `--catch-up`, which re-copies docs whose `updatedAt` changed since the first run.
+- **Order:**
+  1. Build on dev.
+  2. Dry run.
+  3. Local read-only smoke test of the new backend against the converted data.
+  4. Apply.
+  5. Kera pushes main (backend and frontend together).
+  6. Catch-up.
+  7. Read-back check.
+
+  Browsers with an old page open get errors until they reload, which is acceptable for a few minutes.
