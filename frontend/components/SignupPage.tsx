@@ -17,7 +17,7 @@ import { signInWithGoogle, isGoogleUser, isInAppBrowser, splitDisplayName } from
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type AccountType = 'vendor' | 'market' | 'community';
+type AccountType = 'vendor' | 'organizer' | 'community';
 
 interface SignupPageProps {
   onNavigate: (view: View) => void;
@@ -197,7 +197,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
     if (wizardStep === 4) {
       const e: typeof errors4 = {};
       if (!businessName.trim())
-        e.businessName = accountType === 'market' ? 'Market name is required' : 'Business name is required';
+        e.businessName = accountType === 'organizer' ? 'Organization name is required' : 'Business name is required';
       setErrors4(e);
       return Object.keys(e).length === 0;
     }
@@ -282,7 +282,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
           businessName: businessName.trim(),
           description: description.trim() || undefined,
           vendorTypes: accountType === 'vendor' && vendorTypes.length > 0 ? vendorTypes : undefined,
-          marketCategories: accountType === 'market' && marketTypes.length > 0 ? marketTypes : undefined,
+          marketCategories: accountType === 'organizer' && marketTypes.length > 0 ? marketTypes : undefined,
         };
         let user: User;
         if (googleEmail) {
@@ -308,7 +308,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
         // Upload logo — blocks the "Go to Your Hub" button until complete
         if (logoFiles[0]) {
-          const profileType = accountType === 'vendor' ? 'vendors' : 'markets';
+          const profileType = accountType === 'vendor' ? 'vendors' : 'organizers';
           const profileId = accountType === 'vendor' ? user.ownedVendorId : user.ownedOrganizerId;
           if (profileId) {
             setIsUploadingLogo(true);
@@ -398,10 +398,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         desc: 'I sell products — food, crafts, art, or other goods — at markets.',
                       },
                       {
-                        type: 'market' as AccountType,
+                        type: 'organizer' as AccountType,
                         emoji: '🏪',
-                        title: 'Market Organizer',
-                        desc: 'I run or organize a market and want to list it for vendors and shoppers.',
+                        title: 'Organizer',
+                        desc: 'I run markets — one or many — and want to list them for vendors and shoppers.',
                       },
                       {
                         type: 'community' as AccountType,
@@ -661,7 +661,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                 <div className="space-y-5">
                   <div>
                     <label className={labelCls}>
-                      {accountType === 'market' ? 'Organization Name' : 'Business / Stall Name'}
+                      {accountType === 'organizer' ? 'Organization Name' : 'Business / Stall Name'}
                     </label>
                     <input
                       type="text"
@@ -670,12 +670,12 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       onKeyDown={handleStepEnter}
                       className={inputCls}
                       placeholder={
-                        accountType === 'market'
+                        accountType === 'organizer'
                           ? 'e.g. Elevate Arts Society, Saanich Peninsula Food Hub'
                           : 'e.g. Green Thumb Organics'
                       }
                     />
-                    {accountType === 'market' && (
+                    {accountType === 'organizer' && (
                       <p className="text-sm text-gray-500 mt-1">
                         This is your organizing entity's name — you'll create individual market events within your profile.
                       </p>
@@ -683,7 +683,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     {errors4.businessName && <p className={errCls}>{errors4.businessName}</p>}
                   </div>
 
-                  {accountType === 'market' && (
+                  {accountType === 'organizer' && (
                     <div>
                       <label className={labelCls}>Market Type</label>
                       <p className="text-sm text-gray-500 mb-2">Choose up to 3 types that describe the markets you organize.</p>
@@ -768,7 +768,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                       rows={3}
                       className={`${inputCls} resize-none`}
                       placeholder={
-                        accountType === 'market'
+                        accountType === 'organizer'
                           ? 'Tell vendors and shoppers what your organization does...'
                           : 'Tell shoppers what you make or sell...'
                       }

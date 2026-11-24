@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarPlus, Share2, MapPin, ExternalLink } from 'lucide-react';
-import type { Organizer, Market, User } from '../types';
+import type { Organizer, Market, User, Vendor } from '../types';
+import { HeartIcon } from './Icons';
 import {
-  formatTime, upcomingOccurrences, nextOccurrence, recurrenceSummary,
-  buildGoogleCalendarUrl, eventUrl, directionsUrl, prefersShareSheet,
+  formatTime, upcomingOccurrences, nextOccurrence, recurrenceSummary, pastDates, isVendorDate,
+  buildGoogleCalendarUrl, marketUrl, directionsUrl, prefersShareSheet,
   type CalendarOccurrence,
 } from '../utils';
 
-// One page per market event (T013): the hero with the next (or shared) date,
-// every date in the next 6 weeks with cancelled ones crossed out, the poster,
-// where it is and who hosts it.
+// A market's page (T013, T128): /markets/<slug>. The hero with the next (or
+// shared) date, upcoming dates with cancelled ones crossed out, the vendors
+// who'll be there, the poster, where it is and who runs it. Unclaimed markets
+// (no organizer yet) say where their information came from and how the
+// organizer can claim them. Past dates sit folded away at the bottom.
 
 const TAG_LABELS: Record<string, string> = {
   seasonalMarket: 'Seasonal',
@@ -20,36 +23,44 @@ const TAG_LABELS: Record<string, string> = {
 };
 
 interface MarketPageProps {
-  organizer: Organizer;
-  event: Market;
+  market: Market;
+  organizer?: Organizer; // undefined = unclaimed
+  vendorsAttending: { vendor: Vendor; dates: string[] }[];
   selectedDate?: string; // from ?date= on a shared link
   currentUser: User | null;
-  isFollowing: boolean;
-  onToggleFollow: (marketId: string) => void;
+  isSaved: boolean;
+  onToggleSave: (marketId: string) => void;
   onOpenLoginModal: () => void;
   onBack: () => void;
 }
 
 const longDate = (iso: string) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
-const hours = (o: { startTime: string; endTime: string }) => `${formatTime(o.startTime)} – ${formatTime(o.endTime)}`;
+const longDateYear = (iso: string) =>
+  new Date(iso + 'T12:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+// '' times = to be confirmed (markets added from vendors' information)
+const hours = (o: { startTime: string; endTime: string }) =>
+  o.startTime && o.endTime ? `${formatTime(o.startTime)} – ${formatTime(o.endTime)}` : 'Times to be confirmed';
 
 const card = 'bg-white rounded-2xl shadow-sm p-6 sm:p-7';
 const h2 = 'font-serif text-xl sm:text-2xl text-brand-blue mb-3';
 
 const MarketPage: React.FC<MarketPageProps> = ({
-  organizer, event, selectedDate, currentUser, isFollowing, onToggleFollow, onOpenLoginModal, onBack,
+  market, organizer, vendorsAttending, selectedDate, currentUser, isSaved, onToggleSave, onOpenLoginModal, onBack,
 }) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const previous = document.title;
-    document.title = `${event.name} · VI Markets`;
+    document.title = `${market.name} · VI Markets`;
     return () => { document.title = previous; };
-  }, [event.name]);
+  }, [market.name]);
 
-  // Every date in the next 6 weeks, cancelled ones included so they show crossed out
-  const dates = upcomingOccurrences([event], 42, new Date(), { includeCancelled: true });
+  // Upcoming dates, cancelled ones included so they show crossed out. A repeating
+  // market shows the next 6 weeks; a market on a list of dates shows them all.
+  const dayWindow = market.type === 'recurring' ? 42 : 800;
+  const dates = upcomingOccurrences([market], dayWindow, new Date(), { includeCancelled: true });
+  const past = pastDates(market);
 
   // The top box: the shared date if the link had one, otherwise the next real date
   let featured: CalendarOccurrence | null = null;
@@ -58,17 +69,20 @@ const MarketPage: React.FC<MarketPageProps> = ({
     const match = dates.find(d => d.date === selectedDate);
     if (match) { featured = match; featuredLabel = match.cancelled ? 'This date is cancelled' : 'Your date'; }
   }
-  if (!featured) featured = nextOccurrence(event);
+  if (!featured) featured = nextOccurrence(market);
 
-  const repeats = recurrenceSummary(event);
-  const marketType: string[] = (event as any).marketType ?? [];
-  const about = event.description?.trim() || organizer.description?.trim() || '';
-  const { venueName, address, city, province } = event.location;
+  const repeats = recurrenceSummary(market);
+  const marketType: string[] = market.marketType ?? [];
+  const about = market.description?.trim() || organizer?.description?.trim() || '';
+  const { venueName, address, city, province } = market.location;
+  const place = [venueName, city].filter(Boolean).join(' · ');
+  const hasWhere = !!(venueName || address || city);
+  const claimHref = `mailto:hello@vimarkets.ca?subject=${encodeURIComponent(`This is my market: ${market.name}`)}`;
 
   const handleShare = async () => {
-    const url = eventUrl(organizer.slug ?? '', event, selectedDate);
+    const url = marketUrl(market, selectedDate);
     if (prefersShareSheet()) {
-      try { await navigator.share({ title: event.name, text: `${event.name} on VI Markets`, url }); } catch { /* closed */ }
+      try { await navigator.share({ title: market.name, text: `${market.name} on VI Markets`, url }); } catch { /* closed */ }
       return;
     }
     try {
@@ -78,27 +92,32 @@ const MarketPage: React.FC<MarketPageProps> = ({
     } catch { /* clipboard blocked */ }
   };
 
-  const followButton = (
+  const saveButton = (
     <button
       type="button"
-      onClick={() => (currentUser ? onToggleFollow(organizer.id) : onOpenLoginModal())}
-      className={`mt-4 w-full min-h-[2.75rem] rounded-lg border-2 border-brand-light-blue font-semibold transition-colors ${
-        isFollowing ? 'bg-brand-light-blue text-white' : 'bg-white text-brand-light-blue hover:bg-brand-cream'
+      onClick={() => (currentUser ? onToggleSave(market.id) : onOpenLoginModal())}
+      aria-pressed={isSaved}
+      className={`min-h-[2.75rem] px-4 rounded-full border-2 border-brand-light-blue font-semibold inline-flex items-center gap-2 transition-colors ${
+        isSaved ? 'bg-brand-light-blue text-white' : 'bg-white text-brand-light-blue hover:bg-brand-cream'
       }`}
+      title={currentUser ? undefined : 'Log in or sign up to save'}
     >
-      {isFollowing ? 'Saved: this market is in your list' : 'Save this market'}
+      <HeartIcon className={`w-5 h-5 ${isSaved ? 'text-white' : 'text-brand-gold'}`} filled={isSaved} />
+      {isSaved ? 'Saved' : 'Save'}
     </button>
   );
+
+  const dateNote = (date: string) => (isVendorDate(market, date) ? ' · Date from a vendor' : '');
 
   return (
     <div className="bg-brand-cream min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <button type="button" onClick={onBack} className="text-brand-light-blue hover:text-brand-blue font-semibold">
+        <button type="button" onClick={onBack} className="min-h-[2.75rem] text-brand-light-blue hover:text-brand-blue font-semibold">
           &larr; Back
         </button>
 
         {/* Hero */}
-        <section className="mt-4 bg-white rounded-2xl shadow-sm overflow-hidden">
+        <section className="mt-2 bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="h-2 bg-brand-light-blue" />
           <div className="p-6 sm:p-8 flex flex-wrap gap-6 justify-between items-end">
             <div className="flex-[1_1_28rem] min-w-0">
@@ -106,17 +125,30 @@ const MarketPage: React.FC<MarketPageProps> = ({
                 {repeats && (
                   <span className="bg-brand-cream text-brand-light-blue text-sm font-semibold px-3 py-1 rounded-full">{repeats}</span>
                 )}
-                {[...marketType, ...event.marketTags.map(t => TAG_LABELS[t] ?? t)].map(label => (
+                {[...marketType, ...(market.marketTags ?? []).map(t => TAG_LABELS[t] ?? t)].map(label => (
                   <span key={label} className="bg-brand-violet/10 text-brand-violet text-sm font-semibold px-3 py-1 rounded-full">{label}</span>
                 ))}
               </div>
-              <h1 className="font-serif text-3xl sm:text-4xl text-brand-blue leading-tight break-words">{event.name}</h1>
-              <p className="mt-2 text-base text-brand-text">
-                Hosted by{' '}
-                <Link to={`/markets/${organizer.slug}`} className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
-                  {organizer.name}
-                </Link>
-              </p>
+              <div className="flex items-start gap-4">
+                {(market.logoUrl || organizer?.logoUrl) && (
+                  <img src={market.logoUrl || organizer?.logoUrl} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <h1 className="font-serif text-3xl sm:text-4xl text-brand-blue leading-tight break-words">{market.name}</h1>
+                  {place && <p className="mt-1 text-base text-gray-600">{place}</p>}
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                {organizer ? (
+                  <p className="text-base text-brand-text">
+                    Run by{' '}
+                    <Link to={`/organizers/${organizer.slug}`} className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
+                      {organizer.name}
+                    </Link>
+                  </p>
+                ) : null}
+                {saveButton}
+              </div>
             </div>
 
             <div className="flex-[0_1_22rem] w-full bg-brand-cream rounded-xl p-5">
@@ -129,7 +161,10 @@ const MarketPage: React.FC<MarketPageProps> = ({
                     {longDate(featured.date)}
                   </p>
                   {!featured.cancelled && (
-                    <p className="text-base text-brand-text">{hours(featured)} · {venueName}</p>
+                    <p className="text-base text-brand-text">{[hours(featured), venueName].filter(Boolean).join(' · ')}</p>
+                  )}
+                  {isVendorDate(market, featured.date) && (
+                    <p className="text-sm text-gray-600 mt-1">Date from a vendor: check with the market before you go.</p>
                   )}
                   {featured.changed && !featured.cancelled && (
                     <p className="text-sm text-brand-violet mt-1">Changed hours for this date</p>
@@ -140,7 +175,7 @@ const MarketPage: React.FC<MarketPageProps> = ({
                         downloads were dropped (Kera, Nov 10) */}
                     {!featured.cancelled && (
                       <a
-                        href={buildGoogleCalendarUrl(event, featured.date, featured.startTime, featured.endTime)}
+                        href={buildGoogleCalendarUrl(market, featured.date, featured.startTime, featured.endTime)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="min-h-[2.75rem] px-4 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90 inline-flex items-center gap-2"
@@ -166,10 +201,17 @@ const MarketPage: React.FC<MarketPageProps> = ({
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-gray-600">No upcoming dates</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-gray-600">No upcoming dates announced</p>
                   <p className="mt-1 text-base text-brand-text">
-                    This event has no dates coming up. Follow the market to hear when it's back.
+                    Save this market to find it again when its next dates are up.
                   </p>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="mt-4 min-h-[2.75rem] px-4 rounded-lg border-2 border-brand-blue bg-white text-brand-blue font-semibold hover:bg-gray-50 inline-flex items-center gap-2"
+                  >
+                    <Share2 className="w-5 h-5" aria-hidden="true" /> {copied ? 'Link copied' : 'Share'}
+                  </button>
                 </>
               )}
             </div>
@@ -179,18 +221,18 @@ const MarketPage: React.FC<MarketPageProps> = ({
         <div className="mt-6 flex flex-wrap gap-6 items-start">
           {/* Main column */}
           <div className="flex-[999_1_34rem] min-w-0 flex flex-col gap-6">
-            {(about || event.externalEventUrl) && (
+            {(about || market.externalEventUrl) && (
               <section className={card}>
                 <h2 className={h2}>About this market</h2>
                 {about && <p className="text-base text-brand-text leading-relaxed whitespace-pre-line">{about}</p>}
-                {event.externalEventUrl && (
+                {market.externalEventUrl && (
                   <a
-                    href={event.externalEventUrl}
+                    href={market.externalEventUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-4 inline-flex items-center gap-1 font-semibold text-brand-light-blue underline hover:text-brand-blue"
                   >
-                    Event website <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                    Market website <ExternalLink className="w-4 h-4" aria-hidden="true" />
                   </a>
                 )}
               </section>
@@ -198,7 +240,7 @@ const MarketPage: React.FC<MarketPageProps> = ({
 
             <section className={card}>
               <h2 className={`${h2} mb-1`}>Upcoming dates</h2>
-              <p className="text-sm text-gray-600 mb-3">Next 6 weeks</p>
+              {market.type === 'recurring' && <p className="text-sm text-gray-600 mb-3">Next 6 weeks</p>}
               {dates.length > 0 ? (
                 <ul className="grid sm:grid-cols-2 gap-x-8">
                   {dates.map(o => {
@@ -216,11 +258,12 @@ const MarketPage: React.FC<MarketPageProps> = ({
                             {o.cancelled ? 'Cancelled' : o.changed ? `Changed hours: ${hours(o)}` : hours(o)}
                             {isSelected && !o.cancelled ? ' · Your date' : ''}
                             {o.note ? ` · ${o.note}` : ''}
+                            {dateNote(o.date)}
                           </p>
                         </div>
                         {!o.cancelled && (
                           <a
-                            href={buildGoogleCalendarUrl(event, o.date, o.startTime, o.endTime)}
+                            href={buildGoogleCalendarUrl(market, o.date, o.startTime, o.endTime)}
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`Add ${longDate(o.date)} to Google Calendar`}
@@ -235,56 +278,113 @@ const MarketPage: React.FC<MarketPageProps> = ({
                   })}
                 </ul>
               ) : (
-                <p className="text-base text-gray-600">No dates in the next 6 weeks.</p>
+                <p className="text-base text-gray-600">No upcoming dates announced yet.</p>
               )}
             </section>
+
+            {vendorsAttending.length > 0 && (
+              <section className={card}>
+                <h2 className={h2}>Vendors who'll be there</h2>
+                <ul className="grid sm:grid-cols-2 gap-3">
+                  {vendorsAttending.map(({ vendor, dates: vDates }) => (
+                    <li key={vendor.id}>
+                      <Link
+                        to={`/vendors/${vendor.slug}`}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:bg-brand-cream"
+                      >
+                        {vendor.logoUrl ? (
+                          <img src={vendor.logoUrl} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                        ) : (
+                          <span className="w-12 h-12 rounded-lg bg-brand-cream flex-shrink-0" aria-hidden="true" />
+                        )}
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-brand-text break-words">{vendor.name}</span>
+                          {vDates.length > 0 && (
+                            <span className="block text-sm text-gray-600">{vDates.map(longDate).join(', ')}</span>
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {past.length > 0 && (
+              <details className={card}>
+                <summary className="cursor-pointer font-semibold text-brand-light-blue min-h-[2.75rem] flex items-center">
+                  Past dates ({past.length})
+                </summary>
+                <ul className="mt-3 grid sm:grid-cols-2 gap-x-8">
+                  {past.map(d => (
+                    <li key={d} className="py-2 border-b border-gray-200 text-base text-brand-text">{longDateYear(d)}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </div>
 
           {/* Sidebar */}
           <aside className="flex-[1_1_18rem] min-w-0 flex flex-col gap-6">
-            {event.posterUrl && (
+            {market.posterUrl && (
               <section className="bg-white rounded-2xl shadow-sm p-4">
-                <a href={event.posterUrl} target="_blank" rel="noopener noreferrer">
-                  <img src={event.posterUrl} alt={`Poster for ${event.name}`} className="w-full rounded-lg" />
+                <a href={market.posterUrl} target="_blank" rel="noopener noreferrer">
+                  <img src={market.posterUrl} alt={`Poster for ${market.name}`} className="w-full rounded-lg" />
                 </a>
                 <p className="mt-3 text-center">
-                  <a href={event.posterUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
+                  <a href={market.posterUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
                     View full size
                   </a>
                 </p>
               </section>
             )}
 
-            <section className={card}>
-              <h2 className={h2}>Where</h2>
-              <p className="font-semibold text-brand-text">{venueName}</p>
-              {address && <p className="text-brand-text">{address}</p>}
-              {(city || province) && <p className="text-brand-text">{[city, province].filter(Boolean).join(', ')}</p>}
-              <a
-                href={directionsUrl(event)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-1 font-semibold text-brand-light-blue underline hover:text-brand-blue"
-              >
-                <MapPin className="w-4 h-4" aria-hidden="true" /> Get directions
-              </a>
-            </section>
+            {hasWhere && (
+              <section className={card}>
+                <h2 className={h2}>Where</h2>
+                {venueName && <p className="font-semibold text-brand-text">{venueName}</p>}
+                {address && <p className="text-brand-text">{address}</p>}
+                {(city || province) && <p className="text-brand-text">{[city, province].filter(Boolean).join(', ')}</p>}
+                <a
+                  href={directionsUrl(market)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1 font-semibold text-brand-light-blue underline hover:text-brand-blue"
+                >
+                  <MapPin className="w-4 h-4" aria-hidden="true" /> Get directions
+                </a>
+              </section>
+            )}
 
-            <section className={card}>
-              <h2 className={h2}>Hosted by</h2>
-              <div className="flex items-center gap-3">
-                {organizer.logoUrl && (
-                  <img src={organizer.logoUrl} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <p className="font-semibold text-brand-text break-words">{organizer.name}</p>
-                  <Link to={`/markets/${organizer.slug}`} className="text-brand-light-blue underline hover:text-brand-blue">
-                    View market profile
-                  </Link>
+            {organizer ? (
+              <section className={card}>
+                <h2 className={h2}>Run by</h2>
+                <div className="flex items-center gap-3">
+                  {organizer.logoUrl && (
+                    <img src={organizer.logoUrl} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-brand-text break-words">{organizer.name}</p>
+                    <Link to={`/organizers/${organizer.slug}`} className="text-brand-light-blue underline hover:text-brand-blue">
+                      See all their markets
+                    </Link>
+                  </div>
                 </div>
-              </div>
-              {followButton}
-            </section>
+              </section>
+            ) : (
+              <section className={card}>
+                <h2 className={h2}>Is this your market?</h2>
+                <p className="text-base text-brand-text">
+                  VI Markets listed this market from vendor and public information. If you run it, we'll hand it over so you can keep it up to date, for free.
+                </p>
+                <a
+                  href={claimHref}
+                  className="mt-4 inline-flex min-h-[2.75rem] items-center px-4 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90"
+                >
+                  Tell us it's yours
+                </a>
+              </section>
+            )}
           </aside>
         </div>
       </div>

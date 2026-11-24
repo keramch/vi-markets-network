@@ -215,7 +215,7 @@ const NotificationSettingsComponent: React.FC<NotificationSettingsProps> = ({ se
             )}
             {newsletter && (
               <p className="text-sm text-gray-600 mt-2">
-                {currentUser.accountType === 'vendor' || currentUser.accountType === 'market'
+                {currentUser.accountType === 'vendor' || currentUser.accountType === 'organizer' || currentUser.accountType === 'market'
                   ? "This is just the newsletter. You'll still get account emails — like password resets and messages from shoppers — and membership notices such as renewal reminders."
                   : "This is just the newsletter. You'll still get account emails like password resets."}
               </p>

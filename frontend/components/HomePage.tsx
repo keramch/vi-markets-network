@@ -10,23 +10,25 @@ import type {
 } from "../types";
 import { MarketCategories, VendorTypes } from "../types";
 import MarketCard from "./MarketCard";
+import OrganizerCard from "./OrganizerCard";
 import VendorCard from "./VendorCard";
 import ComingUp from "./ComingUp";
-import * as api from "../services/api.live";
 import { SearchIcon, MapPinIcon, FilterIcon, XIcon } from "./Icons";
 import { getDistance, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
 
 interface HomePageProps {
   organizers: Organizer[];
+  markets: Market[]; // published markets (the events people go to, T128)
   vendors: Vendor[];
   isLoading: boolean;
   onSelectMarket: (id: string) => void;
   onSelectVendor: (id: string) => void;
+  onSelectOrganizer: (id: string) => void;
   onViewAllMarkets: () => void;
   onViewAllVendors: () => void;
 }
 
-interface SearchableMarket extends Organizer {
+interface SearchableMarket extends Market {
   distance?: number;
 }
 interface SearchableVendor extends Vendor {
@@ -133,10 +135,12 @@ const SkeletonCard = () => (
 
 const HomePage: React.FC<HomePageProps> = ({
   organizers,
+  markets,
   vendors,
   isLoading,
   onSelectMarket,
   onSelectVendor,
+  onSelectOrganizer,
   onViewAllMarkets,
   onViewAllVendors,
 }) => {
@@ -182,12 +186,6 @@ const HomePage: React.FC<HomePageProps> = ({
 
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
 
-  // Published market events for the Coming up panel (T122); non-fatal if it fails
-  const [upcomingEvents, setUpcomingEvents] = useState<Market[]>([]);
-  useEffect(() => {
-    api.getMarkets({ status: "published" }).then(setUpcomingEvents).catch(() => {});
-  }, []);
-
   // What's New carousel
   const carouselRef = useRef<HTMLDivElement>(null);
   // card width (w-36 = 144px) + gap (gap-3 = 12px)
@@ -211,6 +209,11 @@ const HomePage: React.FC<HomePageProps> = ({
     rememberBrowseList("vendors", ids, backLabel);
     onSelectVendor(id);
   };
+  const openOrganizerFrom = (ids: string[], backLabel: string) => (id: string) => {
+    rememberBrowseList("organizers", ids, backLabel);
+    onSelectOrganizer(id);
+  };
+  const organizerById = useMemo(() => new Map(organizers.map(o => [o.id, o])), [organizers]);
 
   const handleTagSelection = (tag: string) => {
     setSelectedVendorTags((prev) =>
@@ -218,9 +221,14 @@ const HomePage: React.FC<HomePageProps> = ({
     );
   };
 
-  const activeMarkets = useMemo(
+  // Organizers stay in Featured until stage 4 (T131) decides how Featured works for markets
+  const activeOrganizers = useMemo(
     () => organizers.filter((m) => m.status === "active"),
     [organizers]
+  );
+  const activeMarkets = useMemo(
+    () => markets.filter((m) => m.status === "published"),
+    [markets]
   );
   const activeVendors = useMemo(
     () => vendors.filter((v) => v.status === "active"),
@@ -237,7 +245,7 @@ const HomePage: React.FC<HomePageProps> = ({
     };
 
     const allActive = [
-      ...activeMarkets.map(m => ({ type: "market" as const, data: m as Organizer })),
+      ...activeOrganizers.map(m => ({ type: "organizer" as const, data: m as Organizer })),
       ...activeVendors.map(v => ({ type: "vendor" as const, data: v as Vendor })),
     ];
 
@@ -264,20 +272,25 @@ const HomePage: React.FC<HomePageProps> = ({
     );
 
     return uniqueItems.slice(0, FEATURED_COUNT);
-  }, [activeMarkets, activeVendors]);
+  }, [activeOrganizers, activeVendors]);
 
+  // Newest markets and vendors (T128: markets, not organizer profiles)
   const whatsNewItems = useMemo(() => {
-    const allItems: ((Organizer | Vendor) & { type: "market" | "vendor" })[] = [
-      ...activeMarkets.map((m) => ({ ...m, type: "market" as const })),
-      ...activeVendors.map((v) => ({ ...v, type: "vendor" as const })),
+    const allItems: { id: string; name: string; type: "market" | "vendor"; image?: string; added: string }[] = [
+      ...activeMarkets.map((m) => ({
+        id: m.id, name: m.name, type: "market" as const,
+        image: m.posterUrl || m.logoUrl || (m.organizerId ? organizerById.get(m.organizerId)?.logoUrl : undefined),
+        added: m.createdAt ?? "",
+      })),
+      ...activeVendors.map((v) => ({
+        id: v.id, name: v.name, type: "vendor" as const,
+        image: v.logoUrl || v.photos?.[0], added: v.joinDate ?? "",
+      })),
     ];
     return allItems
-      .sort(
-        (a, b) =>
-          new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime()
-      )
+      .sort((a, b) => new Date(b.added).getTime() - new Date(a.added).getTime())
       .slice(0, 20);
-  }, [activeMarkets, activeVendors]);
+  }, [activeMarkets, activeVendors, organizerById]);
 
   useEffect(() => {
     const STORAGE_KEY = "vi_markets_geolocation";
@@ -338,13 +351,12 @@ const HomePage: React.FC<HomePageProps> = ({
     if (newLocationTerm === "" || newLocationTerm === "Current Location") {
       setSearchCenter(userLocation);
     } else {
+      const term = newLocationTerm.toLowerCase();
       const foundMarket = activeMarkets.find((m) =>
-        (m.location?.address || "")
-          .toLowerCase()
-          .includes(newLocationTerm.toLowerCase())
+        `${m.location?.address || ""} ${m.location?.city || ""}`.toLowerCase().includes(term)
       );
-      if (foundMarket && foundMarket.location?.coordinates) {
-        setSearchCenter(foundMarket.location.coordinates);
+      if (foundMarket && foundMarket.location?.lat != null && foundMarket.location?.lng != null) {
+        setSearchCenter({ lat: foundMarket.location.lat, lng: foundMarket.location.lng });
       } else {
         setSearchCenter(null);
       }
@@ -353,15 +365,17 @@ const HomePage: React.FC<HomePageProps> = ({
 
   const performSearch = useCallback(() => {
     let resultsMarkets: SearchableMarket[] = activeMarkets.filter((market) => {
+      const organizer = market.organizerId ? organizerById.get(market.organizerId) : undefined;
       const searchTextMatch =
         searchTerm === "" ||
         fuzzySearch(
           searchTerm,
-          `${market.name} ${market.description} ${(market.marketTypes || []).join(' ')}`
+          [market.name, market.description, market.location?.city, market.location?.venueName,
+            (market.marketType || []).join(' '), organizer?.name].join(' ')
         );
       const categoryMatch =
         selectedMarketCategory === "all" ||
-        (market.marketTypes || []).includes(selectedMarketCategory);
+        (market.marketType || []).includes(selectedMarketCategory);
       return searchTextMatch && categoryMatch;
     });
 
@@ -384,17 +398,17 @@ const HomePage: React.FC<HomePageProps> = ({
     });
 
     if (searchCenter) {
-      const marketsWithCoords = resultsMarkets.filter(
-        (m) => m.location && m.location.coordinates
-      );
+      const coordsOf = (m: Market): Coordinates | null =>
+        m.location?.lat != null && m.location?.lng != null ? { lat: m.location.lat, lng: m.location.lng } : null;
+      const marketsWithCoords = resultsMarkets.filter((m) => coordsOf(m));
 
       resultsMarkets = marketsWithCoords.map((m) => ({
         ...m,
-        distance: getDistance(searchCenter, m.location!.coordinates),
+        distance: getDistance(searchCenter, coordsOf(m)!),
       }));
 
       const marketCoordsMap = new Map(
-        marketsWithCoords.map((m) => [m.id, m.location!.coordinates])
+        activeMarkets.filter((m) => coordsOf(m)).map((m) => [m.id, coordsOf(m)!])
       );
 
       resultsVendors = resultsVendors.map((v) => {
@@ -429,6 +443,7 @@ const HomePage: React.FC<HomePageProps> = ({
   }, [
     searchTerm,
     activeMarkets,
+    organizerById,
     activeVendors,
     selectedMarketCategory,
     selectedVendorTypes,
@@ -442,8 +457,8 @@ const HomePage: React.FC<HomePageProps> = ({
 
   // Back from a profile: return to where the visitor was (T118)
   useEffect(() => {
-    if (!isLoading && (organizers.length > 0 || vendors.length > 0)) applyScrollRestore();
-  }, [isLoading, organizers.length, vendors.length]);
+    if (!isLoading && (markets.length > 0 || vendors.length > 0)) applyScrollRestore();
+  }, [isLoading, markets.length, vendors.length]);
 
   const showSearchResults =
     searchTerm.trim().length > 0 ||
@@ -641,7 +656,7 @@ const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
           {/* Next market dates, live (T122); hidden while search results are showing */}
-          {!showSearchResults && <ComingUp events={upcomingEvents} markets={activeMarkets} />}
+          {!showSearchResults && <ComingUp markets={activeMarkets} />}
         </div>
       </div>
 
@@ -728,6 +743,7 @@ const HomePage: React.FC<HomePageProps> = ({
                         <MarketCard
                           key={market.id}
                           market={market}
+                          organizer={market.organizerId ? organizerById.get(market.organizerId) : undefined}
                           onSelect={openMarketFrom(filteredMarkets.map((m) => m.id), resultsLabel())}
                           distance={market.distance}
                         />
@@ -786,10 +802,9 @@ const HomePage: React.FC<HomePageProps> = ({
                   className="flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory pr-8 mx-9 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
                 >
                   {whatsNewItems.map((item) => {
-                    const imageSrc = item.logoUrl || item.photos?.[0];
+                    const imageSrc = item.image;
                     const joinLabel = (() => {
-                      if (!item.joinDate) return null;
-                      const parts = item.joinDate.split('-').map(Number);
+                      const parts = (item.added || '').slice(0, 10).split('-').map(Number);
                       if (parts.length !== 3 || parts.some(isNaN)) return null;
                       return new Date(parts[0], parts[1] - 1, parts[2])
                         .toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -844,17 +859,17 @@ const HomePage: React.FC<HomePageProps> = ({
               ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
                 {featuredItems.map((item) =>
-                  item.type === "market" ? (
-                    <MarketCard
+                  item.type === "organizer" ? (
+                    <OrganizerCard
                       key={item.data.id}
-                      market={item.data as Organizer}
-                      onSelect={openMarketFrom(featuredItems.filter((f) => f.type === "market").map((f) => f.data.id), "Back to Featured")}
+                      organizer={item.data as Organizer}
+                      onSelect={openOrganizerFrom(featuredItems.filter((f) => f.type === "organizer").map((f) => f.data.id), "Back to Featured")}
                     />
                   ) : (
                     <VendorCard
                       key={item.data.id}
                       vendor={item.data as Vendor}
-                      onSelect={openVendorFrom(featuredItems.filter((f) => f.type !== "market").map((f) => f.data.id), "Back to Featured")}
+                      onSelect={openVendorFrom(featuredItems.filter((f) => f.type !== "organizer").map((f) => f.data.id), "Back to Featured")}
                     />
                   )
                 )}

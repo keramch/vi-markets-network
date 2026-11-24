@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import type { SpamGuardFields } from './SpamGuard';
-import type { Vendor, Organizer, User } from '../types';
+import type { Vendor, Market, User } from '../types';
 import { RibbonIcon, HeartIcon, MapPinIcon } from './Icons';
 import ProfileChecklist, { type ChecklistItem } from './ProfileChecklist';
 import SocialLinks, { socialLinks } from './SocialLinks';
@@ -14,9 +14,9 @@ import PhotoGallery from './PhotoGallery';
 
 interface VendorProfileProps {
   vendor: Vendor;
-  markets: Organizer[];
+  markets: Market[]; // published markets
   owner?: User | null;
-  onSelectMarket: (id: string) => void;
+  onSelectMarket: (id: string, date?: string) => void;
   onBack: () => void;
   isFavorited: boolean;
   onToggleFavorite: (id: string) => void;
@@ -45,7 +45,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
       const market = markets.find(m => m.id === entry.marketId);
       return market ? { market, date: entry.date } : null;
     })
-    .filter((x): x is { market: Organizer; date: string } => x !== null);
+    .filter((x): x is { market: Market; date: string } => x !== null);
 
   const todayStr = todayPacific();
   const currentEntries = attendingEntries.filter(e => e.date >= todayStr);
@@ -273,7 +273,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                   {currentEntries.length > 0 && (
                     <ul className="space-y-2.5">
                       {(showAllUpcoming ? currentEntries : currentEntries.slice(0, 3)).map(({ market, date }) => {
-                        const isActive = market.status === 'active';
+                        const isActive = market.status === 'published';
                         const d = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : null;
                         const place = market.location?.city || market.location?.address;
                         return (
@@ -286,7 +286,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                             )}
                             <div className="min-w-0">
                               {isActive ? (
-                                <button type="button" onClick={() => onSelectMarket(market.id)} className="text-base font-semibold text-brand-light-blue hover:underline text-left">
+                                <button type="button" onClick={() => onSelectMarket(market.id, date)} className="text-base font-semibold text-brand-light-blue hover:underline text-left">
                                   {market.name}
                                 </button>
                               ) : (
@@ -401,7 +401,7 @@ const VendorProfile: React.FC<VendorProfileProps> = ({
                       {review.reviewerAccountType === 'vendor' && (
                         <span className="text-sm px-2 py-0.5 rounded-full bg-brand-cream text-brand-light-blue font-medium">Vendor</span>
                       )}
-                      {review.reviewerAccountType === 'market' && (
+                      {(review.reviewerAccountType === 'organizer' || review.reviewerAccountType === 'market') && (
                         <span className="text-sm px-2 py-0.5 rounded-full bg-brand-cream text-brand-light-blue font-medium">Organizer</span>
                       )}
                     </div>

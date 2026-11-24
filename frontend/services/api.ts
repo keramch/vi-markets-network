@@ -176,7 +176,7 @@ export const createApplication = (vendorId: string, marketId: string, customResp
              const newApplication: Application = {
                 id: `app-${Date.now()}`,
                 vendorId,
-                marketId,
+                organizerId: marketId,
                 date: new Date().toISOString().split('T')[0],
                 status: 'pending',
                 customResponses,

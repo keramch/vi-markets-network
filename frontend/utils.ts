@@ -29,6 +29,8 @@ export const getDistance = (coords1: Coordinates, coords2: Coordinates): number 
  * @returns The formatted time string.
  */
 export const formatTime = (time: string): string => {
+  // '' = times to be confirmed (markets added from vendors' information)
+  if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return '';
   const [hour, minute] = time.split(':').map(Number);
   const ampm = hour >= 12 ? 'pm' : 'am';
   const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
@@ -37,6 +39,8 @@ export const formatTime = (time: string): string => {
 
 // ─── Calendar helpers ──────────────────────────────────────────────────────────
 
+// One day a market is on. (`event` is the market; the name dates from when
+// markets were called events.)
 export interface CalendarOccurrence {
   event: Market;
   date: string;       // YYYY-MM-DD
@@ -65,9 +69,9 @@ function weekOfMonth(d: Date): number {
 }
 
 /**
- * Expands a list of MarketEvent documents into individual calendar occurrences
- * for the given year/month (0-based month, Jan=0).
- * Only published events are included. Cancelled exceptions are suppressed.
+ * Expands a list of markets into individual calendar occurrences for the given
+ * year/month (0-based month, Jan=0). Only published markets are included.
+ * Cancelled exceptions are suppressed.
  */
 export function expandOccurrences(
   events: Market[],
@@ -103,15 +107,15 @@ export function expandOccurrences(
       });
     };
 
-    if (event.type === 'oneTime') {
-      if (schedule.date && isInMonth(schedule.date, year, month)) {
-        pushOccurrence(schedule.date);
+    if (event.type !== 'recurring') {
+      // "On these dates" (one-off, several days, irregular)
+      for (const d of listedDates(event)) {
+        if (isInMonth(d, year, month)) pushOccurrence(d);
       }
       continue;
     }
 
-    // recurring / specialEdition — walk days in the month that fall within the
-    // event's active range
+    // recurring — walk days in the month that fall within the market's active range
     const eventStart = schedule.startDate ? new Date(schedule.startDate + 'T12:00:00') : monthStart;
     const eventEnd   = schedule.endDate   ? new Date(schedule.endDate   + 'T12:00:00') : monthEnd;
 
@@ -169,8 +173,38 @@ export function expandOccurrences(
   );
 }
 
+/** The days a market on a list of dates is on, sorted ([] for a repeating one).
+ *  Accepts the old one-time shape (schedule.date) too. */
+export function listedDates(market: Market): string[] {
+  if (market.type === 'recurring') return [];
+  const list = market.schedule.dates ?? (market.schedule.date ? [market.schedule.date] : []);
+  return [...new Set(list.filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)))].sort();
+}
+
+/** Dates a market was on, newest first, within the last `years` years. */
+export function pastDates(market: Market, years = 5, from: Date = new Date()): string[] {
+  const todayIso = toIsoDate(from);
+  const out: string[] = [];
+  if (market.type !== 'recurring') {
+    out.push(...listedDates(market).filter(d => d < todayIso));
+  } else {
+    for (let i = 1; i <= years * 12; i++) {
+      const m = new Date(from.getFullYear(), from.getMonth() - i + 1, 1);
+      for (const o of expandOccurrences([market], m.getFullYear(), m.getMonth())) {
+        if (o.date < todayIso) out.push(o.date);
+      }
+    }
+  }
+  return [...new Set(out)].sort().reverse();
+}
+
+/** True when a date is known only from a vendor, not the organizer or HQ. */
+export function isVendorDate(market: Market, date: string): boolean {
+  return market.dateSources?.[date] === 'vendor';
+}
+
 /**
- * The next date an event actually happens, on or after today in the visitor's
+ * The next date a market actually happens, on or after today in the visitor's
  * local time (not UTC, so an event stays listed for its whole day). Uses
  * expandOccurrences, so it reads the right schedule fields for the event's
  * type and skips cancelled dates. Returns null if nothing is coming up within
@@ -235,8 +269,18 @@ const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  * Nov 29", or '' if it isn't one. Mirrored in backend routes/sharePreview.ts.
  */
 export function shortSeriesRange(event: Market): string {
+  const fmt = (d: Date) => d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+  if (event.type !== 'recurring') {
+    // Several days within one week ("Sat, Nov 28 – Sun, Nov 29")
+    const dates = listedDates(event);
+    if (dates.length < 2) return '';
+    const first = new Date(dates[0] + 'T12:00:00');
+    const last = new Date(dates[dates.length - 1] + 'T12:00:00');
+    if (Math.round((last.getTime() - first.getTime()) / 86_400_000) > 6) return '';
+    return `${fmt(first)} – ${fmt(last)}`;
+  }
   const { startDate, endDate, recurrenceDays = [] } = event.schedule;
-  if (event.type === 'oneTime' || !startDate || !endDate) return '';
+  if (!startDate || !endDate) return '';
   const start = new Date(startDate + 'T12:00:00');
   const end = new Date(endDate + 'T12:00:00');
   const spanDays = Math.round((end.getTime() - start.getTime()) / 86_400_000);
@@ -246,18 +290,18 @@ export function shortSeriesRange(event: Market): string {
     if (recurrenceDays.includes(d.getDay())) dates.push(new Date(d));
   }
   if (dates.length === 0) return '';
-  const fmt = (d: Date) => d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
   const first = fmt(dates[0]);
   const last = fmt(dates[dates.length - 1]);
   return first === last ? first : `${first} – ${last}`;
 }
 
-/** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Empty for one-time events.
- *  A series within one week shows its dates instead (see shortSeriesRange). */
+/** "Every Sat", "Every other Sat/Sun", "Monthly, Sat". Days within one week
+ *  show their dates instead (see shortSeriesRange). Otherwise empty for a
+ *  market on a list of dates. */
 export function recurrenceSummary(event: Market): string {
-  if (event.type === 'oneTime') return '';
   const range = shortSeriesRange(event);
   if (range) return range;
+  if (event.type !== 'recurring') return '';
   // Monday first, so weekend markets read "Sat/Sun"
   const days = [...(event.schedule.recurrenceDays ?? [])]
     .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
@@ -271,21 +315,21 @@ export function recurrenceSummary(event: Market): string {
   }
 }
 
-// ─── Event page links ─────────────────────────────────────────────────────────
+// ─── Market page links ────────────────────────────────────────────────────────
 
 /**
- * The event page path: /markets/<market slug>/<event slug>. Events saved before
- * slugs existed use their ID until their next save; the page accepts both.
- * `date` (YYYY-MM-DD) opens the page on that one date.
+ * A market's page: /markets/<slug>. Every market has a slug unique across all
+ * markets (T128); the ID is a fallback. `date` (YYYY-MM-DD) opens the page on
+ * that one date.
  */
-export function eventPath(marketSlug: string, event: Pick<Market, 'id' | 'slug'>, date?: string): string {
-  const path = `/markets/${marketSlug}/${encodeURIComponent(event.slug || event.id)}`;
+export function marketPath(market: Pick<Market, 'id' | 'slug'>, date?: string): string {
+  const path = `/markets/${encodeURIComponent(market.slug || market.id)}`;
   return date ? `${path}?date=${date}` : path;
 }
 
 /** Full link for sharing or copying. */
-export function eventUrl(marketSlug: string, event: Pick<Market, 'id' | 'slug'>, date?: string): string {
-  return `${window.location.origin}${eventPath(marketSlug, event, date)}`;
+export function marketUrl(market: Pick<Market, 'id' | 'slug'>, date?: string): string {
+  return `${window.location.origin}${marketPath(market, date)}`;
 }
 
 /**
@@ -313,13 +357,18 @@ export function buildGoogleCalendarUrl(
   startTime: string,
   endTime: string
 ): string {
-  const dtStart = `${date.replace(/-/g, '')}T${startTime.replace(':', '')}00`;
-  const dtEnd   = `${date.replace(/-/g, '')}T${endTime.replace(':', '')}00`;
-  const loc = `${event.location.venueName}, ${event.location.address}, ${event.location.city}`;
+  const day = date.replace(/-/g, '');
+  // Times to be confirmed: an all-day entry (end date is the next day)
+  const next = new Date(date + 'T12:00:00');
+  next.setDate(next.getDate() + 1);
+  const dates = startTime && endTime
+    ? `${day}T${startTime.replace(':', '')}00/${day}T${endTime.replace(':', '')}00`
+    : `${day}/${toIsoDate(next).replace(/-/g, '')}`;
+  const loc = [event.location.venueName, event.location.address, event.location.city].filter(Boolean).join(', ');
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: event.name,
-    dates: `${dtStart}/${dtEnd}`,
+    dates,
     location: loc,
     ctz: 'America/Vancouver',
   });
@@ -461,7 +510,7 @@ export const websiteUrl = (raw: string | undefined | null): string | null => {
 // sessionStorage can be blocked (private windows); everything still works,
 // just without the remembered list.
 
-export type BrowseKind = 'markets' | 'vendors';
+export type BrowseKind = 'markets' | 'vendors' | 'organizers';
 
 export interface BrowseList {
   kind: BrowseKind;

@@ -1,19 +1,24 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { vendorTypeLabel, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState } from "../utils";
-import type { Organizer, Vendor } from "../types";
+import { vendorTypeLabel, rememberBrowseList, applyScrollRestore, loadTabState, saveTabState, nextOccurrence } from "../utils";
+import type { Organizer, Vendor, Market } from "../types";
 import MarketCard from "./MarketCard";
 import VendorCard from "./VendorCard";
 import { SearchIcon, XIcon } from "./Icons";
 
 const PAGE_SIZE = 24; // divisible by 2, 3 and 4 so grid rows come out full
 
-interface BrowsePageProps {
-  mode: "markets" | "vendors";
-  items: Organizer[] | Vendor[];
+// Markets are the events people go to (T128); organizers only give a market
+// its logo and make it findable by the organizer's name.
+type BrowsePageProps = {
   onSelect: (id: string) => void;
   onBack: () => void;
   onSwitchMode: () => void;
-}
+} & (
+  | { mode: "markets"; markets: Market[]; organizers: Organizer[] }
+  | { mode: "vendors"; vendors: Vendor[] }
+);
+
+type Item = { id: string; name: string; description?: string; searchText: string };
 
 const fuzzyMatch = (term: string, text: string | undefined) => {
   if (!text) return false;
@@ -22,13 +27,33 @@ const fuzzyMatch = (term: string, text: string | undefined) => {
   return words.every((w) => target.includes(w));
 };
 
-const BrowsePage: React.FC<BrowsePageProps> = ({
-  mode,
-  items,
-  onSelect,
-  onBack,
-  onSwitchMode,
-}) => {
+const BrowsePage: React.FC<BrowsePageProps> = (props) => {
+  const { mode, onSelect, onBack, onSwitchMode } = props;
+  const organizerById = useMemo(
+    () => new Map((props.mode === "markets" ? props.organizers : []).map(o => [o.id, o])),
+    [props]
+  );
+  // Markets soonest first (ones with no dates yet last, by name); vendors by name
+  const items: Item[] = useMemo(() => {
+    if (props.mode === "markets") {
+      return props.markets
+        .map(m => ({ m, next: nextOccurrence(m)?.date ?? "9999" }))
+        .sort((a, b) => a.next.localeCompare(b.next) || a.m.name.localeCompare(b.m.name))
+        .map(({ m }) => ({
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          searchText: [m.name, m.description, m.location?.city, m.location?.venueName, (m.marketType ?? []).join(" "),
+            m.organizerId ? organizerById.get(m.organizerId)?.name : ""].join(" "),
+        }));
+    }
+    return props.vendors.map(v => ({
+      id: v.id, name: v.name, description: v.description,
+      searchText: `${v.name} ${v.description} ${vendorTypeLabel(v)}`,
+    }));
+  }, [props, organizerById]);
+  const marketById = useMemo(() => new Map((props.mode === "markets" ? props.markets : []).map(m => [m.id, m])), [props]);
+  const vendorById = useMemo(() => new Map((props.mode === "vendors" ? props.vendors : []).map(v => [v.id, v])), [props]);
   // Kept for this browser tab, so coming back from a profile shows the same
   // filtered list, loaded as far as before (T118)
   const stateKey = `vim-browse-page-${mode}`;
@@ -43,12 +68,7 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
 
   const filtered = useMemo(() => {
     if (!filterTerm.trim()) return items;
-    return items.filter((item) =>
-      fuzzyMatch(
-        filterTerm,
-        `${item.name} ${item.description} ${"vendorTypes" in item ? vendorTypeLabel(item) : ""}`
-      )
-    );
+    return items.filter((item) => fuzzyMatch(filterTerm, item.searchText));
   }, [items, filterTerm]);
 
   const visible = filtered.slice(0, visibleCount);
@@ -102,7 +122,8 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder={`Search ${noun} by name, description, or category…`}
+              aria-label={`Search ${noun}`}
+              placeholder={mode === "markets" ? "Search markets by name, town, type or organizer…" : "Search vendors by name, description, or category…"}
               value={filterTerm}
               onChange={handleFilterChange}
               className="w-full pl-10 pr-10 py-2.5 rounded-full text-gray-900 text-sm focus:outline-none focus:ring-4 focus:ring-brand-gold border-0"
@@ -141,20 +162,24 @@ const BrowsePage: React.FC<BrowsePageProps> = ({
           </div>
         ) : mode === "markets" ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-            {(visible as Organizer[]).map((market) => (
-              <MarketCard
-                key={market.id}
-                market={market}
-                onSelect={openFromList}
-              />
-            ))}
+            {visible.map(({ id }) => {
+              const market = marketById.get(id)!;
+              return (
+                <MarketCard
+                  key={id}
+                  market={market}
+                  organizer={market.organizerId ? organizerById.get(market.organizerId) : undefined}
+                  onSelect={openFromList}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-            {(visible as Vendor[]).map((vendor) => (
+            {visible.map(({ id }) => (
               <VendorCard
-                key={vendor.id}
-                vendor={vendor}
+                key={id}
+                vendor={vendorById.get(id)!}
                 onSelect={openFromList}
               />
             ))}

@@ -38,7 +38,7 @@ const MyApplications: React.FC<MyApplicationsProps> = ({ applications, organizer
         {applications.length > 0 ? (
           <div className="space-y-4">
             {applications.map(app => {
-              const market = organizers.find(m => m.id === app.marketId);
+              const market = organizers.find(m => m.id === app.organizerId);
               if (!market) return null;
               return (
                 <div key={app.id} className="p-4 border rounded-md flex justify-between items-center">

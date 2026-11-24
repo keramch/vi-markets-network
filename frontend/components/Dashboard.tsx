@@ -1,18 +1,24 @@
 import React from 'react';
-import type { Organizer, Vendor } from '../types';
+import type { Organizer, Vendor, Market } from '../types';
 import MarketCard from './MarketCard';
+import OrganizerCard from './OrganizerCard';
 import VendorCard from './VendorCard';
 import { HeartIcon } from './Icons';
 
+// The member's saved markets and vendors, and the organizers they follow
+// (markets and vendors are Saved, organizers Followed: OD-16)
+
 interface DashboardProps {
-  markets: Organizer[];
+  markets: Market[];
   vendors: Vendor[];
+  organizers: Organizer[];
   onSelectMarket: (id: string) => void;
   onSelectVendor: (id: string) => void;
+  onSelectOrganizer: (id: string) => void;
   onBack: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket, onSelectVendor, onBack }) => {
+const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, organizers, onSelectMarket, onSelectVendor, onSelectOrganizer, onBack }) => {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
@@ -20,7 +26,7 @@ const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket,
             <HeartIcon className="w-8 h-8 mr-4 text-brand-gold" filled />
             Saved
         </h1>
-        <button onClick={onBack} className="text-brand-light-blue hover:text-brand-blue font-semibold">
+        <button onClick={onBack} className="min-h-[2.75rem] text-brand-light-blue hover:text-brand-blue font-semibold">
           &larr; Back to home
         </button>
       </div>
@@ -28,8 +34,15 @@ const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket,
       <section className="mb-12">
         <h2 className="text-3xl font-extrabold font-serif text-brand-blue mb-6">Saved Markets</h2>
         {markets.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {markets.map(market => <MarketCard key={market.id} market={market} onSelect={onSelectMarket} />)}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {markets.map(market => (
+              <MarketCard
+                key={market.id}
+                market={market}
+                organizer={market.organizerId ? organizers.find(o => o.id === market.organizerId) : undefined}
+                onSelect={onSelectMarket}
+              />
+            ))}
           </div>
         ) : (
           <div className="text-center py-12 bg-white rounded-lg shadow">
@@ -39,7 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket,
         )}
       </section>
 
-      <section>
+      <section className="mb-12">
         <h2 className="text-3xl font-extrabold font-serif text-brand-blue mb-6">Saved Vendors</h2>
         {vendors.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -52,6 +65,15 @@ const Dashboard: React.FC<DashboardProps> = ({ markets, vendors, onSelectMarket,
           </div>
         )}
       </section>
+
+      {organizers.length > 0 && (
+        <section>
+          <h2 className="text-3xl font-extrabold font-serif text-brand-blue mb-6">Organizers you follow</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {organizers.map(o => <OrganizerCard key={o.id} organizer={o} onSelect={onSelectOrganizer} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

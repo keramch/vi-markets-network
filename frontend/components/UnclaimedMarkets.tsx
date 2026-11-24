@@ -1,17 +1,22 @@
-import React, { useMemo, useState } from 'react';
-import type { Organizer, Vendor } from '../types';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import type { Market, Organizer, User, Vendor } from '../types';
 import { MarketCategories } from '../types';
+import { listedDates, nextOccurrence, recurrenceSummary, marketPath } from '../utils';
+import Modal from './Modal';
+import MarketEventForm from './MarketEventForm';
+import DiscardChangesDialog from './DiscardChangesDialog';
 
-// HQ › Unclaimed markets (T105): markets nobody owns yet, added by vendors
-// from their profiles or by an admin here. Lets Kera review and tidy them
-// before they get public pages (T020): spot duplicates, edit, delete, and
-// add new ones directly.
+// HQ › Unclaimed markets (T105, T128): markets with no organizer yet, added by
+// vendors from their profiles or by Kera here. Edit opens the market form (its
+// dates, venue, poster…); a market can be handed to an organizer from there.
+// Delete removes it and vendors' links to it (T133).
 
 interface UnclaimedMarketsProps {
-  markets: Organizer[];   // all markets
+  markets: Market[];        // every market (admins get drafts too)
+  organizers: Organizer[];
   vendors: Vendor[];
-  onEdit: (id: string) => void;
-  onEvents: (id: string) => void;   // that market's dates (T124)
+  currentUser: User;
+  onSaved: (market: Market) => void;
   onDelete: (id: string) => void;
   onCreate: (data: { name: string; city: string; address: string; marketTypes: string[] }) => Promise<void>;
 }
@@ -19,7 +24,10 @@ interface UnclaimedMarketsProps {
 // "St. Mary's Christmas Market" and "St Marys christmas market" compare equal
 const normalize = (name: string) => name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
 
-const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, onEdit, onEvents, onDelete, onCreate }) => {
+const shortDate = (iso: string) =>
+  new Date(iso + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+
+const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, organizers, vendors, currentUser, onSaved, onDelete, onCreate }) => {
   const [search, setSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
@@ -28,28 +36,44 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
   const [types, setTypes] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [editing, setEditing] = useState<Market | null>(null);
+
+  // The edit window asks before a click outside throws changes away
+  const formDirty = useRef(false);
+  const trackDirty = useCallback((dirty: boolean) => { formDirty.current = dirty; }, []);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const closeEdit = () => { formDirty.current = false; setEditing(null); };
 
   const unclaimed = useMemo(
-    () => markets.filter(m => m.status === 'unclaimed').sort((a, b) => a.name.localeCompare(b.name)),
+    () => markets.filter(m => !m.organizerId && m.status !== 'archived').sort((a, b) => a.name.localeCompare(b.name)),
     [markets]
   );
 
-  // Who added or lists each market (vendors linked to it)
-  const linkedVendors = (m: Organizer) =>
-    vendors.filter(v => (m.vendorIds || []).includes(v.id) || (v.attendingMarkets || []).some(a => a.marketId === m.id));
+  // Vendors who list each market, and who added it
+  const linkedVendors = (m: Market) =>
+    vendors.filter(v => (v.attendingMarkets || []).some(a => a.marketId === m.id));
+  const addedBy = (m: Market) => m.addedBy?.vendorId ? vendors.find(v => v.id === m.addedBy!.vendorId) : undefined;
 
   // Another market (claimed or not) with the same or overlapping name
-  const possibleDuplicate = (m: Organizer) => {
+  const possibleDuplicate = (m: Market) => {
     const mine = normalize(m.name);
     return markets.find(o => {
-      if (o.id === m.id) return false;
+      if (o.id === m.id || o.status === 'archived') return false;
       const theirs = normalize(o.name);
       return theirs === mine || (Math.min(theirs.length, mine.length) >= 6 && (theirs.includes(mine) || mine.includes(theirs)));
     });
   };
 
+  const when = (m: Market) => {
+    const repeats = recurrenceSummary(m);
+    const next = nextOccurrence(m);
+    if (next) return `Next: ${shortDate(next.date)}${repeats ? ` · ${repeats}` : ''}`;
+    const dates = listedDates(m);
+    return dates.length ? `Last: ${shortDate(dates[dates.length - 1])} (no upcoming dates)` : 'No dates yet';
+  };
+
   const shown = search.trim()
-    ? unclaimed.filter(m => `${m.name} ${m.location?.city ?? ''} ${m.location?.address ?? ''}`.toLowerCase().includes(search.toLowerCase()))
+    ? unclaimed.filter(m => `${m.name} ${m.location?.city ?? ''} ${m.location?.address ?? ''} ${m.location?.venueName ?? ''}`.toLowerCase().includes(search.toLowerCase()))
     : unclaimed;
 
   const submit = async (e: React.FormEvent) => {
@@ -76,7 +100,7 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
         <div>
           <h2 className="font-serif text-2xl text-brand-blue">Unclaimed markets <span className="font-sans font-medium text-base text-gray-600 tracking-normal">· {unclaimed.length}</span></h2>
           <p className="text-sm text-gray-600 mt-1 max-w-2xl">
-            Markets nobody has claimed yet: added by vendors from their profiles, or by you here. Tidy names and details, merge duplicates by deleting the extra one, then they're ready for public pages.
+            Markets with no organizer yet: added by vendors from their profiles, or by you here. They're public. Edit adds dates, times, the venue and a poster, or hands a market to its organizer.
           </p>
         </div>
         <button
@@ -125,11 +149,11 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
             </div>
           </fieldset>
           {error && <p className="text-sm text-red-700">{error}</p>}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button type="submit" disabled={saving} className="min-h-[2.75rem] px-5 rounded-md bg-brand-light-blue text-white text-sm font-semibold disabled:opacity-60">
               {saving ? 'Adding…' : 'Add market'}
             </button>
-            <p className="text-sm text-gray-600">You can add a description and photos after, with Edit, and dates with Events.</p>
+            <p className="text-sm text-gray-600">Then use Edit to add its dates, times, venue and poster.</p>
           </div>
         </form>
       )}
@@ -150,31 +174,31 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
           {shown.map(m => {
             const dup = possibleDuplicate(m);
             const by = linkedVendors(m);
-            const place = [m.location?.city, m.location?.address].filter(Boolean).join(' · ');
+            const adder = addedBy(m);
+            const place = [m.location?.venueName, m.location?.address, m.location?.city].filter(Boolean).join(' · ');
             return (
               <li key={m.id} className="py-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-brand-text">{m.name}</p>
-                    {!m.slug && (
-                      <span className="text-sm px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">No web address yet: saving it adds one</span>
+                    <a href={marketPath(m)} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-light-blue hover:underline">{m.name}</a>
+                    {m.status !== 'published' && (
+                      <span className="text-sm px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{m.status === 'draft' ? 'Draft: not public' : m.status}</span>
                     )}
                     {dup && (
-                      <span className="text-sm px-2 py-0.5 rounded-full bg-[#FBE3EA] text-[#8E1F43]">Possible duplicate of {dup.name}{dup.status === 'active' ? ' (claimed)' : ''}</span>
+                      <span className="text-sm px-2 py-0.5 rounded-full bg-[#FBE3EA] text-[#8E1F43]">Possible duplicate of {dup.name}{dup.organizerId ? ' (claimed)' : ''}</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mt-0.5">{place || 'No town or address'}</p>
+                  <p className="text-sm text-gray-600 mt-0.5">{place || 'No venue or town yet'}</p>
+                  <p className="text-sm text-gray-600">{when(m)}</p>
                   <p className="text-sm text-gray-600">
-                    {by.length > 0 ? `Listed by ${by.map(v => v.name).join(', ')}` : 'Added in HQ'}
-                    {m.joinDate ? ` · added ${new Date(m.joinDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+                    {adder ? `Added by ${adder.name}` : 'Added in HQ'}
+                    {by.length > 0 ? ` · listed by ${by.map(v => v.name).join(', ')}` : ''}
+                    {m.hqCheckedAt ? ` · checked ${shortDate(m.hqCheckedAt.slice(0, 10))}` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => onEdit(m.id)} className="min-h-[2.75rem] px-4 rounded-md border border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream">
+                  <button type="button" onClick={() => setEditing(m)} className="min-h-[2.75rem] px-4 rounded-md border border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream">
                     Edit
-                  </button>
-                  <button type="button" onClick={() => onEvents(m.id)} className="min-h-[2.75rem] px-4 rounded-md border border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream">
-                    Events
                   </button>
                   <button
                     type="button"
@@ -194,6 +218,31 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, vendors, o
           })}
         </ul>
       )}
+
+      <Modal
+        isOpen={!!editing}
+        onClose={closeEdit}
+        onClickOutside={confirmingDiscard ? undefined : () => (formDirty.current ? setConfirmingDiscard(true) : closeEdit())}
+        title={editing ? `Edit ${editing.name}` : 'Edit market'}
+        maxWidth="lg"
+      >
+        {editing && (
+          <MarketEventForm
+            key={editing.id}
+            currentUser={currentUser}
+            existingEvent={editing}
+            allOrganizers={organizers}
+            onDirtyChange={trackDirty}
+            onSaved={saved => { onSaved(saved); closeEdit(); }}
+            onCancel={closeEdit}
+          />
+        )}
+      </Modal>
+      <DiscardChangesDialog
+        isOpen={confirmingDiscard}
+        onKeepEditing={() => setConfirmingDiscard(false)}
+        onDiscard={() => { setConfirmingDiscard(false); closeEdit(); }}
+      />
     </div>
   );
 };

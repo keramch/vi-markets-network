@@ -1,43 +1,53 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Organizer, Vendor, Review, User, MemberStatus } from '../types';
+import type { Organizer, Vendor, Review, User, MemberStatus, Market } from '../types';
 import { CheckIcon, TrashIcon, AlertCircleIcon, UsersIcon, RibbonIcon, MapPinIcon, TagIcon, SearchIcon, XIcon } from './Icons';
 import UnclaimedMarkets from './UnclaimedMarkets';
 
+type ReviewEntity = 'market' | 'vendor' | 'organizer';
+
 interface AdminPanelProps {
   organizers: Organizer[];
+  markets: Market[];  // every market (admins get drafts and unclaimed ones too)
   vendors: Vendor[];
   users: User[];
   reviews: Review[]; // every review, any status (loaded for admins only)
-  onModerateReview: (entityType: 'market' | 'vendor', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => void;
-  onResolveReviewRemoval: (entityType: 'market' | 'vendor', entityId: string, reviewId: string, action: 'remove' | 'keep') => void;
-  onEditProfile: (profileId: string, profileType: 'market' | 'vendor') => void;
-  onUpdateMemberStatus: (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => void;
-  onHardDeleteMember: (memberId: string, type: 'market' | 'vendor') => void;
+  currentUser: User;
+  onModerateReview: (entityType: ReviewEntity, entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => void;
+  onResolveReviewRemoval: (entityType: ReviewEntity, entityId: string, reviewId: string, action: 'remove' | 'keep') => void;
+  onEditProfile: (profileId: string, profileType: 'organizer' | 'vendor') => void;
+  onOpenOrganizerMarkets: (organizerId: string) => void;
+  onUpdateMemberStatus: (memberId: string, type: 'organizer' | 'vendor', status: MemberStatus) => void;
+  onHardDeleteMember: (memberId: string, type: 'organizer' | 'vendor') => void;
   onToggleFoundingMember: (userId: string, isCurrentlyFounding: boolean) => void;
-  onToggleFeatured: (type: 'market' | 'vendor', id: string, currentValue: boolean) => void;
+  onToggleFeatured: (type: 'organizer' | 'vendor', id: string, currentValue: boolean) => void;
   onSendMessage: (to: string, subject: string, body: string) => Promise<void>;
   onCreateMarket: (data: { name: string; city: string; address: string; marketTypes: string[] }) => Promise<void>;
-  onOpenMarketEvents: (marketId: string) => void;
+  onMarketSaved: (market: Market) => void;
+  onDeleteMarket: (id: string) => void;
   initialTab?: 'reviews' | 'memberships' | 'unclaimed';
   onTabChange?: (tab: 'reviews' | 'memberships' | 'unclaimed') => void;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({
   organizers,
+  markets,
   vendors,
   users,
   reviews,
+  currentUser,
   onModerateReview,
   onResolveReviewRemoval,
   onEditProfile,
+  onOpenOrganizerMarkets,
   onUpdateMemberStatus,
   onHardDeleteMember,
   onToggleFoundingMember,
   onToggleFeatured,
   onSendMessage,
   onCreateMarket,
-  onOpenMarketEvents,
+  onMarketSaved,
+  onDeleteMarket,
   initialTab = 'reviews',
   onTabChange,
 }) => {
@@ -104,12 +114,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // ── Data ─────────────────────────────────────────────────────────────────
 
-  const allReviews: { entityType: 'market' | 'vendor'; entity: Organizer | Vendor; review: Review }[] = [];
+  // Reviews are about a market, a vendor or an organizer (T128)
+  const allReviews: { entityType: ReviewEntity; entity: { id: string; name: string }; review: Review }[] = [];
   reviews.forEach(r => {
-    const entity = r.entityType === 'vendor'
+    const entityType: ReviewEntity = r.entityType === 'vendor' ? 'vendor' : r.entityType === 'organizer' ? 'organizer' : 'market';
+    const entity = entityType === 'vendor'
       ? vendors.find(v => v.id === r.entityId)
-      : organizers.find(m => m.id === r.entityId);
-    if (entity) allReviews.push({ entityType: r.entityType === 'vendor' ? 'vendor' : 'market', entity, review: r });
+      : entityType === 'organizer'
+        ? organizers.find(o => o.id === r.entityId)
+        : markets.find(m => m.id === r.entityId);
+    if (entity) allReviews.push({ entityType, entity, review: r });
   });
 
   const filteredReviews = allReviews
@@ -118,8 +132,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       : item.review.status === activeReviewTab)
     .sort((a, b) => new Date(b.review.date).getTime() - new Date(a.review.date).getTime());
 
-  const allMembers: ({ type: 'market'; data: Organizer } | { type: 'vendor'; data: Vendor })[] = [
-    ...organizers.map(m => ({ type: 'market' as const, data: m })),
+  const allMembers: ({ type: 'organizer'; data: Organizer } | { type: 'vendor'; data: Vendor })[] = [
+    ...organizers.map(m => ({ type: 'organizer' as const, data: m })),
     ...vendors.map(v => ({ type: 'vendor' as const, data: v })),
   ].sort((a, b) => new Date(b.data.joinDate).getTime() - new Date(a.data.joinDate).getTime());
 
@@ -202,12 +216,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {activeMainTab === 'unclaimed' && (
         <UnclaimedMarkets
-          markets={organizers}
+          markets={markets}
+          organizers={organizers}
           vendors={vendors}
-          onEdit={(id) => onEditProfile(id, 'market')}
-          onDelete={(id) => onHardDeleteMember(id, 'market')}
+          currentUser={currentUser}
+          onSaved={onMarketSaved}
+          onDelete={onDeleteMarket}
           onCreate={onCreateMarket}
-          onEvents={onOpenMarketEvents}
         />
       )}
 
@@ -357,8 +372,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             {pagedMembers.map(member => {
               const user = users.find(u => u.ownedOrganizerId === member.data.id || u.ownedVendorId === member.data.id);
               const isOpen = openDropdownId === member.data.id;
-              const TypeIcon = member.type === 'market' ? MapPinIcon : TagIcon;
-              const typeColor = member.type === 'market' ? 'text-brand-teal' : 'text-brand-violet';
+              const TypeIcon = member.type === 'organizer' ? MapPinIcon : TagIcon;
+              const typeColor = member.type === 'organizer' ? 'text-brand-light-blue' : 'text-brand-violet';
               const contactName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.displayName || null;
 
               return (
@@ -419,6 +434,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                           >
                             ✏️ Edit Profile
                           </button>
+
+                          {member.type === 'organizer' && (
+                            <button
+                              className={ddItem}
+                              onClick={() => { onOpenOrganizerMarkets(member.data.id); setOpenDropdownId(null); }}
+                            >
+                              📅 Their markets
+                            </button>
+                          )}
 
                           <button
                             className={ddItem}

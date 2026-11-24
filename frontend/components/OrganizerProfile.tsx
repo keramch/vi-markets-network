@@ -8,7 +8,7 @@ import PhotoGallery from './PhotoGallery';
 import ProfileChecklist, { type ChecklistItem } from './ProfileChecklist';
 import ReviewForm from './ReviewForm';
 import ContactForm from './ContactForm';
-import { formatTime, upcomingOccurrences, recurrenceSummary, eventPath } from '../utils';
+import { formatTime, upcomingOccurrences, recurrenceSummary, marketPath } from '../utils';
 import { Link } from 'react-router-dom';
 import ShareButton from './ShareButton';
 
@@ -57,7 +57,7 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
     || currentUser?.subscription?.tier === 'superPro'
     || currentUser?.subscription?.foundingMember === true;
   const hasApplied = applications.some(
-    app => app.vendorId === currentUserVendor?.id && app.marketId === organizer.id
+    app => app.vendorId === currentUserVendor?.id && app.organizerId === organizer.id
   );
 
   let canApply = true;
@@ -88,20 +88,21 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
       className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
         isFavorited ? 'bg-white text-brand-blue' : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-brand-blue'
       }`}
-      aria-label={isFavorited ? 'Remove this market from your saved list' : 'Save this market'}
+      aria-label={isFavorited ? `Stop following ${organizer.name}` : `Follow ${organizer.name}`}
       aria-pressed={isFavorited}
     >
+      {/* Organizers are Followed; markets and vendors are Saved (OD-16) */}
       <HeartIcon className="w-4 h-4 text-brand-gold" filled={isFavorited} />
-      {isFavorited ? 'Saved' : 'Save'}
+      {isFavorited ? 'Following' : 'Follow'}
     </button>
   ) : (
     <button
       onClick={onOpenLoginModal}
       className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-white text-gray-500 hover:bg-gray-100 transition-colors duration-200 whitespace-nowrap"
-      title="Log in or sign up to save"
+      title="Log in or sign up to follow"
     >
       <HeartIcon className="w-4 h-4 text-brand-gold" />
-      Save
+      Follow
     </button>
   );
 
@@ -139,7 +140,7 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
   // Owner checklist, most valuable first
   const socials = organizer.contact?.socials ?? {};
   const checklist: ChecklistItem[] = [
-    { key: 'dates', done: hasDates, title: 'Add your market dates', short: 'market dates', why: 'Your dates appear here, on the calendar, and each gets a page you can share.', action: 'Add dates', to: '/dashboard/my-market' },
+    { key: 'dates', done: hasDates, title: 'Add your market dates', short: 'market dates', why: 'Your dates appear here, on the calendar, and each gets a page you can share.', action: 'Add dates', to: '/dashboard/my-markets' },
     { key: 'photos', done: (organizer.photos?.length ?? 0) >= 3, title: 'Add 3 or more photos of your market', short: 'photos', why: 'Photos fill your gallery and the banner at the top of your profile.', action: 'Add photos' },
     { key: 'about', done: (organizer.description?.trim().length ?? 0) >= 100, title: 'Describe your market in About us', short: 'About us', why: 'What makes it special, and what shoppers can expect when they visit.', action: 'Write About us' },
     { key: 'place', done: !!place, title: 'Add your location', short: 'location', why: 'Shown under your name, so shoppers know where to find you.', action: 'Add location' },
@@ -254,8 +255,8 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
               {/* Admins only: jump straight to editing this profile, and come back here after saving */}
               {currentUser?.isAdmin && (
                 <Link
-                  to={`/hq/edit/market/${organizer.id}`}
-                  state={{ returnTo: `/markets/${organizer.slug}` }}
+                  to={`/hq/edit/organizer/${organizer.id}`}
+                  state={{ returnTo: `/organizers/${organizer.slug}` }}
                   className="text-sm font-medium text-brand-light-blue hover:underline px-2 py-1"
                 >
                   Edit profile
@@ -290,7 +291,7 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
                     {upcomingDates.map(({ event, date, startTime, endTime }) => {
                       // One row per date in the next 6 weeks (T001, T096, T099)
                       const d = new Date(date + 'T12:00:00');
-                      const timeStr = `${formatTime(startTime)} – ${formatTime(endTime)}`;
+                      const timeStr = startTime && endTime ? `${formatTime(startTime)} – ${formatTime(endTime)}` : 'Times to be confirmed';
                       const repeats = recurrenceSummary(event);
                       return (
                         <li key={`${event.id}-${date}`} className="flex items-center gap-4 px-4 py-3 border border-gray-200 rounded-lg">
@@ -299,17 +300,13 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
                             <p className="font-serif text-2xl text-brand-blue leading-none">{d.getDate()}</p>
                           </div>
                           <div className="min-w-0">
-                            {/* Opens the event page on this date; its own website is linked from there (T013) */}
-                            {organizer.slug ? (
-                              <Link
-                                to={eventPath(organizer.slug, event, date)}
-                                className="text-base font-semibold text-brand-light-blue hover:underline"
-                              >
-                                {event.name}
-                              </Link>
-                            ) : (
-                              <p className="text-base font-semibold text-brand-text">{event.name}</p>
-                            )}
+                            {/* Opens the market's page on this date; its own website is linked from there (T013) */}
+                            <Link
+                              to={marketPath(event, date)}
+                              className="text-base font-semibold text-brand-light-blue hover:underline"
+                            >
+                              {event.name}
+                            </Link>
                             <p className="text-sm text-gray-600 mt-0.5">
                               {d.toLocaleDateString('en-CA', { weekday: 'short' }).replace('.', '')}, {timeStr}
                               {event.location?.venueName ? ` · ${event.location.venueName}` : ''}
@@ -470,7 +467,7 @@ const OrganizerProfile: React.FC<OrganizerProfileProps> = ({
                       {review.reviewerAccountType === 'vendor' && (
                         <span className="text-sm px-2 py-0.5 rounded-full bg-brand-cream text-brand-light-blue font-medium">Vendor</span>
                       )}
-                      {review.reviewerAccountType === 'market' && (
+                      {(review.reviewerAccountType === 'organizer' || review.reviewerAccountType === 'market') && (
                         <span className="text-sm px-2 py-0.5 rounded-full bg-brand-cream text-brand-light-blue font-medium">Organizer</span>
                       )}
                     </div>

@@ -290,7 +290,7 @@ export const applications: Application[] = [
     {
         id: 'app-1',
         vendorId: 'vendor-2', // The Honest Loaf
-        marketId: 'market-3', // Oakwood Artisan Fair
+        organizerId: 'market-3', // Oakwood Artisan Fair
         date: '2024-08-10',
         status: 'pending',
         customResponses: [

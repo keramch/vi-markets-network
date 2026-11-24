@@ -128,7 +128,7 @@ function normalizeApplication(raw: any): Application {
 // LISTS
 
 export const getOrganizers = async (): Promise<Organizer[]> => {
-  const raw = await request<any[]>("/markets");
+  const raw = await request<any[]>("/organizers");
   return raw.map(normalizeOrganizer);
 };
 
@@ -169,7 +169,7 @@ export const register = (data: {
   password: string;
   firstName: string;
   lastName: string;
-  accountType: "vendor" | "market" | "community";
+  accountType: "vendor" | "organizer" | "community";
   businessName?: string;
   city?: string;
   description?: string;
@@ -189,7 +189,7 @@ export const register = (data: {
 // REGISTER WITH GOOGLE — the person is already signed in to Firebase with
 // Google; the backend creates their profile from the verified token
 export const registerOAuth = (data: {
-  accountType: "vendor" | "market" | "community";
+  accountType: "vendor" | "organizer" | "community";
   firstName?: string;
   lastName?: string;
   businessName?: string;
@@ -223,21 +223,22 @@ export const setFoundingMember = (userId: string, currentSub: User['subscription
 
 // MARKETS
 
-export const createMarketOld = (
-  // vendorId: a vendor adding a market to their profile; admins may leave it out (T105)
-  payload: { name: string; vendorId?: string; city?: string; address?: string; marketTypes?: string[] }
-): Promise<Organizer> => {
-  return request<any>("/markets", {
+// A vendor adds a market they'll be at that isn't listed yet: it goes up as an
+// unclaimed market, with their date marked as from a vendor (T128)
+export const addMarketFromVendor = (
+  payload: { vendorId: string; name: string; city?: string; address?: string; date?: string }
+): Promise<Market> => {
+  return request<Market>("/markets/from-vendor", {
     method: "POST",
     body: JSON.stringify(payload),
-  }).then(normalizeOrganizer);
+  });
 };
 
 export const updateOrganizer = (
   marketId: string,
   updates: Partial<Organizer>
 ): Promise<Organizer> => {
-  return request<Organizer>(`/markets/${marketId}`, {
+  return request<Organizer>(`/organizers/${marketId}`, {
     method: "PATCH",
     body: JSON.stringify(updates)
   });
@@ -258,7 +259,7 @@ export const updateVendor = (
 // REVIEWS
 
 export const addReview = (
-  entityType: "market" | "vendor",
+  entityType: "market" | "vendor" | "organizer",
   entityId: string,
   reviewData: Omit<Review, "id" | "date" | "status">
 ): Promise<Review> => {
@@ -322,12 +323,12 @@ export const moderateReview = (
 
 export const createApplication = (
   vendorId: string,
-  marketId: string,
+  organizerId: string,
   customResponses: { question: string; answer: string }[]
 ): Promise<Application> => {
   return request<Application>("/applications", {
     method: "POST",
-    body: JSON.stringify({ vendorId, marketId, customResponses })
+    body: JSON.stringify({ vendorId, organizerId, customResponses })
   });
 };
 
@@ -402,27 +403,23 @@ export const sendContactMessage = (params: {
   });
 };
 
-// MARKET EVENTS
+// MARKETS (the events people go to; OD-16)
 
 export const getMarkets = async (params: {
-  marketPageId?: string;
+  organizerId?: string;
   status?: string;
-  month?: number;
-  year?: number;
 } = {}): Promise<Market[]> => {
   const qs = new URLSearchParams();
-  if (params.marketPageId) qs.set("marketPageId", params.marketPageId);
+  if (params.organizerId) qs.set("organizerId", params.organizerId);
   if (params.status) qs.set("status", params.status);
-  if (params.month !== undefined) qs.set("month", String(params.month));
-  if (params.year !== undefined) qs.set("year", String(params.year));
   const query = qs.toString();
-  return request<Market[]>(`/market-events${query ? `?${query}` : ""}`);
+  return request<Market[]>(`/markets${query ? `?${query}` : ""}`);
 };
 
 export const createMarket = (
-  data: Omit<Market, "id" | "createdAt" | "updatedAt">
+  data: Partial<Omit<Market, "id" | "createdAt" | "updatedAt">>
 ): Promise<Market> => {
-  return request<Market>("/market-events", {
+  return request<Market>("/markets", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -432,21 +429,26 @@ export const updateMarket = (
   id: string,
   updates: Partial<Market>
 ): Promise<Market> => {
-  return request<Market>(`/market-events/${id}`, {
+  return request<Market>(`/markets/${id}`, {
     method: "PATCH",
     body: JSON.stringify(updates),
   });
 };
 
 export const archiveMarket = (id: string): Promise<void> => {
-  return request<void>(`/market-events/${id}`, { method: "DELETE" });
+  return request<void>(`/markets/${id}`, { method: "DELETE" });
 };
 
-// ADMIN — hard delete (market/vendor + owner user + Firebase Auth)
+// Admins only, unclaimed markets only: deletes it and vendors' links to it (T133)
+export const deleteMarketPermanently = (id: string): Promise<void> => {
+  return request<void>(`/markets/${id}?permanent=1`, { method: "DELETE" });
+};
+
+// ADMIN — hard delete (organizer/vendor + owner user + Firebase Auth)
 
 export const hardDeleteMember = async (
   memberId: string,
-  type: "market" | "vendor"
+  type: "organizer" | "vendor"
 ): Promise<void> => {
   return request<void>(`/admin/members/${type}/${memberId}`, {
     method: "DELETE",
@@ -458,13 +460,14 @@ export const hardDeleteMember = async (
 // Fetch all follows for a user. Returns two arrays for easy consumption in App.tsx.
 export const fetchFollows = async (
   followerUid: string
-): Promise<{ marketIds: string[]; vendorIds: string[] }> => {
+): Promise<{ marketIds: string[]; vendorIds: string[]; organizerIds: string[] }> => {
   const follows = await request<Follow[]>(
     `/follows?followerUid=${encodeURIComponent(followerUid)}`
   );
   return {
     marketIds: follows.filter(f => f.targetType === "market").map(f => f.targetId),
     vendorIds: follows.filter(f => f.targetType === "vendor").map(f => f.targetId),
+    organizerIds: follows.filter(f => f.targetType === "organizer").map(f => f.targetId),
   };
 };
 
@@ -472,7 +475,7 @@ export const fetchFollows = async (
 export const addFollow = (
   followerUid: string,
   targetId: string,
-  targetType: "market" | "vendor"
+  targetType: "market" | "vendor" | "organizer"
 ): Promise<Follow> => {
   return request<Follow>("/follows", {
     method: "POST",

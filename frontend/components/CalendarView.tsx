@@ -24,12 +24,17 @@ import {
 
 interface CalendarViewProps {
   currentUser?: User | null;
-  // The signed-in member's own market, if they have one: Add Event puts dates there
+  markets: Market[]; // published markets, claimed or not (T128)
+  // The signed-in organizer, if any: Add a market puts it under them
   ownOrganizer?: Organizer;
-  onSelectMarket: (id: string) => void;
-  onSelectEvent: (event: Market, date: string) => void;
+  onMarketAdded: (market: Market) => void;
+  onSelectEvent: (market: Market, date: string) => void;
   onBack: () => void;
 }
+
+// '' times = to be confirmed (markets added from vendors' information)
+const timeRange = (start: string, end: string) =>
+  start && end ? `${formatTime(start)} – ${formatTime(end)}` : 'Times to be confirmed';
 
 // ─── Tag display config ────────────────────────────────────────────────────────
 
@@ -63,14 +68,13 @@ const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, onSelectMarket, onSelectEvent, onBack }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, markets: events, ownOrganizer, onMarketAdded, onSelectEvent, onBack }) => {
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
-  const [events, setEvents] = useState<Market[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loading = false; // markets arrive with the rest of the site's data
   const [activeTag, setActiveTag] = useState<MarketTag | null>(null);
   const [selectedOcc, setSelectedOcc] = useState<CalendarOccurrence | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -81,16 +85,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, 
 
   const year  = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-based
-
-  // Fetch published events when the month changes
-  useEffect(() => {
-    setLoading(true);
-    api
-      .getMarkets({ status: 'published', year, month: month + 1 })
-      .then(setEvents)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [year, month]);
 
   // Expand occurrences for this month
   const occurrences = useMemo(() => {
@@ -270,7 +264,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, 
                   <p className="text-xs text-gray-500 flex items-center gap-3 mt-0.5">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {formatTime(occ.startTime)} – {formatTime(occ.endTime)}
+                      {timeRange(occ.startTime, occ.endTime)}
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
@@ -344,15 +338,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, 
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-brand-blue flex-shrink-0" />
               <span>
-                {formatTime(startTime)} – {formatTime(endTime)}
+                {timeRange(startTime, endTime)}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-brand-blue flex-shrink-0 mt-0.5" />
               <span>
                 {event.location.venueName}
-                <br />
-                {event.location.address}, {event.location.city}
+                {event.location.venueName && <br />}
+                {[event.location.address, event.location.city].filter(Boolean).join(', ')}
               </span>
             </div>
           </div>
@@ -370,13 +364,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, 
             </a>
             <button
               onClick={() => {
-                // Opens the event page on this date (T013)
+                // Opens the market's page on this date (T013)
                 onSelectEvent(event, date);
                 setSelectedOcc(null);
               }}
               className="flex items-center gap-1.5 px-3 py-3 bg-brand-blue/10 text-brand-blue rounded-lg text-sm hover:bg-brand-blue/20 ml-auto"
             >
-              View event →
+              View market →
             </button>
           </div>
         </div>
@@ -408,7 +402,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, 
               className="flex items-center gap-1.5 px-4 py-3 bg-brand-blue text-white rounded-lg text-sm font-semibold hover:bg-brand-blue/90 min-h-[3rem]"
             >
               <Plus className="w-4 h-4" />
-              Add Event
+              Add a market
             </button>
           )}
 
@@ -499,15 +493,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, ownOrganizer, 
             if (formDirty.current) setConfirmingDiscard(true);
             else setIsFormOpen(false);
           }}
-          title={`Add an event to ${ownOrganizer.name}`}
+          title={`Add a market to ${ownOrganizer.name}`}
           maxWidth="xl"
         >
           <MarketEventForm
             currentUser={currentUser}
             organizer={ownOrganizer}
             onDirtyChange={trackDirty}
-            onSaved={newEvent => {
-              setEvents(prev => [...prev, newEvent]);
+            onSaved={newMarket => {
+              onMarketAdded(newMarket);
               setIsFormOpen(false);
             }}
             onCancel={() => setIsFormOpen(false)}

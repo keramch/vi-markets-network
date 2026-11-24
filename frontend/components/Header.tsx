@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                       onClick={() => onNavigate({ type: 'organizerHub' })}
                       className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
                     >
-                      My Market
+                      My Markets
                     </button>
                   )}
                   {currentUser.ownedVendorId && (
@@ -193,7 +193,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
                     onClick={() => { onNavigate({ type: 'organizerHub' }); setMenuOpen(false); }}
                     className="text-brand-blue hover:bg-brand-blue/10 px-3 py-3 rounded-md text-sm font-medium text-left"
                   >
-                    My Market
+                    My Markets
                   </button>
                 )}
                 {currentUser.ownedVendorId && (

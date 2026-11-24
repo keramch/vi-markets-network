@@ -3,11 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { vendorTypeLabel, cleanSocial, socialUrl, socialProblem, SOCIAL_PLATFORMS, SOCIAL_LABEL, type SocialPlatform } from '../utils';
 import ReviewRemovalRequest from './ReviewRemovalRequest';
-import type { Organizer, Vendor, Review, Application, User, ScheduleRule } from '../types';
+import type { Organizer, Vendor, Review, Application, User, Market } from '../types';
 import { DayOfWeek, VendorTypes, VendorTags, MarketTags, MarketCategories } from '../types';
 import ImageUploader from './ImageUploader';
 import HelpTip from './HelpTip';
-import { getDistance } from '../utils';
 import { WarningIcon, InboxIcon, RibbonIcon, XIcon } from './Icons';
 import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../services/storageUpload';
 import * as api from '../services/api.live';
@@ -15,7 +14,7 @@ import * as api from '../services/api.live';
 interface ProfileManagerProps {
   profileData: Organizer | Vendor;
   user: User | null;
-  allMarkets: Organizer[];
+  allMarkets: Market[]; // published markets, for a vendor's "Find us at" picker
   applications?: Application[];
   vendors?: Vendor[];
   listingReviews: Review[]; // pending + approved reviews of this listing (read-only)
@@ -62,7 +61,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     ...profileData,
     contact: { ...profileData.contact, website: profileData.contact?.website || profileData.contact?.socials?.website || '' },
   }));
-  const [scheduleConflicts, setScheduleConflicts] = useState<string[]>([]);
+  const scheduleConflicts: string[] = [];
   const [activeTab, setActiveTab] = useState<ActiveTab>('details');
 
   useEffect(() => { window.scrollTo(0, 0); }, [activeTab]);
@@ -91,32 +90,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const isProMember = user?.subscription?.tier === 'pro' || user?.subscription?.tier === 'superPro' || user?.subscription?.foundingMember === true;
   const isFreeUser = !user?.subscription?.foundingMember && (user?.subscription?.tier === 'free' || !user?.subscription?.tier);
 
-  useEffect(() => {
-    if (!isOrganizer(formData)) return;
-
-    const conflicts: string[] = [];
-    const currentMarket = formData;
-
-    currentMarket.schedule?.rules?.forEach(rule => {
-      const conflictingMarkets = allMarkets.filter(otherMarket => {
-        if (otherMarket.id === currentMarket.id) return false;
-        if (otherMarket.status !== 'active') return false;
-
-        const hasSameDay = otherMarket.schedule?.rules?.some((otherRule: ScheduleRule) => otherRule.dayOfWeek === rule.dayOfWeek);
-        if (!hasSameDay) return false;
-        
-        const distance = getDistance(currentMarket.location.coordinates, otherMarket.location.coordinates);
-        return distance < 10;
-      });
-
-      conflictingMarkets.forEach(conflictMarket => {
-        const distance = getDistance(currentMarket.location.coordinates, conflictMarket.location.coordinates);
-        conflicts.push(`${conflictMarket.name} also runs on ${rule.dayOfWeek}s and is ${distance.toFixed(1)}km away.`);
-      });
-    });
-
-    setScheduleConflicts(conflicts);
-  }, [formData, allMarkets]);
+  // (The schedule-conflict check between organizers' profile schedules was
+  // removed in stage 1, T128: market dates live on markets, OD-06.)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -179,7 +154,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     setFormData({ ...formData, [group]: newValues });
   };
   
-  const profileType = isOrganizer(formData) ? 'markets' : 'vendors';
+  // Storage folder: organizers/<id> since stage 1 (T128), vendors/<id>
+  const profileType = isOrganizer(formData) ? 'organizers' : 'vendors';
 
   const saveWithUploads = async () => {
     setIsSaving(true);
@@ -233,7 +209,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         const newMarketEntries: { marketId: string; date: string; source: 'self' }[] = [];
         for (const pm of pendingNewMarkets) {
           try {
-            const created = await api.createMarketOld({ name: pm.name, vendorId: vendor.id, city: pm.city, address: pm.address });
+            // Goes up straight away as an unclaimed market, its date marked as from a vendor (T128)
+            const created = await api.addMarketFromVendor({ vendorId: vendor.id, name: pm.name, city: pm.city, address: pm.address, date: pm.date });
             newMarketEntries.push({ marketId: created.id, date: pm.date, source: 'self' });
           } catch {
             setUploadError('One or more markets could not be created. Your other changes will still be saved.');
@@ -306,7 +283,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   );
 
   const ManageApplications = ({marketData}: {marketData: Organizer}) => {
-    const marketApplications = applications.filter(app => app.marketId === marketData.id);
+    const marketApplications = applications.filter(app => app.organizerId === marketData.id);
 
     return (
         <div>
@@ -771,7 +748,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                       name: m?.name ?? entry.marketId,
                                       city: m?.location?.city,
                                       date: entry.date,
-                                      isUnclaimed: m?.status === 'unclaimed',
+                                      isUnclaimed: !!m && !m.organizerId,
                                       onRemove: () => setFormData({
                                         ...formData,
                                         attendingMarkets: (vendor.attendingMarkets || []).filter(e => e.marketId !== entry.marketId),
@@ -805,7 +782,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                             {item.city && <span className="text-xs text-gray-500">{item.city}</span>}
                                             <span className="text-xs text-gray-400">{item.date}</span>
                                             {item.isUnclaimed && (
-                                              <span className="bg-brand-gold/10 text-brand-gold text-xs rounded-full px-2 py-0.5 whitespace-nowrap">not yet in directory</span>
+                                              <span className="bg-brand-gold/10 text-brand-gold text-sm rounded-full px-2 py-0.5 whitespace-nowrap">no organizer yet</span>
                                             )}
                                           </div>
                                           <button
@@ -859,7 +836,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                               <button
                                                 type="button"
                                                 onClick={() => {
-                                                  setSelectedSearchResult({ id: m.id, name: m.name, city: m.location?.city, status: m.status });
+                                                  setSelectedSearchResult({ id: m.id, name: m.name, city: m.location?.city, status: m.organizerId ? 'claimed' : 'unclaimed' });
                                                   setSearchQuery('');
                                                 }}
                                                 className="w-full text-left px-4 py-3 text-sm hover:bg-brand-cream/60 transition-colors flex items-center justify-between gap-2"
@@ -868,8 +845,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                                                   <span className="font-medium">{m.name}</span>
                                                   {m.location?.city && <span className="ml-2 text-gray-500 text-xs">{m.location.city}</span>}
                                                 </span>
-                                                {m.status === 'unclaimed' && (
-                                                  <span className="bg-brand-gold/10 text-brand-gold text-xs rounded-full px-2 py-0.5 flex-shrink-0">not yet in directory</span>
+                                                {!m.organizerId && (
+                                                  <span className="bg-brand-gold/10 text-brand-gold text-sm rounded-full px-2 py-0.5 flex-shrink-0">no organizer yet</span>
                                                 )}
                                               </button>
                                             </li>

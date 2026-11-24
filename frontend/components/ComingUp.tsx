@@ -1,16 +1,15 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { Organizer, Market } from '../types';
-import { upcomingOccurrences, formatTime, eventPath, recurrenceSummary, shortSeriesRange } from '../utils';
+import type { Market } from '../types';
+import { upcomingOccurrences, formatTime, marketPath, recurrenceSummary, shortSeriesRange } from '../utils';
 
 // "Coming up" on the home page banner (T122): the next three market dates,
-// live from published events, each linking to its event page. Beside them,
-// the first market's own poster, else a simple calendar graphic. Nothing
-// upcoming means nothing is rendered.
+// live from published markets (claimed or not, T128), each linking to its
+// market page. Beside them, the first market's own poster, else a simple
+// calendar graphic. Nothing upcoming means nothing is rendered.
 
 interface ComingUpProps {
-  events: Market[];
-  markets: Organizer[]; // active markets only
+  markets: Market[]; // published markets
 }
 
 // A simple calendar page in the brand colours, drawn from shapes: no dates,
@@ -38,20 +37,18 @@ const CalendarGraphic: React.FC = () => {
   );
 };
 
-const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
+const ComingUp: React.FC<ComingUpProps> = ({ markets }) => {
   const upcoming = useMemo(() => {
-    const bySlug = new Map(markets.filter(m => m.slug).map(m => [m.id, m]));
     const seen = new Set<string>();
-    return upcomingOccurrences(events, 120)
-      .map(o => ({ ...o, market: bySlug.get(o.event.organizerId) }))
-      // Only markets with a public page; one row per event, so a weekly market doesn't fill the list
+    return upcomingOccurrences(markets, 120)
+      // One row per market, so a weekly market doesn't fill the list
       .filter(o => {
-        if (!o.market || seen.has(o.event.id)) return false;
+        if (seen.has(o.event.id)) return false;
         seen.add(o.event.id);
         return true;
       })
       .slice(0, 3);
-  }, [events, markets]);
+  }, [markets]);
 
   if (upcoming.length === 0) return null;
 
@@ -67,7 +64,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
     <aside aria-labelledby="coming-up-title" className="w-full lg:w-[31rem] flex-shrink-0 flex gap-4 items-start text-left">
       {poster ? (
         <Link
-          to={eventPath(first.market!.slug!, first.event, first.date)}
+          to={marketPath(first.event, first.date)}
           className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
           <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
@@ -97,7 +94,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
           {upcoming.map(o => (
             <li key={`${o.event.id}-${o.date}`}>
               <Link
-                to={eventPath(o.market!.slug!, o.event, o.date)}
+                to={marketPath(o.event, o.date)}
                 className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-lg text-brand-text hover:bg-brand-cream focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
               >
                 <span className="w-12 flex-shrink-0 text-center leading-tight">
@@ -112,7 +109,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
                     <span className="block text-sm font-semibold text-brand-light-blue">{recurrenceSummary(o.event)}</span>
                   )}
                   <span className="block text-sm text-gray-600">
-                    {[o.event.location?.city, `${formatTime(o.startTime)} – ${formatTime(o.endTime)}`].filter(Boolean).join(' · ')}
+                    {[o.event.location?.city, o.startTime && o.endTime ? `${formatTime(o.startTime)} – ${formatTime(o.endTime)}` : ''].filter(Boolean).join(' · ')}
                   </span>
                 </span>
               </Link>

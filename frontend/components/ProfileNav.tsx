@@ -12,7 +12,7 @@ interface Item { id: string; name: string; slug?: string; status?: string }
 interface ProfileNavProps {
   kind: BrowseKind;
   currentId: string;
-  items: Item[]; // all markets or all vendors
+  items: Item[]; // all markets, organizers or vendors
 }
 
 const Chevron: React.FC<{ dir: 'left' | 'right' }> = ({ dir }) => (
@@ -26,7 +26,8 @@ const ProfileNav: React.FC<ProfileNavProps> = ({ kind, currentId, items }) => {
   const remembered = readBrowseList(kind, currentId);
 
   const sequence = useMemo(() => {
-    const usable = items.filter(i => i.slug && (i.status ?? 'active') === 'active');
+    // Organizers and vendors are 'active' when public, markets 'published'
+    const usable = items.filter(i => i.slug && ['active', 'published'].includes(i.status ?? 'active'));
     if (remembered) {
       const byId = new Map(usable.map(i => [i.id, i]));
       return remembered.ids.map(id => byId.get(id)).filter((i): i is Item => !!i);

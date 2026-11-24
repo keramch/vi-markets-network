@@ -5,18 +5,20 @@ import * as api from '../services/api.live';
 import Modal from './Modal';
 import MarketEventForm from './MarketEventForm';
 import DiscardChangesDialog from './DiscardChangesDialog';
-import { eventUrl } from '../utils';
+import { marketUrl, listedDates } from '../utils';
 
 interface OrganizerHubProps {
   currentUser: User;
   organizer: Organizer;
   onNavigateToProfile: () => void;
   onBack: () => void;
-  // HQ › a market's Events (T124): an admin managing any market's dates,
-  // usually an unclaimed one. Hides the owner's plan and coming-soon sections.
+  // HQ › an organizer's markets: an admin managing any organizer's markets.
+  // Hides the owner's plan and coming-soon sections.
   adminView?: boolean;
-  // Every market, so an admin can move an event to another market page
+  // Every organizer, so an admin can hand a market to another one
   allOrganizers?: Organizer[];
+  // Keeps the site's market list in step after a save
+  onMarketSaved?: (market: Market) => void;
 }
 
 const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -36,6 +38,17 @@ function formatRecurringDate(event: Market): string {
   return `Every ${days}`;
 }
 
+// "Sat, Nov 28", or "Sat, Nov 28 + 2 more" for a market on several dates
+function formatListedDates(event: Market): string {
+  const dates = listedDates(event);
+  if (dates.length === 0) return 'No dates yet';
+  const today = new Date().toLocaleDateString('en-CA');
+  const upcoming = dates.filter(d => d >= today);
+  const shown = upcoming[0] ?? dates[dates.length - 1];
+  const more = (upcoming.length || dates.length) - 1;
+  return more > 0 ? `${formatOneTimeDate(shown)} + ${more} more` : formatOneTimeDate(shown);
+}
+
 function formatOneTimeDate(dateStr: string): string {
   const [, month, day] = dateStr.split('-');
   const dt = new Date(dateStr + 'T12:00:00');
@@ -46,11 +59,11 @@ function formatOneTimeDate(dateStr: string): string {
 }
 
 function sortKey(event: Market): string {
-  // An event that switched type keeps its old schedule fields, so sort by the
+  // A market that switched type keeps its old schedule fields, so sort by the
   // field that matches its current type (T094).
-  return event.type === 'oneTime'
-    ? event.schedule.date ?? event.schedule.startDate ?? ''
-    : event.schedule.startDate ?? event.schedule.date ?? '';
+  return event.type !== 'recurring'
+    ? listedDates(event)[0] ?? ''
+    : event.schedule.startDate ?? '';
 }
 
 const OrganizerHub: React.FC<OrganizerHubProps> = ({
@@ -60,8 +73,9 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   onBack,
   adminView = false,
   allOrganizers,
+  onMarketSaved,
 }) => {
-  // Shown after an admin moves an event to another market page
+  // Shown after an admin hands a market to another organizer
   const [movedNote, setMovedNote] = useState('');
   const [events, setEvents] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,15 +86,14 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Copies the public event page link for sharing (T013)
+  // Copies the market's public page link for sharing (T013)
   const copyEventLink = async (event: Market) => {
-    if (!organizer.slug) return;
     try {
-      await navigator.clipboard.writeText(eventUrl(organizer.slug, event));
+      await navigator.clipboard.writeText(marketUrl(event));
       setCopiedId(event.id);
       setTimeout(() => setCopiedId(prev => (prev === event.id ? null : prev)), 2500);
     } catch {
-      window.prompt('Copy this link:', eventUrl(organizer.slug, event));
+      window.prompt('Copy this link:', marketUrl(event));
     }
   };
 
@@ -92,7 +105,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   const loadEvents = async () => {
     setLoading(true);
     try {
-      const all = await api.getMarkets({ marketPageId: organizer.id });
+      const all = await api.getMarkets({ organizerId: organizer.id });
       const visible = all
         .filter(e => e.status !== 'archived')
         .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
@@ -134,9 +147,12 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   const handleSaved = (saved: Market) => {
     closeEdit();
+    onMarketSaved?.(saved);
     if (saved.organizerId !== organizer.id) {
-      // Moved to another market page: it no longer belongs on this list
-      const to = allOrganizers?.find(m => m.id === saved.organizerId)?.name ?? 'another market';
+      // Handed to another organizer (or back to unclaimed): no longer on this list
+      const to = saved.organizerId
+        ? allOrganizers?.find(m => m.id === saved.organizerId)?.name ?? 'another organizer'
+        : 'unclaimed markets in HQ';
       setMovedNote(`"${saved.name}" moved to ${to}.`);
       setEvents(prev => prev.filter(e => e.id !== saved.id));
       return;
@@ -199,11 +215,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
   // ── event type label ─────────────────────────────────────────────────────────
 
-  const typeLabel = (t: Market['type']) => {
-    if (t === 'recurring') return 'Recurring';
-    if (t === 'oneTime') return 'One-Time';
-    return 'Special Edition';
-  };
+  const typeLabel = (t: Market['type']) => (t === 'recurring' ? 'Repeats' : 'On set dates');
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
@@ -221,7 +233,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-serif text-brand-blue">{adminView ? 'Market events' : 'Organizer Hub'}</h1>
+          <h1 className="text-3xl font-serif text-brand-blue">{adminView ? 'Their markets' : 'My Markets'}</h1>
           <p className="text-gray-500 mt-1 text-sm">
             {organizer.name}
             <span className="mx-2 text-gray-300">·</span>
@@ -257,7 +269,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         {/* Section header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-800">Event manager</span>
+            <span className="font-semibold text-gray-800">Your markets</span>
             <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
               Live
             </span>
@@ -269,13 +281,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
             }}
             className="bg-brand-blue text-white text-sm font-medium px-4 py-3 rounded-lg hover:bg-brand-blue/90 transition-colors min-h-[3rem]"
           >
-            + Add event
+            + Add a market
           </button>
         </div>
 
         {/* Coming soon note */}
         <p className="px-5 pt-3 text-sm text-gray-400 italic">
-          Per-occurrence editing and more event management features coming soon.
+          Per-date editing and more market tools are coming soon.
         </p>
 
         {/* Event list */}
@@ -288,7 +300,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
             </div>
           ) : events.length === 0 ? (
             <p className="text-sm text-gray-500 py-4 text-center">
-              No events yet. Add your first event to get started.
+              No markets yet. Add your first market to get started.
             </p>
           ) : (
             <div>
@@ -300,7 +312,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0 text-sm"
                   >
                     <span className="text-gray-700 flex-1">
-                      Archive <span className="font-medium">{event.name}</span>? This cannot be undone.
+                      Take <span className="font-medium">{event.name}</span> down? It disappears from the site and from this list.
                     </span>
                     <button
                       onClick={() => handleDeleteConfirm(event.id)}
@@ -323,8 +335,8 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                   >
                     {/* Date */}
                     <div className="text-sm text-gray-500 flex-shrink-0 min-w-[6.875rem]">
-                      {event.type === 'oneTime' && event.schedule.date
-                        ? formatOneTimeDate(event.schedule.date)
+                      {event.type !== 'recurring'
+                        ? formatListedDates(event)
                         : formatRecurringDate(event)}
                     </div>
 
@@ -332,7 +344,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate text-sm">{event.name}</p>
                       <p className="text-sm text-gray-500 truncate">
-                        {event.location.venueName} · {event.location.city}
+                        {[event.location.venueName, event.location.city].filter(Boolean).join(' · ')}
                       </p>
                     </div>
 
@@ -354,7 +366,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {event.status === 'published' && organizer.slug && (
+                      {event.status === 'published' && (
                         <button
                           onClick={() => copyEventLink(event)}
                           className="text-brand-light-blue border border-brand-light-blue/40 rounded text-sm px-3 py-2 hover:bg-brand-cream transition-colors"
@@ -448,7 +460,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         isOpen={editModalOpen}
         onClose={closeEdit}
         onClickOutside={confirmingDiscard ? undefined : closeFromOutside}
-        title={selectedEvent ? 'Edit Event' : 'Add Event'}
+        title={selectedEvent ? 'Edit market' : 'Add a market'}
         maxWidth="lg"
       >
         <MarketEventForm

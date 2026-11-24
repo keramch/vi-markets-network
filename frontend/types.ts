@@ -54,7 +54,7 @@ export interface Review {
   status: 'pending' | 'approved' | 'declined';
   userId?: string;
   reviewerAccountType?: string;
-  entityType?: 'market' | 'vendor'; // which listing it's about (admin/owner views)
+  entityType?: 'market' | 'vendor' | 'organizer'; // what it's about (admin/owner views)
   entityId?: string;
   // Listing owner's request for the admin to remove this review (admin/owner views)
   removalRequest?: {
@@ -287,10 +287,11 @@ export interface Vendor {
   status: MemberStatus;
 }
 
+// A vendor's application to an organizer (legacy flow from the organizer profile)
 export interface Application {
   id: string;
   vendorId: string;
-  marketId: string;
+  organizerId: string;
   date: string;
   status: 'pending' | 'approved' | 'rejected';
   customResponses: { question: string; answer: string }[];
@@ -353,7 +354,7 @@ export type View =
   | { type: 'myApplications' }
   | { type: 'privacyPolicy' }
   | { type: 'termsOfService' }
-  | { type: 'adminEditProfile'; profileId: string; profileType: 'market' | 'vendor' }
+  | { type: 'adminEditProfile'; profileId: string; profileType: 'organizer' | 'vendor' }
   | { type: 'forgotPassword' }
   | { type: 'signup' }
   | { type: 'browseMarkets' }
@@ -392,16 +393,26 @@ export interface EventException {
   note?: string;
 }
 
+// A market: the event people go to — on a list of dates (one-off, several days,
+// irregular) or repeating (OD-16). Run by an organizer, or unclaimed
+// (organizerId null): added by a vendor or by HQ, waiting for its organizer.
 export interface Market {
   id: string;
-  organizerId: string;
-  organizerUid: string;
+  organizerId: string | null;
+  organizerUid?: string;  // before stage 1 (T128): who created it
+  addedBy?: { uid?: string | null; vendorId?: string | null };
+  hqCheckedAt?: string;   // last saved by an admin
+  legacyPaths?: string[]; // old /markets/<organizer>/<event> links that forward here
   name: string;
-  slug?: string; // readable link part, unique within the market; older events may not have one yet
-  description?: string; // optional; the event page falls back to the market's description
-  posterUrl?: string;   // vertical poster, shown on the event page
+  slug?: string; // readable link part, unique across all markets; never changes once set
+  description?: string; // optional; the market page falls back to the organizer's description
+  posterUrl?: string;   // vertical poster, shown on the market page
   tileUrl?: string;     // horizontal share image (1200 × 628), used for link previews
-  type: 'recurring' | 'oneTime' | 'specialEdition';
+  logoUrl?: string;     // carried over from unclaimed listings that had one
+  marketType?: string[];
+  reviews?: Review[];   // approved reviews, added by GET /markets
+  // 'dates': on each day in schedule.dates; 'recurring': a repeating rule
+  type: 'recurring' | 'dates';
   marketTags: MarketTag[];
   location: {
     venueName: string;
@@ -412,14 +423,17 @@ export interface Market {
     lng?: number;
   };
   schedule: {
-    date?: string;
+    dates?: string[];  // type 'dates', sorted
+    date?: string;     // before stage 1: a one-time market's date
     startDate?: string;
     endDate?: string;
     recurrenceDays?: number[];
     recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly';
-    startTime: string;
+    startTime: string; // '' = times to be confirmed
     endTime: string;
   };
+  // Dates known only from a vendor, shown as "Date from a vendor" until confirmed
+  dateSources?: Record<string, 'vendor'>;
   exceptions: EventException[];
   status: 'draft' | 'published' | 'cancelled' | 'archived';
   photos: string[];
@@ -485,6 +499,6 @@ export interface Follow {
   id: string;
   followerUid: string;
   targetId: string;
-  targetType: 'market' | 'vendor';
+  targetType: 'market' | 'vendor' | 'organizer'; // markets/vendors Saved, organizers Followed
   createdAt: string;
 }

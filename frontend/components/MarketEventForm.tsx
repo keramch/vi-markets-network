@@ -7,10 +7,10 @@ import { uploadImage, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from '../servi
 
 interface MarketEventFormProps {
   currentUser: User;
-  // The market page these dates belong to: the owner's own market, or any
-  // market when an admin manages it from HQ
-  organizer: Organizer;
-  // All markets: lets an admin move an existing event to another market page
+  // The organizer whose market this is: the signed-in organizer, or any
+  // organizer an admin manages from HQ. None = an unclaimed market (HQ only).
+  organizer?: Organizer;
+  // All organizers: lets an admin give an existing market to another organizer
   allOrganizers?: Organizer[];
   onSaved: (event: Market) => void;
   onCancel: () => void;
@@ -41,17 +41,24 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   existingEvent,
   onDirtyChange,
 }) => {
-  const [type, setType] = useState<'recurring' | 'oneTime' | 'specialEdition'>(
-    existingEvent?.type ?? 'recurring'
+  // 'dates': on a list of days (one-off, several days, irregular); 'recurring': repeats
+  const [type, setType] = useState<'recurring' | 'dates'>(
+    existingEvent?.type === 'recurring' ? 'recurring' : existingEvent ? 'dates' : 'dates'
   );
   const [name, setName]             = useState(existingEvent?.name ?? '');
   const [venueName, setVenueName]   = useState(existingEvent?.location.venueName ?? '');
   const [address, setAddress]       = useState(existingEvent?.location.address ?? '');
-  const [city, setCity]             = useState(existingEvent?.location.city ?? 'Victoria');
+  const [city, setCity]             = useState(existingEvent?.location.city ?? '');
   const [province, setProvince]     = useState(existingEvent?.location.province ?? 'BC');
-  const [startTime, setStartTime]   = useState(existingEvent?.schedule.startTime ?? '09:00');
-  const [endTime, setEndTime]       = useState(existingEvent?.schedule.endTime ?? '14:00');
-  const [date, setDate]             = useState(existingEvent?.schedule.date ?? '');
+  const [startTime, setStartTime]   = useState(existingEvent ? existingEvent.schedule.startTime ?? '' : '09:00');
+  const [endTime, setEndTime]       = useState(existingEvent ? existingEvent.schedule.endTime ?? '' : '14:00');
+  // "On these dates": the list, plus the date picker for adding one
+  const [dates, setDates]           = useState<string[]>(
+    existingEvent ? (existingEvent.schedule.dates ?? (existingEvent.schedule.date ? [existingEvent.schedule.date] : [])) : []
+  );
+  const [newDate, setNewDate]       = useState('');
+  // Dates known only from a vendor; confirming one removes its mark
+  const [dateSources, setDateSources] = useState<Record<string, 'vendor'>>(existingEvent?.dateSources ?? {});
   const [startDate, setStartDate]   = useState(existingEvent?.schedule.startDate ?? '');
   const [endDate, setEndDate]       = useState(existingEvent?.schedule.endDate ?? '');
   const [recurrenceDays, setRecurrenceDays] = useState<number[]>(
@@ -64,7 +71,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     existingEvent?.marketTags ?? []
   );
   const [marketType, setMarketType] = useState<string[]>(
-    (existingEvent as any)?.marketType ?? []
+    existingEvent?.marketType ?? []
   );
   const [externalUrl, setExternalUrl] = useState(existingEvent?.externalEventUrl ?? '');
   const [description, setDescription] = useState(existingEvent?.description ?? '');
@@ -75,23 +82,23 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   const [tileFile, setTileFile]       = useState<File | null>(null);
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
-  // Admins only, editing an event: which market page it belongs to (T124)
-  const canMove = !!existingEvent && !!currentUser.isAdmin && (allOrganizers?.length ?? 0) > 1;
-  const [moveTo, setMoveTo] = useState(existingEvent?.organizerId ?? organizer.id);
-  const moving = !!existingEvent && moveTo !== existingEvent.organizerId;
+  // Admins only, editing a market: which organizer runs it ('' = unclaimed)
+  const isAdmin = !!currentUser.isAdmin;
+  const canMove = !!existingEvent && isAdmin && (allOrganizers?.length ?? 0) > 0;
+  const [moveTo, setMoveTo] = useState(existingEvent ? existingEvent.organizerId ?? '' : organizer?.id ?? '');
+  const moving = !!existingEvent && moveTo !== (existingEvent.organizerId ?? '');
   // A live event gets Save Changes / Unpublish instead of Save Draft / Publish,
   // and Unpublish asks for confirmation because it hides every date (T093).
   const isLive = existingEvent?.status === 'published';
   const [confirmingUnpublish, setConfirmingUnpublish] = useState(false);
-  // Switching a live event to or from One-Time replaces its public dates.
-  // Recurring <-> Special Edition use the same series fields, so no warning.
-  // The server merges, so the old schedule fields stay and switching back
-  // restores them (T094).
+  // Switching a live market between "on these dates" and "repeats" replaces
+  // its public dates. The server merges, so the other schedule's fields stay
+  // and switching back restores them (T094).
   const typeSwitchReplacesDates =
-    isLive && (existingEvent!.type === 'oneTime') !== (type === 'oneTime');
+    isLive && (existingEvent!.type === 'recurring') !== (type === 'recurring');
 
   const snapshot = JSON.stringify([
-    type, name, venueName, address, city, province, startTime, endTime, date, startDate, endDate,
+    type, name, venueName, address, city, province, startTime, endTime, dates, dateSources, startDate, endDate,
     recurrenceDays, recurrenceFrequency, selectedTags, marketType, externalUrl, description,
     posterUrl, tileUrl, posterFile?.name ?? '', tileFile?.name ?? '', moveTo,
   ]);
@@ -110,17 +117,29 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
 
+  const addDate = () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) return;
+    setDates(prev => [...new Set([...prev, newDate])].sort());
+    setNewDate('');
+  };
+  const removeDate = (d: string) => {
+    setDates(prev => prev.filter(x => x !== d));
+    setDateSources(prev => { const { [d]: _gone, ...rest } = prev; return rest; });
+  };
+  const confirmDate = (d: string) =>
+    setDateSources(prev => { const { [d]: _gone, ...rest } = prev; return rest; });
+
+  // Organizers give the full details; HQ may list a market with what's known so far
   const validate = (): string | null => {
-    if (!name.trim())      return 'Event name is required';
-    if (!venueName.trim()) return 'Venue name is required';
-    if (!address.trim())   return 'Address is required';
-    if (!startTime || !endTime) return 'Start and end times are required';
-    if (type === 'oneTime' && !date)
-      return 'Date is required for one-time events';
-    if (type !== 'oneTime' && !startDate)
-      return 'Start date is required for recurring events';
-    if (type !== 'oneTime' && recurrenceDays.length === 0)
-      return 'Select at least one recurrence day';
+    if (!name.trim()) return 'Please give the market a name.';
+    if (!isAdmin && !venueName.trim()) return 'Venue name is required';
+    if (!isAdmin && !address.trim())   return 'Address is required';
+    if (!venueName.trim() && !address.trim() && !city.trim()) return 'Please add a venue, address or town.';
+    if (!!startTime !== !!endTime) return 'Please add both a start and an end time, or neither.';
+    if (!isAdmin && (!startTime || !endTime)) return 'Start and end times are required';
+    if (type === 'dates' && !isAdmin && dates.length === 0) return 'Please add at least one date.';
+    if (type === 'recurring' && !startDate) return 'Start date is required for a repeating market';
+    if (type === 'recurring' && recurrenceDays.length === 0) return 'Select at least one day it repeats on';
     return null;
   };
 
@@ -131,19 +150,20 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     setSaving(true);
     setError('');
 
-    // Upload any newly chosen images into the market's own image folder
-    // (storage.rules lets the market's owner write there)
-    const marketId = existingEvent?.organizerId ?? organizer.id;
+    // Upload any newly chosen images: into the organizer's folder (their owner
+    // can write there), or for an unclaimed market into markets/ (admins only)
+    const organizerId = existingEvent ? existingEvent.organizerId : organizer?.id;
+    const folder = organizerId ? `organizers/${organizerId}` : `markets/${existingEvent?.id ?? 'new'}`;
     let finalPosterUrl = posterUrl;
     let finalTileUrl = tileUrl;
     try {
       if (posterFile) {
         const ext = posterFile.name.split('.').pop() ?? 'jpg';
-        finalPosterUrl = await uploadImage(posterFile, `markets/${marketId}/event_poster_${Date.now()}.${ext}`);
+        finalPosterUrl = await uploadImage(posterFile, `${folder}/market_poster_${Date.now()}.${ext}`);
       }
       if (tileFile) {
         const ext = tileFile.name.split('.').pop() ?? 'jpg';
-        finalTileUrl = await uploadImage(tileFile, `markets/${marketId}/event_tile_${Date.now()}.${ext}`);
+        finalTileUrl = await uploadImage(tileFile, `${folder}/market_tile_${Date.now()}.${ext}`);
       }
     } catch {
       setError('The image could not be uploaded. Please try again, or save without it.');
@@ -154,8 +174,8 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     const schedule: Market['schedule'] = {
       startTime,
       endTime,
-      ...(type === 'oneTime'
-        ? { date }
+      ...(type === 'dates'
+        ? { dates }
         : {
             startDate,
             // An emptied end date is sent as '' so the server's merge clears
@@ -193,18 +213,22 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         : existingEvent?.description ? { description: '' } : {}),
       ...(finalPosterUrl ? { posterUrl: finalPosterUrl } : existingEvent?.posterUrl ? { posterUrl: '' } : {}),
       ...(finalTileUrl ? { tileUrl: finalTileUrl } : existingEvent?.tileUrl ? { tileUrl: '' } : {}),
-    } as Omit<Market, 'id' | 'createdAt' | 'updatedAt' | 'marketPageId' | 'organizerUid'>;
+      // An organizer's own dates are confirmed; HQ keeps "from a vendor" marks it hasn't confirmed
+      dateSources: isAdmin
+        ? Object.fromEntries(Object.entries(dateSources).filter(([d]) => dates.includes(d)))
+        : {},
+    } as Partial<Market>;
 
     try {
-      // A new event belongs to this market page. An edit never sends which
-      // market it's on, so editing as an admin can't move it by accident.
-      // organizerUid only records who added it; who can edit comes from the page.
+      // A new market belongs to this organizer (or is unclaimed, from HQ). An
+      // edit only sends the organizer when an admin chose a different one, so
+      // editing can't move a market by accident. Who can edit comes from the organizer.
       const saved = existingEvent
-        ? await api.updateMarket(existingEvent.id, { ...payload, status, ...(moving ? { organizerId: moveTo } : {}) })
-        : await api.createMarket({ ...payload, organizerId: organizer.id, organizerUid: organizer.ownerId || currentUser.id });
+        ? await api.updateMarket(existingEvent.id, { ...payload, status, ...(moving ? { organizerId: moveTo || null } : {}) })
+        : await api.createMarket({ ...payload, organizerId: organizer?.id ?? null });
       onSaved(saved);
     } catch (e: any) {
-      setError(e.message ?? 'Failed to save event');
+      setError(e.message ?? 'Failed to save the market');
     } finally {
       setSaving(false);
     }
@@ -213,42 +237,49 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   return (
     <div className="space-y-5 text-sm">
 
-      {/* Event type */}
+      {/* When it's on */}
       <div>
-        <label className={labelCls}>Event Type</label>
-        <div className="flex gap-2">
-          {(['recurring', 'oneTime', 'specialEdition'] as const).map(t => (
+        <p className={labelCls} id="market-when">When is it on?</p>
+        <div className="flex gap-2" role="group" aria-labelledby="market-when">
+          {(['dates', 'recurring'] as const).map(t => (
             <button
               key={t}
               type="button"
+              aria-pressed={type === t}
               onClick={() => setType(t)}
-              className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 min-h-[2.75rem] rounded-lg border text-sm font-medium transition-colors ${
                 type === t
                   ? 'bg-brand-blue text-white border-brand-blue'
                   : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {t === 'recurring' ? 'Recurring' : t === 'oneTime' ? 'One-Time' : 'Special Edition'}
+              {t === 'dates' ? 'On these dates' : 'Repeats'}
             </button>
           ))}
         </div>
+        <p className="mt-1 text-sm text-gray-500">
+          {type === 'dates'
+            ? 'One day, a weekend, or any set of days: add each date below.'
+            : 'Every week, every other week or monthly, between a start and end date.'}
+        </p>
         {typeSwitchReplacesDates && (
           <p className="mt-2 border border-amber-300 bg-amber-50 rounded-lg p-3 text-sm text-gray-800" role="alert">
-            {type === 'oneTime'
-              ? 'Saving this replaces every date of this series on the public calendar with the single date below. Your series details are kept, so switching back restores them.'
-              : 'Saving this replaces the single date of this event on the public calendar with the series dates below. The one-time date is kept, so switching back restores it.'}
+            {type === 'dates'
+              ? 'Saving this replaces every repeating date on the public calendar with the dates below. Your repeat details are kept, so switching back restores them.'
+              : 'Saving this replaces the listed dates on the public calendar with the repeating dates below. The list is kept, so switching back restores it.'}
           </p>
         )}
       </div>
 
       {/* Name */}
       <div>
-        <label className={labelCls}>Event Name *</label>
+        <label className={labelCls}>Market name *</label>
         <input
           className={inputCls}
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="e.g. Saturday Farmers Market"
+          maxLength={200}
         />
       </div>
 
@@ -284,9 +315,9 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
       {/* Description */}
       <div>
-        <label htmlFor="event-description" className={labelCls}>About this event</label>
+        <label htmlFor="event-description" className={labelCls}>About this market</label>
         <p id="event-description-help" className="text-sm text-gray-500 mb-2">
-          Optional. Shown on the event page. If you leave it empty, your market's own description is shown instead.
+          Optional. Shown on the market's page. If you leave it empty, the organizer's own description is shown instead.
         </p>
         <textarea
           id="event-description"
@@ -302,11 +333,11 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
         <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Location</legend>
         <div>
-          <label className={labelCls}>Venue Name *</label>
+          <label className={labelCls}>Venue name{isAdmin ? '' : ' *'}</label>
           <input className={inputCls} value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="e.g. Centennial Square" />
         </div>
         <div>
-          <label className={labelCls}>Address *</label>
+          <label className={labelCls}>Address{isAdmin ? '' : ' *'}</label>
           <input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. 1 Centennial Square" />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -325,10 +356,54 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
         <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Schedule</legend>
 
-        {type === 'oneTime' ? (
+        {type === 'dates' ? (
           <div>
-            <label className={labelCls}>Date *</label>
-            <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
+            <label htmlFor="market-new-date" className={labelCls}>Dates{isAdmin ? '' : ' *'}</label>
+            {dates.length > 0 && (
+              <ul className="mb-2 space-y-1.5">
+                {dates.map(d => (
+                  <li key={d} className="flex flex-wrap items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+                    <span className="font-medium text-brand-text">
+                      {new Date(d + 'T12:00:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    {dateSources[d] === 'vendor' && (
+                      <>
+                        <span className="text-sm text-gray-600">from a vendor</span>
+                        <button type="button" onClick={() => confirmDate(d)} className="min-h-[2.75rem] px-2 text-sm font-semibold text-brand-light-blue hover:underline">
+                          Confirm
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeDate(d)}
+                      aria-label={`Remove ${d}`}
+                      className="ml-auto min-h-[2.75rem] px-2 text-sm text-gray-600 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <input
+                id="market-new-date"
+                type="date"
+                className={inputCls}
+                value={newDate}
+                onChange={e => setNewDate(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addDate(); } }}
+              />
+              <button
+                type="button"
+                onClick={addDate}
+                disabled={!newDate}
+                className="px-4 min-h-[2.75rem] rounded-lg border border-brand-blue text-brand-blue font-medium hover:bg-brand-blue/5 disabled:opacity-50"
+              >
+                Add date
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -380,11 +455,11 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelCls}>Start Time *</label>
+            <label className={labelCls}>Start time{isAdmin ? '' : ' *'}</label>
             <input type="time" className={inputCls} value={startTime} onChange={e => setStartTime(e.target.value)} />
           </div>
           <div>
-            <label className={labelCls}>End Time *</label>
+            <label className={labelCls}>End time{isAdmin ? '' : ' *'}</label>
             <input type="time" className={inputCls} value={endTime} onChange={e => setEndTime(e.target.value)} />
           </div>
         </div>
@@ -415,12 +490,12 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           previews (stored as tileUrl; it was a square tile until Nov 10, when
           Kera saw Facebook crop squares to a wide strip) */}
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-4">
-        <legend className="text-sm font-semibold text-gray-600 px-1">Event images</legend>
+        <legend className="text-sm font-semibold text-gray-600 px-1">Market images</legend>
         <div className="bg-brand-cream rounded-lg p-3 text-sm text-gray-700 space-y-1">
           <p>Both images are optional, but we recommend adding both:</p>
           <ul className="list-disc pl-5 space-y-1">
-            <li><strong>Vertical poster</strong>, like your print poster (8.5 × 11). It's shown on your event page.</li>
-            <li><strong>Horizontal share image</strong>. It's the picture people see when your event link is shared on Facebook, in messages and elsewhere. The best fit is 1200 × 628 (Canva's "Facebook Ad" size). A Facebook event cover (1920 × 1080) works too, with a little trimmed off the top and bottom. Keep important words away from the edges.</li>
+            <li><strong>Vertical poster</strong>, like your print poster (8.5 × 11). It's shown on the market's page.</li>
+            <li><strong>Horizontal share image</strong>. It's the picture people see when the market's link is shared on Facebook, in messages and elsewhere. The best fit is 1200 × 628 (Canva's "Facebook Ad" size). A Facebook event cover (1920 × 1080) works too, with a little trimmed off the top and bottom. Keep important words away from the edges.</li>
           </ul>
         </div>
 
@@ -462,7 +537,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
       {/* External URL */}
       <div>
-        <label className={labelCls}>External Event URL</label>
+        <label className={labelCls}>Market website or event link</label>
         <input
           className={inputCls}
           value={externalUrl}
@@ -474,42 +549,41 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
       {canMove && (
         <div className="p-4 rounded-lg bg-brand-cream">
-          <label htmlFor="event-market-page" className={labelCls}>Market page (admin)</label>
+          <label htmlFor="event-market-page" className={labelCls}>Organizer (admin)</label>
           <select
             id="event-market-page"
             value={moveTo}
             onChange={e => setMoveTo(e.target.value)}
             className={inputCls + ' bg-white'}
           >
+            <option value="">No organizer yet (unclaimed)</option>
             {[...allOrganizers!]
+              .filter(o => o.status === 'active' || o.id === moveTo)
               .sort((a, b) => a.name.localeCompare(b.name))
               .map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name}{m.status === 'unclaimed' ? ' (unclaimed)' : ''}
-                </option>
+                <option key={m.id} value={m.id}>{m.name}</option>
               ))}
           </select>
           <p className="mt-2 text-sm text-gray-600">
             {moving
-              ? "Saving moves this event to that market's page. Its web address changes, so links shared before won't work."
-              : 'To move this event to another market, choose it here.'}
+              ? 'Saving hands this market to that organizer: they can edit it from then on. Its web address stays the same.'
+              : 'To hand this market to an organizer, or take it back to unclaimed, choose here.'}
           </p>
         </div>
       )}
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      {existingEvent && existingEvent.type !== 'oneTime' && (
-        <p className="text-gray-600 text-sm">Changes apply to every date in this series.</p>
+      {existingEvent && type === 'recurring' && (
+        <p className="text-gray-600 text-sm">Changes apply to every date it repeats on.</p>
       )}
 
       {/* Actions */}
       {confirmingUnpublish ? (
         <div className="border border-amber-300 bg-amber-50 rounded-lg p-4 space-y-3" role="alert">
           <p className="text-sm text-gray-800">
-            Unpublishing takes every date of this event off the public calendar and your market
-            profile. Your changes are saved, and the event stays in your list as a draft. Publish
-            it again any time to bring the dates back.
+            Unpublishing takes this market and its dates off the public site. Your changes are
+            saved, and it stays in your list as a draft. Publish it again any time to bring it back.
           </p>
           <div className="flex gap-3">
             <button

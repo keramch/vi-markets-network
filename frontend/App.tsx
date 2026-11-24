@@ -8,7 +8,7 @@ import * as api from './services/api.live';
 import { onAuthStateChanged, signOut, sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, checkActionCode } from 'firebase/auth';
 import { firebaseAuth } from './services/firebase';
 import { signInWithGoogle, isInAppBrowser } from './services/googleAuth';
-import { PASSWORD_POLICY_MESSAGE, nextOccurrence, eventPath, rememberBrowseList } from './utils';
+import { PASSWORD_POLICY_MESSAGE, nextOccurrence, marketPath, rememberBrowseList } from './utils';
 import ProfileNav from './components/ProfileNav';
 
 import Header from './components/Header';
@@ -59,14 +59,14 @@ const viewToPath = (view: View): string => {
     case 'pricing':            return '/pricing';
     case 'signup':             return '/signup';
     case 'dashboard':          return '/dashboard';
-    case 'organizerHub':       return '/dashboard/my-market';
+    case 'organizerHub':       return '/dashboard/my-markets';
     case 'manageProfile':      return '/dashboard/profile';
     case 'notificationSettings': return '/dashboard/notifications';
     case 'myApplications':     return '/dashboard/applications';
     case 'promotions':         return '/dashboard/promotions';
     case 'adminPanel':         return '/hq';
     case 'adminEditProfile':   return `/hq/edit/${view.profileType}/${view.profileId}`;
-    case 'marketProfile':      return `/markets/${view.id}`;
+    case 'marketProfile':      return `/organizers/${view.id}`;
     case 'vendorProfile':      return `/vendors/${view.id}`;
     default:                   return '/';
   }
@@ -76,44 +76,40 @@ const viewToPath = (view: View): string => {
 
 interface OrganizerProfileRouteProps {
   organizers: Organizer[];
+  markets: Market[];
   vendors: Vendor[];
   applications: Application[];
   users: User[];
-  favoritedMarketIds: string[];
+  followedOrganizerIds: string[];
   currentUser: User | null;
-  onToggleFavorite: (id: string) => void;
-  onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
+  onToggleFollow: (id: string) => void;
+  onAddReview: (entityType: 'market' | 'vendor' | 'organizer', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureMarket: (marketId: string) => void;
   onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onApply: (marketId: string) => void;
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
 }
+// /organizers/:slug — an organizer's profile, with every market they run (T128)
 const OrganizerProfileRoute: React.FC<OrganizerProfileRouteProps> = ({
-  organizers, vendors, applications, users, favoritedMarketIds, currentUser,
-  onToggleFavorite, onAddReview, onFeatureMarket, onContactSubmit, onApply, onOpenLoginModal,
+  organizers, markets, vendors, applications, users, followedOrganizerIds, currentUser,
+  onToggleFollow, onAddReview, onFeatureMarket, onContactSubmit, onApply, onOpenLoginModal,
   isDataLoading,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const market = organizers.find(m => m.slug === slug);
+  const organizer = organizers.find(m => m.slug === slug);
 
-  const [upcomingEvents, setUpcomingEvents] = React.useState<Market[]>([]);
-
-  React.useEffect(() => {
-    if (!market?.id) return;
-    api.getMarkets({ marketPageId: market.id, status: 'published' })
-      .then(events => {
-        // Keep events with a real date coming up (a running series counts),
-        // soonest first (T001, T096).
-        const withNext = events
-          .map(e => ({ e, next: nextOccurrence(e) }))
-          .filter(x => x.next !== null);
-        withNext.sort((a, b) => a.next!.date.localeCompare(b.next!.date));
-        setUpcomingEvents(withNext.map(x => x.e));
-      })
-      .catch(() => {}); // non-fatal
-  }, [market?.id]);
+  // Its markets with a real date coming up (a running series counts), soonest first (T001, T096)
+  const upcomingMarkets = useMemo(() => {
+    if (!organizer) return [];
+    return markets
+      .filter(m => m.organizerId === organizer.id && m.status === 'published')
+      .map(m => ({ m, next: nextOccurrence(m) }))
+      .filter(x => x.next !== null)
+      .sort((a, b) => a.next!.date.localeCompare(b.next!.date))
+      .map(x => x.m);
+  }, [organizer?.id, markets]);
 
   if (isDataLoading) {
     return (
@@ -123,29 +119,29 @@ const OrganizerProfileRoute: React.FC<OrganizerProfileRouteProps> = ({
     );
   }
 
-  if (!market || market.status !== 'active') return <Navigate to="/" replace />;
-  const marketOwner = users.find(u => u.id === market.ownerId);
+  if (!organizer || organizer.status !== 'active') return <Navigate to="/" replace />;
+  const organizerOwner = users.find(u => u.id === organizer.ownerId);
   return (
     <>
-    <ProfileNav kind="markets" currentId={market.id} items={organizers} />
+    <ProfileNav kind="organizers" currentId={organizer.id} items={organizers} />
     <OrganizerProfile
-      organizer={market}
+      organizer={organizer}
       vendors={vendors}
       applications={applications}
-      owner={marketOwner}
+      owner={organizerOwner}
       onSelectVendor={(id) => {
         const v = vendors.find(v => v.id === id);
         if (v?.slug) navigate(`/vendors/${v.slug}`);
       }}
       onBack={() => navigate('/')}
-      isFavorited={favoritedMarketIds.includes(market.id)}
-      onToggleFavorite={onToggleFavorite}
+      isFavorited={followedOrganizerIds.includes(organizer.id)}
+      onToggleFavorite={onToggleFollow}
       currentUser={currentUser}
-      onAddReview={(data) => onAddReview('market', market.id, data)}
+      onAddReview={(data) => onAddReview('organizer', organizer.id, data)}
       onFeatureMarket={onFeatureMarket}
       onContactSubmit={onContactSubmit}
       onApply={onApply}
-      upcomingEvents={upcomingEvents}
+      upcomingEvents={upcomingMarkets}
       onOpenLoginModal={onOpenLoginModal}
     />
     </>
@@ -153,85 +149,110 @@ const OrganizerProfileRoute: React.FC<OrganizerProfileRouteProps> = ({
 };
 
 interface MarketPageRouteProps {
+  markets: Market[];
   organizers: Organizer[];
-  favoritedMarketIds: string[];
+  vendors: Vendor[];
+  savedMarketIds: string[];
   currentUser: User | null;
-  onToggleFavorite: (id: string) => void;
+  onToggleSave: (id: string) => void;
   onOpenLoginModal: () => void;
   isDataLoading: boolean;
 }
-// /markets/:slug/:eventSlug — the event part is the event's slug, or its ID for
-// events saved before slugs existed (T013). An ID link moves to the slug link.
+// /markets/:slug — a market's page (T128). Links from before stage 1 still
+// work: an old organizer link (/markets/<organizer>) forwards to
+// /organizers/<organizer>, and a renamed market's old slug to its new one.
 const MarketPageRoute: React.FC<MarketPageRouteProps> = ({
-  organizers, favoritedMarketIds, currentUser, onToggleFavorite, onOpenLoginModal, isDataLoading,
+  markets, organizers, vendors, savedMarketIds, currentUser, onToggleSave, onOpenLoginModal, isDataLoading,
 }) => {
-  const { slug, eventSlug } = useParams<{ slug: string; eventSlug: string }>();
+  const { slug = '' } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const market = organizers.find(m => m.slug === slug);
-  const [event, setEvent] = React.useState<Market | null | undefined>(undefined); // undefined = loading
 
-  React.useEffect(() => {
-    if (!market?.id) return;
-    setEvent(undefined);
-    api.getMarkets({ marketPageId: market.id, status: 'published' })
-      .then(events => {
-        const found = events.find(e => e.slug === eventSlug) ?? events.find(e => e.id === eventSlug) ?? null;
-        if (found?.slug && found.slug !== eventSlug) {
-          navigate(`${eventPath(market.slug!, found)}${location.search}`, { replace: true });
-        }
-        setEvent(found);
-      })
-      .catch(() => setEvent(null));
-  }, [market?.id, eventSlug]);
-
-  if (isDataLoading || (market && event === undefined)) {
+  if (isDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-cream">
         <div className="text-brand-blue text-sm">Loading...</div>
       </div>
     );
   }
-  if (!market || market.status !== 'active') return <Navigate to="/" replace />;
-  if (!event) {
-    return (
-      <div className="min-h-screen bg-brand-cream px-4 py-16 text-center">
-        <h1 className="font-serif text-2xl text-brand-blue">This event isn't available</h1>
-        <p className="mt-3 text-base text-brand-text">It may have ended or been taken down by the organizer.</p>
-        <button
-          type="button"
-          onClick={() => navigate(`/markets/${market.slug}`)}
-          className="mt-6 min-h-[2.75rem] px-5 rounded-lg bg-brand-light-blue text-white font-semibold"
-        >
-          See {market.name}
-        </button>
-      </div>
-    );
+
+  const visible = markets.filter(m => m.status === 'published' || currentUser?.isAdmin);
+  const market = visible.find(m => m.slug === slug) ?? visible.find(m => m.id === slug);
+  if (!market) {
+    const moved = visible.find(m => m.legacyPaths?.includes(slug));
+    if (moved) return <Navigate to={`${marketPath(moved)}${location.search}`} replace />;
+    const organizer = organizers.find(o => o.slug === slug);
+    if (organizer) return <Navigate to={`/organizers/${organizer.slug}`} replace />;
+    return <Navigate to="/" replace />;
   }
+  if (market.slug && market.slug !== slug) return <Navigate to={`${marketPath(market)}${location.search}`} replace />;
+
+  const organizer = market.organizerId ? organizers.find(o => o.id === market.organizerId) : undefined;
+  // Vendors who say they'll be there, with their upcoming dates here
+  const today = new Date().toLocaleDateString('en-CA');
+  const vendorsAttending = vendors
+    .filter(v => v.status === 'active')
+    .map(v => ({
+      vendor: v,
+      dates: [...new Set((v.attendingMarkets ?? []).filter(a => a.marketId === market.id).map(a => a.date))]
+        .filter(d => d && d >= today)
+        .sort(),
+      listed: (v.attendingMarkets ?? []).some(a => a.marketId === market.id),
+    }))
+    .filter(x => x.listed)
+    .sort((a, b) => (a.dates[0] ?? '9999').localeCompare(b.dates[0] ?? '9999') || a.vendor.name.localeCompare(b.vendor.name))
+    .map(({ vendor, dates }) => ({ vendor, dates }));
 
   const dateParam = new URLSearchParams(location.search).get('date') ?? undefined;
   return (
+    <>
+    <ProfileNav kind="markets" currentId={market.id} items={visible} />
     <MarketPage
-      organizer={market}
-      event={event}
+      market={market}
+      organizer={organizer}
+      vendorsAttending={vendorsAttending}
       selectedDate={dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined}
       currentUser={currentUser}
-      isFollowing={favoritedMarketIds.includes(market.id)}
-      onToggleFollow={onToggleFavorite}
+      isSaved={savedMarketIds.includes(market.id)}
+      onToggleSave={onToggleSave}
       onOpenLoginModal={onOpenLoginModal}
-      onBack={() => (window.history.length > 1 ? navigate(-1) : navigate(`/markets/${market.slug}`))}
+      onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/markets'))}
     />
+    </>
   );
+};
+
+// /markets/:organizer/:event — event links from before stage 1 (T128). Forwards
+// to the market's own page, keeping ?date= so a shared date still opens.
+const LegacyMarketLinkRoute: React.FC<{ markets: Market[]; organizers: Organizer[]; isDataLoading: boolean }> = ({
+  markets, organizers, isDataLoading,
+}) => {
+  const { slug = '', eventSlug = '' } = useParams<{ slug: string; eventSlug: string }>();
+  const location = useLocation();
+  if (isDataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+        <div className="text-brand-blue text-sm">Loading...</div>
+      </div>
+    );
+  }
+  const organizer = organizers.find(o => o.slug === slug);
+  const market = markets.find(m => m.legacyPaths?.includes(`${slug}/${eventSlug}`))
+    ?? markets.find(m => m.id === eventSlug)
+    ?? (organizer ? markets.find(m => m.organizerId === organizer.id && m.slug === eventSlug) : undefined);
+  if (market) return <Navigate to={`${marketPath(market)}${location.search}`} replace />;
+  if (organizer) return <Navigate to={`/organizers/${organizer.slug}`} replace />;
+  return <Navigate to="/" replace />;
 };
 
 interface VendorProfileRouteProps {
   vendors: Vendor[];
-  markets: Organizer[];
+  markets: Market[];
   users: User[];
   favoritedVendorIds: string[];
   currentUser: User | null;
   onToggleFavorite: (id: string) => void;
-  onAddReview: (entityType: 'market' | 'vendor', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
+  onAddReview: (entityType: 'market' | 'vendor' | 'organizer', entityId: string, data: { rating: number; comment: string }) => Promise<void>;
   onFeatureVendor: (vendorId: string) => void;
   onContactSubmit: (params: { recipientEmail: string; recipientName: string; senderName: string; senderEmail: string; subject: string; message: string } & SpamGuardFields) => Promise<void>;
   onOpenLoginModal: () => void;
@@ -258,7 +279,7 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
   const vendorOwner = users.find(u => u.id === vendor.ownerId);
   // Markets this vendor attends, in their order, for Previous / Next (T118)
   const attendedMarketIds = [...new Set((vendor.attendingMarkets || []).map(a => a.marketId))]
-    .filter(id => markets.some(m => m.id === id && m.status === 'active'));
+    .filter(id => markets.some(m => m.id === id && m.status === 'published'));
   return (
     <>
     <ProfileNav kind="vendors" currentId={vendor.id} items={vendors} />
@@ -266,11 +287,11 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
       vendor={vendor}
       markets={markets}
       owner={vendorOwner}
-      onSelectMarket={(id) => {
+      onSelectMarket={(id, date) => {
         const m = markets.find(m => m.id === id);
-        if (!m?.slug) return;
+        if (!m) return;
         rememberBrowseList('markets', attendedMarketIds, `Back to ${vendor.name}`);
-        navigate(`/markets/${m.slug}`);
+        navigate(marketPath(m, date));
       }}
       onBack={() => navigate('/')}
       isFavorited={favoritedVendorIds.includes(vendor.id)}
@@ -287,41 +308,42 @@ const VendorProfileRoute: React.FC<VendorProfileRouteProps> = ({
 
 interface AdminEditProfileRouteProps {
   organizers: Organizer[];
+  markets: Market[];
   vendors: Vendor[];
   users: User[];
   currentUser: User | null;
   onSaveChanges: (data: Organizer | Vendor, returnTo?: string) => Promise<void>;
 }
-// HQ › a market's Events (T124): the My Market events screen for any market,
-// so an admin can add and edit dates for unclaimed markets
-const AdminMarketEventsRoute: React.FC<{ markets: Organizer[]; currentUser: User | null }> = ({ markets, currentUser }) => {
-  const { marketId } = useParams<{ marketId: string }>();
+// HQ › an organizer's markets: the My Markets screen for any organizer, so an
+// admin can add and edit their dates
+const AdminOrganizerMarketsRoute: React.FC<{ organizers: Organizer[]; currentUser: User | null }> = ({ organizers, currentUser }) => {
+  const { organizerId } = useParams<{ organizerId: string }>();
   const navigate = useNavigate();
   if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
-  const market = markets.find(m => m.id === marketId);
-  if (!market) return <Navigate to="/hq" replace />;
+  const organizer = organizers.find(m => m.id === organizerId);
+  if (!organizer) return <Navigate to="/hq" replace />;
   return (
     <OrganizerHub
       currentUser={currentUser}
-      organizer={market}
-      allOrganizers={markets}
+      organizer={organizer}
+      allOrganizers={organizers}
       adminView
-      onNavigateToProfile={() => navigate(`/hq/edit/market/${market.id}`)}
+      onNavigateToProfile={() => navigate(`/hq/edit/organizer/${organizer.id}`)}
       onBack={() => navigate('/hq')}
     />
   );
 };
 
 const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
-  organizers, vendors, users, currentUser, onSaveChanges,
+  organizers, markets, vendors, users, currentUser, onSaveChanges,
 }) => {
   const { profileType, profileId } = useParams<{ profileType: string; profileId: string }>();
   const navigate = useNavigate();
   // Opened from a profile's Edit profile link: go back to that profile, not HQ
   const requested = (useLocation().state as { returnTo?: string } | null)?.returnTo;
-  const returnTo = typeof requested === 'string' && /^\/(markets|vendors)\/[\w-]+$/.test(requested) ? requested : undefined;
+  const returnTo = typeof requested === 'string' && /^\/(organizers|vendors)\/[\w-]+$/.test(requested) ? requested : undefined;
   if (!currentUser?.isAdmin) return <Navigate to="/" replace />;
-  const profileToEdit = profileType === 'market'
+  const profileToEdit = profileType === 'organizer' || profileType === 'market'
     ? organizers.find(m => m.id === profileId)
     : vendors.find(v => v.id === profileId);
   if (!profileToEdit) return <Navigate to="/hq" replace />;
@@ -329,7 +351,7 @@ const AdminEditProfileRoute: React.FC<AdminEditProfileRouteProps> = ({
     <ProfileManager
       profileData={profileToEdit}
       user={users.find(u => u.ownedOrganizerId === profileToEdit.id || u.ownedVendorId === profileToEdit.id) || null}
-      allMarkets={organizers}
+      allMarkets={markets}
       onSaveChanges={(data) => onSaveChanges(data, returnTo)}
       onBack={() => navigate(returnTo ?? '/hq')}
       isAdmin={true}
@@ -356,6 +378,9 @@ const isOrganizer = (profile: Organizer | Vendor): profile is Organizer => {
 
 const App: React.FC = () => {
   const [organizers, setOrganizers] = useState<Organizer[]>([]);
+  // Markets: the events people go to (OD-16). Published ones for everyone; an
+  // admin also gets drafts and unclaimed ones (reloaded when an admin logs in).
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -386,6 +411,7 @@ const App: React.FC = () => {
 
   const [favoritedMarketIds, setFavoritedMarketIds] = useState<string[]>([]);
   const [favoritedVendorIds, setFavoritedVendorIds] = useState<string[]>([]);
+  const [followedOrganizerIds, setFollowedOrganizerIds] = useState<string[]>([]);
   
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -484,14 +510,16 @@ const App: React.FC = () => {
     // Wave 1: public data — homepage needs this
     const fetchPublicData = async () => {
       try {
-        const [marketsData, vendorsData] = await Promise.all([
+        const [organizersData, marketsData, vendorsData] = await Promise.all([
           api.getOrganizers(),
+          api.getMarkets({ status: 'published' }),
           api.getVendors(),
         ]);
-        setOrganizers(marketsData);
+        setOrganizers(organizersData);
+        setMarkets(marketsData);
         setVendors(vendorsData);
       } catch (error) {
-        console.error("Failed to fetch markets/vendors:", error);
+        console.error("Failed to fetch organizers/markets/vendors:", error);
         showNotification("Error: Could not load listings.");
       } finally {
         setIsDataLoading(false);
@@ -512,6 +540,15 @@ const App: React.FC = () => {
       .then(setApplications)
       .catch((error) => console.error("Failed to fetch applications:", error));
   }, [currentUser?.id]);
+
+  // Admins see every market (drafts and unclaimed ones too) and every organizer,
+  // hidden ones included; everyone else keeps the published lists
+  useEffect(() => {
+    if (!currentUser?.isAdmin) return;
+    Promise.all([api.getMarkets(), api.getOrganizers()])
+      .then(([allMarkets, allOrganizers]) => { setMarkets(allMarkets); setOrganizers(allOrganizers); })
+      .catch((error) => console.error("Failed to fetch admin lists:", error));
+  }, [currentUser?.isAdmin]);
 
   // Full member list is admin-only (backend enforces this too)
   useEffect(() => {
@@ -564,6 +601,7 @@ const App: React.FC = () => {
             const follows = await api.fetchFollows(user.id);
             setFavoritedMarketIds(follows.marketIds);
             setFavoritedVendorIds(follows.vendorIds);
+            setFollowedOrganizerIds(follows.organizerIds);
           } catch {
             // follows failed — non-fatal, continue with empty state
           }
@@ -602,6 +640,7 @@ const App: React.FC = () => {
           const follows = await api.fetchFollows(user.id);
           setFavoritedMarketIds(follows.marketIds);
           setFavoritedVendorIds(follows.vendorIds);
+          setFollowedOrganizerIds(follows.organizerIds);
         } catch {
           // follows failed — non-fatal
         }
@@ -624,6 +663,7 @@ const App: React.FC = () => {
                   const follows = await api.fetchFollows(user.id);
                   setFavoritedMarketIds(follows.marketIds);
                   setFavoritedVendorIds(follows.vendorIds);
+                  setFollowedOrganizerIds(follows.organizerIds);
               } catch {
                   // follows failed — non-fatal
               }
@@ -673,6 +713,11 @@ const App: React.FC = () => {
       setCurrentUser(null);
       setFavoritedMarketIds([]);
       setFavoritedVendorIds([]);
+      setFollowedOrganizerIds([]);
+      // Back to the public lists (an admin had drafts and hidden ones)
+      Promise.all([api.getMarkets({ status: 'published' }), api.getOrganizers()])
+        .then(([m, o]) => { setMarkets(m); setOrganizers(o); })
+        .catch(() => {});
       navigate('/');
   };
 
@@ -748,6 +793,21 @@ const App: React.FC = () => {
     }
   };
   
+  // Organizers are Followed (markets and vendors are Saved) — OD-16
+  const handleToggleOrganizerFollow = (id: string) => {
+    if (!currentUser) {
+        setLoginModalOpen(true);
+        return;
+    }
+    const isFollowing = followedOrganizerIds.includes(id);
+    setFollowedOrganizerIds(prev => isFollowing ? prev.filter(o => o !== id) : [...prev, id]);
+    if (isFollowing) {
+      api.removeFollow(currentUser.id, id).catch(err => console.error('Unfollow failed:', err));
+    } else {
+      api.addFollow(currentUser.id, id, 'organizer').catch(err => console.error('Follow failed:', err));
+    }
+  };
+
   const handleToggleVendorFavorite = (id: string) => {
     if (!currentUser) {
         setLoginModalOpen(true);
@@ -765,21 +825,19 @@ const App: React.FC = () => {
   };
 
   const handleAddReview = async (
-    entityType: 'market' | 'vendor', 
+    entityType: 'market' | 'vendor' | 'organizer', 
     entityId: string, 
     reviewData: { rating: number, comment: string }
   ) => {
       if (!currentUser) return;
       try {
           const newReview = await api.addReview(entityType, entityId, { ...reviewData, author: currentUser.firstName && currentUser.lastName ? `${currentUser.firstName} ${currentUser.lastName.charAt(0)}.` : currentUser.email.split('@')[0], userId: currentUser?.id, reviewerAccountType: currentUser?.accountType });
-          const collectionSetter = entityType === 'market' ? setOrganizers : setVendors;
-          collectionSetter(prev => 
-              prev.map(item => 
-                  item.id === entityId 
-                      ? { ...item, reviews: [newReview, ...item.reviews] }
-                      : item
-              )
-          );
+          // Approved reviews only show once HQ approves them; keep the local list in step
+          const add = <T extends { id: string; reviews?: Review[] }>(prev: T[]) =>
+              prev.map(item => item.id === entityId ? { ...item, reviews: [newReview, ...(item.reviews ?? [])] } : item);
+          if (entityType === 'market') setMarkets(add);
+          else if (entityType === 'organizer') setOrganizers(add);
+          else setVendors(add);
           showNotification("Thank you! Your review is pending approval.");
       } catch (error) {
           // e.g. "You've already reviewed this listing."
@@ -796,15 +854,16 @@ const App: React.FC = () => {
   };
 
   // Admin decides on an owner's removal request
-  const handleResolveReviewRemoval = async (entityType: 'market' | 'vendor', entityId: string, reviewId: string, action: 'remove' | 'keep') => {
+  const handleResolveReviewRemoval = async (entityType: 'market' | 'vendor' | 'organizer', entityId: string, reviewId: string, action: 'remove' | 'keep') => {
       try {
           const updated = await api.resolveReviewRemoval(reviewId, action);
           setAdminReviews(prev => prev.map(r => r.id === reviewId ? { ...r, ...updated } : r));
           if (action === 'remove') {
-              const collectionSetter = entityType === 'market' ? setOrganizers : setVendors;
-              collectionSetter(prev => prev.map(item =>
-                  item.id === entityId ? { ...item, reviews: item.reviews.filter(r => r.id !== reviewId) } : item
-              ));
+              const drop = <T extends { id: string; reviews?: Review[] }>(prev: T[]) =>
+                  prev.map(item => item.id === entityId ? { ...item, reviews: (item.reviews ?? []).filter(r => r.id !== reviewId) } : item);
+              if (entityType === 'market') setMarkets(drop);
+              else if (entityType === 'organizer') setOrganizers(drop);
+              else setVendors(drop);
           }
           showNotification(action === 'remove' ? 'Review removed.' : 'Review kept.');
       } catch (error) {
@@ -812,7 +871,7 @@ const App: React.FC = () => {
       }
   };
 
-  const handleModerateReview = async (entityType: 'market' | 'vendor', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => {
+  const handleModerateReview = async (entityType: 'market' | 'vendor' | 'organizer', entityId: string, reviewId: string, newStatus: 'approved' | 'declined') => {
       try {
           await api.moderateReview(entityId, reviewId, newStatus);
           const moderated = adminReviews.find(r => r.id === reviewId);
@@ -820,17 +879,19 @@ const App: React.FC = () => {
 
           // Public listings only ever hold approved reviews: add it when approved,
           // remove it when declined
-          const collectionSetter = entityType === 'market' ? setOrganizers : setVendors;
-          collectionSetter(prev => prev.map(item => {
+          const apply = <T extends { id: string; reviews?: Review[] }>(prev: T[]) => prev.map(item => {
               if (item.id !== entityId) return item;
-              const others = item.reviews.filter(review => review.id !== reviewId);
+              const others = (item.reviews ?? []).filter(review => review.id !== reviewId);
               return {
                   ...item,
                   reviews: newStatus === 'approved' && moderated
                       ? [{ ...moderated, status: 'approved' as const }, ...others]
                       : others,
               };
-          }));
+          });
+          if (entityType === 'market') setMarkets(apply);
+          else if (entityType === 'organizer') setOrganizers(apply);
+          else setVendors(apply);
           showNotification(`Review status updated to ${newStatus}.`);
       } catch (error) {
           showNotification("Failed to update review status.");
@@ -845,9 +906,9 @@ const App: React.FC = () => {
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
-            // Refetch markets so any placeholder markets created during save appear immediately
-            const freshMarkets = await api.getOrganizers();
-            setOrganizers(freshMarkets);
+            // Refetch markets so any markets the vendor added during save appear immediately
+            const freshMarkets = await api.getMarkets(currentUser?.isAdmin ? {} : { status: 'published' });
+            setMarkets(freshMarkets);
         }
         showNotification("Your profile has been updated successfully!");
         navigate('/');
@@ -864,9 +925,9 @@ const App: React.FC = () => {
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
-            // Refetch markets so any placeholder markets created during save appear immediately
-            const freshMarkets = await api.getOrganizers();
-            setOrganizers(freshMarkets);
+            // Refetch markets so any markets added during save appear immediately
+            const freshMarkets = await api.getMarkets();
+            setMarkets(freshMarkets);
         }
         if (returnTo) {
             navigate(returnTo);
@@ -948,20 +1009,20 @@ const App: React.FC = () => {
     }
   };
   
-  const handleUpdateMemberStatus = async (memberId: string, type: 'market' | 'vendor', status: MemberStatus) => {
+  const handleUpdateMemberStatus = async (memberId: string, type: 'organizer' | 'vendor', status: MemberStatus) => {
     // Capture original status for rollback, then apply optimistic update immediately
-    const originalStatus = type === 'market'
+    const originalStatus = type === 'organizer'
       ? organizers.find(m => m.id === memberId)?.status
       : vendors.find(v => v.id === memberId)?.status;
 
-    if (type === 'market') {
+    if (type === 'organizer') {
       setOrganizers(prev => prev.map(m => m.id === memberId ? { ...m, status } : m));
     } else {
       setVendors(prev => prev.map(v => v.id === memberId ? { ...v, status } : v));
     }
 
     try {
-      if (type === 'market') {
+      if (type === 'organizer') {
         const updatedMarket = await api.updateOrganizer(memberId, { status });
         setOrganizers(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
       } else {
@@ -972,7 +1033,7 @@ const App: React.FC = () => {
     } catch (error) {
       // Revert to original status on failure
       if (originalStatus !== undefined) {
-        if (type === 'market') {
+        if (type === 'organizer') {
           setOrganizers(prev => prev.map(m => m.id === memberId ? { ...m, status: originalStatus } : m));
         } else {
           setVendors(prev => prev.map(v => v.id === memberId ? { ...v, status: originalStatus } : v));
@@ -982,17 +1043,43 @@ const App: React.FC = () => {
     }
   };
 
-  // HQ › Unclaimed markets › Add a market (T105). Throws so the form can show an error.
+  // HQ › Unclaimed markets › Add a market (T105, T128): an unclaimed market,
+  // public straight away. Throws so the form can show an error.
   const handleCreateMarketAsAdmin = async (data: { name: string; city: string; address: string; marketTypes: string[] }) => {
-    const created = await api.createMarketOld(data);
-    setOrganizers(prev => [...prev, created]);
+    const created = await api.createMarket({
+      name: data.name,
+      type: 'dates',
+      schedule: { dates: [], startTime: '', endTime: '' },
+      location: { venueName: '', address: data.address, city: data.city, province: 'BC' },
+      marketType: data.marketTypes,
+      status: 'published',
+      organizerId: null,
+    });
+    setMarkets(prev => [...prev, created]);
     showNotification(`Added ${created.name}.`);
   };
 
-  const handleHardDeleteMember = async (memberId: string, type: 'market' | 'vendor') => {
+  // HQ edits to a market (the event form saves through the API itself)
+  const handleMarketSaved = (saved: Market) => {
+    setMarkets(prev => prev.some(m => m.id === saved.id) ? prev.map(m => m.id === saved.id ? saved : m) : [...prev, saved]);
+  };
+
+  // HQ › Unclaimed › Delete: removes the market and vendors' links to it (T133)
+  const handleDeleteUnclaimedMarket = async (id: string) => {
+    try {
+      await api.deleteMarketPermanently(id);
+      setMarkets(prev => prev.filter(m => m.id !== id));
+      setVendors(prev => prev.map(v => ({ ...v, attendingMarkets: (v.attendingMarkets ?? []).filter(a => a.marketId !== id) })));
+      showNotification('Market deleted.');
+    } catch {
+      showNotification('Failed to delete the market.');
+    }
+  };
+
+  const handleHardDeleteMember = async (memberId: string, type: 'organizer' | 'vendor') => {
     try {
       await api.hardDeleteMember(memberId, type);
-      if (type === 'market') {
+      if (type === 'organizer') {
         setOrganizers(prev => prev.filter(m => m.id !== memberId));
       } else {
         setVendors(prev => prev.filter(v => v.id !== memberId));
@@ -1030,22 +1117,22 @@ const App: React.FC = () => {
       }
   };
 
-  const handleToggleFeatured = async (type: 'market' | 'vendor', id: string, currentValue: boolean) => {
+  const handleToggleFeatured = async (type: 'organizer' | 'vendor', id: string, currentValue: boolean) => {
     const newValue = !currentValue;
-    if (type === 'market') {
+    if (type === 'organizer') {
       setOrganizers(prev => prev.map(m => m.id === id ? { ...m, isFeatured: newValue } : m));
     } else {
       setVendors(prev => prev.map(v => v.id === id ? { ...v, isFeatured: newValue } : v));
     }
     try {
-      if (type === 'market') {
+      if (type === 'organizer') {
         await api.updateOrganizer(id, { isFeatured: newValue });
       } else {
         await api.updateVendor(id, { isFeatured: newValue });
       }
       showNotification(newValue ? 'Featured!' : 'Removed from featured');
     } catch {
-      if (type === 'market') {
+      if (type === 'organizer') {
         setOrganizers(prev => prev.map(m => m.id === id ? { ...m, isFeatured: currentValue } : m));
       } else {
         setVendors(prev => prev.map(v => v.id === id ? { ...v, isFeatured: currentValue } : v));
@@ -1245,10 +1332,12 @@ const App: React.FC = () => {
             <Route path="/" element={
               <HomePage
                 organizers={organizers}
+                markets={markets.filter(m => m.status === 'published')}
                 vendors={vendors}
                 isLoading={isDataLoading}
-                onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m) navigate(marketPath(m)); }}
                 onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
+                onSelectOrganizer={(id) => { const o = organizers.find(o => o.id === id); if (o?.slug) navigate(`/organizers/${o.slug}`); }}
                 onViewAllMarkets={() => navigate('/markets')}
                 onViewAllVendors={() => navigate('/vendors')}
               />
@@ -1256,8 +1345,9 @@ const App: React.FC = () => {
             <Route path="/markets" element={
               <BrowsePage
                 mode="markets"
-                items={organizers.filter(m => m.status === 'active')}
-                onSelect={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                markets={markets.filter(m => m.status === 'published')}
+                organizers={organizers}
+                onSelect={(id) => { const m = markets.find(m => m.id === id); if (m) navigate(marketPath(m)); }}
                 onBack={() => navigate('/')}
                 onSwitchMode={() => navigate('/vendors')}
               />
@@ -1265,21 +1355,37 @@ const App: React.FC = () => {
             <Route path="/vendors" element={
               <BrowsePage
                 mode="vendors"
-                items={vendors.filter(v => v.status === 'active')}
+                vendors={vendors.filter(v => v.status === 'active')}
                 onSelect={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}
                 onBack={() => navigate('/')}
                 onSwitchMode={() => navigate('/markets')}
               />
             } />
             <Route path="/markets/:slug" element={
+              <MarketPageRoute
+                markets={markets}
+                organizers={organizers}
+                vendors={vendors}
+                savedMarketIds={favoritedMarketIds}
+                currentUser={currentUser}
+                onToggleSave={handleToggleMarketFavorite}
+                onOpenLoginModal={() => setLoginModalOpen(true)}
+                isDataLoading={isDataLoading}
+              />
+            } />
+            <Route path="/markets/:slug/:eventSlug" element={
+              <LegacyMarketLinkRoute markets={markets} organizers={organizers} isDataLoading={isDataLoading} />
+            } />
+            <Route path="/organizers/:slug" element={
               <OrganizerProfileRoute
                 organizers={organizers}
+                markets={markets}
                 vendors={vendors}
                 applications={applications}
                 users={users}
-                favoritedMarketIds={favoritedMarketIds}
+                followedOrganizerIds={followedOrganizerIds}
                 currentUser={currentUser}
-                onToggleFavorite={handleToggleMarketFavorite}
+                onToggleFollow={handleToggleOrganizerFollow}
                 onAddReview={handleAddReview}
                 onFeatureMarket={handleOpenFeatureMarketModal}
                 onContactSubmit={handleContactSubmit}
@@ -1288,20 +1394,10 @@ const App: React.FC = () => {
                 isDataLoading={isDataLoading}
               />
             } />
-            <Route path="/markets/:slug/:eventSlug" element={
-              <MarketPageRoute
-                organizers={organizers}
-                favoritedMarketIds={favoritedMarketIds}
-                currentUser={currentUser}
-                onToggleFavorite={handleToggleMarketFavorite}
-                onOpenLoginModal={() => setLoginModalOpen(true)}
-                isDataLoading={isDataLoading}
-              />
-            } />
             <Route path="/vendors/:slug" element={
               <VendorProfileRoute
                 vendors={vendors}
-                markets={organizers}
+                markets={markets.filter(m => m.status === 'published')}
                 users={users}
                 favoritedVendorIds={favoritedVendorIds}
                 currentUser={currentUser}
@@ -1316,12 +1412,10 @@ const App: React.FC = () => {
             <Route path="/calendar" element={
               <CalendarView
                 currentUser={currentUser}
+                markets={markets.filter(m => m.status === 'published')}
                 ownOrganizer={currentUser?.ownedOrganizerId ? organizers.find(m => m.id === currentUser.ownedOrganizerId) : undefined}
-                onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
-                onSelectEvent={(event, date) => {
-                  const m = organizers.find(m => m.id === event.organizerId);
-                  if (m?.slug) navigate(eventPath(m.slug, event, date));
-                }}
+                onMarketAdded={handleMarketSaved}
+                onSelectEvent={(market, date) => navigate(marketPath(market, date))}
                 onBack={() => navigate('/')}
               />
             } />
@@ -1341,14 +1435,14 @@ const App: React.FC = () => {
                   setCurrentUser(user);
                   showNotification(`Welcome to VI Markets, ${user.firstName || user.email}!`);
                   // Delay refetch to allow logo upload to complete before
-                  // refreshing market/vendor data from Firestore
+                  // refreshing organizer/vendor data from Firestore
                   setTimeout(async () => {
                     try {
-                      const [marketsData, vendorsData] = await Promise.all([
+                      const [organizersData, vendorsData] = await Promise.all([
                         api.getOrganizers(),
                         api.getVendors(),
                       ]);
-                      setOrganizers(marketsData);
+                      setOrganizers(organizersData);
                       setVendors(vendorsData);
                     } catch {
                       // non-fatal
@@ -1359,47 +1453,48 @@ const App: React.FC = () => {
             } />
             <Route path="/dashboard" element={
               <Dashboard
-                markets={organizers.filter(m => favoritedMarketIds.includes(m.id))}
+                markets={markets.filter(m => favoritedMarketIds.includes(m.id))}
                 vendors={vendors.filter(v => favoritedVendorIds.includes(v.id))}
+                organizers={organizers.filter(o => followedOrganizerIds.includes(o.id))}
                 onSelectMarket={(id) => {
-                  const m = organizers.find(m => m.id === id); if (!m?.slug) return;
-                  rememberBrowseList('markets', organizers.filter(m => favoritedMarketIds.includes(m.id)).map(m => m.id), 'Back to Saved');
-                  navigate(`/markets/${m.slug}`);
+                  const m = markets.find(m => m.id === id); if (!m) return;
+                  rememberBrowseList('markets', markets.filter(m => favoritedMarketIds.includes(m.id)).map(m => m.id), 'Back to Saved');
+                  navigate(marketPath(m));
                 }}
                 onSelectVendor={(id) => {
                   const v = vendors.find(v => v.id === id); if (!v?.slug) return;
                   rememberBrowseList('vendors', vendors.filter(v => favoritedVendorIds.includes(v.id)).map(v => v.id), 'Back to Saved');
                   navigate(`/vendors/${v.slug}`);
                 }}
+                onSelectOrganizer={(id) => {
+                  const o = organizers.find(o => o.id === id); if (o?.slug) navigate(`/organizers/${o.slug}`);
+                }}
                 onBack={() => navigate('/')}
               />
             } />
-            <Route path="/dashboard/my-market" element={
-              currentUser && currentUser.ownedOrganizerId
-                ? (() => {
-                    const ownedMarket = organizers.find(m => m.id === currentUser.ownedOrganizerId);
-                    return ownedMarket ? (
-                      <OrganizerHub
-                        currentUser={currentUser}
-                        organizer={ownedMarket}
-                        allOrganizers={currentUser.isAdmin ? organizers : undefined}
-                        onNavigateToProfile={() => navigate('/dashboard/profile')}
-                        onBack={() => navigate('/')}
-                      />
-                    ) : <Navigate to="/" replace />;
-                  })()
-                : <Navigate to="/" replace />
+            <Route path="/dashboard/my-market" element={<Navigate to="/dashboard/my-markets" replace />} />
+            <Route path="/dashboard/my-markets" element={
+              currentUser && currentUser.ownedOrganizerId && ownedOrganizer ? (
+                <OrganizerHub
+                  currentUser={currentUser}
+                  organizer={ownedOrganizer}
+                  allOrganizers={currentUser.isAdmin ? organizers : undefined}
+                  onNavigateToProfile={() => navigate('/dashboard/profile')}
+                  onBack={() => navigate('/')}
+                  onMarketSaved={handleMarketSaved}
+                />
+              ) : <Navigate to="/" replace />
             } />
             <Route path="/dashboard/profile" element={(() => {
               const profileData = ownedOrganizer || ownedVendor;
               if (!currentUser || !profileData) return <Navigate to="/" replace />;
-              const marketApplications = isOrganizer(profileData) ? applications.filter(app => app.marketId === profileData.id) : [];
+              const organizerApplications = isOrganizer(profileData) ? applications.filter(app => app.organizerId === profileData.id) : [];
               return (
                 <ProfileManager
                   profileData={profileData}
                   user={currentUser}
-                  allMarkets={organizers}
-                  applications={marketApplications}
+                  allMarkets={markets.filter(m => m.status === 'published')}
+                  applications={organizerApplications}
                   vendors={vendors}
                   listingReviews={ownListingReviews}
                   onRequestReviewRemoval={handleRequestReviewRemoval}
@@ -1407,7 +1502,7 @@ const App: React.FC = () => {
                   onSaveChanges={handleUpdateProfile}
                   onToggleAutoRenew={(autoRenew) => handleToggleAutoRenew(currentUser.id, autoRenew)}
                   onOpenUpgradeModal={() => setMembershipModalOpen(true)}
-                  onBack={() => navigate(isOrganizer(profileData) ? '/dashboard/my-market' : '/')}
+                  onBack={() => navigate(isOrganizer(profileData) ? '/dashboard/my-markets' : '/')}
                   isAdmin={false}
                 />
               );
@@ -1434,7 +1529,7 @@ const App: React.FC = () => {
                 <MyApplications
                   applications={vendorApps}
                   organizers={organizers}
-                  onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/markets/${m.slug}`); }}
+                  onSelectMarket={(id) => { const m = organizers.find(m => m.id === id); if (m?.slug) navigate(`/organizers/${m.slug}`); }}
                   onBack={() => navigate('/')}
                 />
               );
@@ -1455,30 +1550,35 @@ const App: React.FC = () => {
               !currentUser?.isAdmin ? <Navigate to="/" replace /> : (
                 <AdminPanel
                   organizers={organizers}
+                  markets={markets}
                   vendors={vendors}
                   users={users}
                   reviews={adminReviews}
+                  currentUser={currentUser}
                   onModerateReview={handleModerateReview}
                   onResolveReviewRemoval={handleResolveReviewRemoval}
                   onEditProfile={(profileId, profileType) => navigate(`/hq/edit/${profileType}/${profileId}`)}
+                  onOpenOrganizerMarkets={(id) => navigate(`/hq/organizer/${id}/markets`)}
                   onUpdateMemberStatus={handleUpdateMemberStatus}
                   onHardDeleteMember={handleHardDeleteMember}
                   onToggleFoundingMember={handleToggleFoundingMember}
                   onToggleFeatured={handleToggleFeatured}
                   onSendMessage={handleSendAdminMessage}
                   onCreateMarket={handleCreateMarketAsAdmin}
-                  onOpenMarketEvents={(id) => navigate(`/hq/market/${id}/events`)}
+                  onMarketSaved={handleMarketSaved}
+                  onDeleteMarket={handleDeleteUnclaimedMarket}
                   initialTab={adminActiveTab}
                   onTabChange={setAdminActiveTab}
                 />
               )
             } />
-            <Route path="/hq/market/:marketId/events" element={
-              <AdminMarketEventsRoute markets={organizers} currentUser={currentUser} />
+            <Route path="/hq/organizer/:organizerId/markets" element={
+              <AdminOrganizerMarketsRoute organizers={organizers} currentUser={currentUser} />
             } />
             <Route path="/hq/edit/:profileType/:profileId" element={
               <AdminEditProfileRoute
                 organizers={organizers}
+                markets={markets}
                 vendors={vendors}
                 users={users}
                 currentUser={currentUser}
