@@ -41,7 +41,7 @@ Background: OD-16 decides that a **market** is the event people go to (one-off, 
 - **For an unclaimed market, the vendors' dates are the dates we know.** The page marks them *"Date from a vendor"* until Kera or the organizer confirms them.
 - **Times are optional for unclaimed markets.** Without them, the page says *"Times to be confirmed"*. Vendors never gave times.
 - **A market with no dates at all still gets a page** saying *"No dates announced yet"*. It shows in Browse and search, but not on the calendar.
-- **Past dates aren't shown.** This is a new site and doesn't need to look historical. A market whose known dates have all passed keeps its page, saying *"No upcoming dates announced"*. That suits yearly markets, which shoppers will search for again next year. Past dates stay in the record but aren't displayed.
+- **Past dates are kept and converted like any other date.** They're the start of each market's history: how long it has run and how often. A market page leads with its upcoming dates. Below them is a short, folded-away *"Past dates"* list. A market whose known dates have all passed says *"No upcoming dates announced"*, which suits yearly markets that shoppers will search for again next year. Showing longevity more prominently ("Running since 2024") can come later, once there's history to show.
 - **A year in a market's name is fine** ("Foggy Mountain Fall Fair 2026"): it's common, and it's the organizer's choice. One listing can also hold several years' dates. Only dates or days written into a name ("(Fri 10-Sun 12)") are better moved into the dates.
 
 ---
@@ -114,7 +114,10 @@ The site is out of beta and the numbers are small, so the code's names get fixed
 
 It's done in the same conversion, so there's one switch-over, not two. The conversion **copies** into the new collections and leaves the old ones untouched as a backup, which makes going back simple.
 
-**Brevo is the one outside system affected.** Its MEMBERTYPE field says "Market" for organizers. It keeps receiving "Market" unless Kera changes the Brevo segments to "Organizer" first.
+**Brevo is the one outside system affected.** Its MEMBERTYPE field says "Market" for organizers, and becomes **"Organizer"** (Kera, Nov 23):
+- **Before the switch-over:** Kera changes any Brevo segment or automation that looks for "Market" to look for "Market *or* Organizer". This is harmless to do early.
+- **During the switch-over:** the conversion updates the existing organizer contacts in Brevo to "Organizer". New and updated members send "Organizer" from then on.
+- **Afterwards, once it's settled:** Kera can drop "Market" from those segments.
 
 ## How it's done safely
 
