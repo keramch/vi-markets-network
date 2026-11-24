@@ -20,6 +20,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { db } from "../src/firebase";
 import { slugify, firstFreeSlug } from "../src/utils/slug";
+import { syncMemberIfVerified } from "../src/utils/brevoSync";
 
 type Doc = Record<string, any> & { id: string };
 type Col = "organizers" | "markets" | "users" | "follows" | "reviews" | "vendors" | "applications";
@@ -44,6 +45,23 @@ async function readAll(name: string): Promise<Doc[]> {
 }
 
 const withoutId = ({ id, ...rest }: Doc) => rest;
+
+// A repeating series that starts and ends within one week: its actual days
+// (mirrors shortSeriesRange in frontend/utils.ts), else null
+function shortSeriesDays(schedule: Record<string, any>): string[] | null {
+  const { startDate, endDate } = schedule;
+  const days: number[] = schedule.recurrenceDays ?? [];
+  if (!isDate(startDate) || !isDate(endDate)) return null;
+  const start = new Date(`${startDate}T12:00:00Z`);
+  const end = new Date(`${endDate}T12:00:00Z`);
+  const span = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  if (span < 0 || span > 6) return null;
+  const out: string[] = [];
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    if (days.includes(d.getUTCDay())) out.push(d.toISOString().slice(0, 10));
+  }
+  return out.length ? out : null;
+}
 
 // ── the plan: every write, worked out from a read of the live data ──────────
 
@@ -111,9 +129,18 @@ async function plan() {
     if (e.type === "oneTime") {
       type = "dates";
       schedule.dates = isDate(schedule.date) ? [schedule.date] : [];
+    } else if (e.type !== "oneTime") {
+      // The T015 workaround: "repeats" within one week was really a few set days
+      const days = shortSeriesDays(schedule);
+      if (days) {
+        type = "dates";
+        schedule.dates = days;
+        say(`  (${tidyName(e.name)}: a series within one week, stored as the dates ${days.join(", ")})`);
+      }
     }
     const slug = pickSlug(e.slug, e.name);
-    const legacyPaths = org?.slug && e.slug ? [`${org.slug}/${e.slug}`] : [];
+    // Old links used the event's slug, or its ID before slugs existed (T013)
+    const legacyPaths = org?.slug ? [...new Set([e.slug, e.id].filter(Boolean).map(x => `${org.slug}/${x}`))] : [];
     const market = {
       ...rest,
       name: tidyName(e.name),
@@ -333,6 +360,17 @@ async function apply(writes: Write[]) {
   for (const w of writes) ops.push(b => b.set(db.collection(w.col).doc(w.id), w.data));
   await commitInBatches(ops);
   console.log(`Applied ${writes.length} writes.`);
+
+  // Brevo: organizers' MEMBERTYPE becomes "Organizer" (verified members only,
+  // the same rule as everywhere else). Without the key here, it happens on
+  // each organizer's next login instead (/auth/me syncs then).
+  const organizerUids = writes.filter(w => w.col === "users" && w.data.accountType === "organizer").map(w => w.id);
+  if (process.env.BREVO_API_KEY) {
+    for (const uid of organizerUids) await syncMemberIfVerified(uid).catch(() => false);
+    console.log(`Brevo: re-synced ${organizerUids.length} organizer contacts.`);
+  } else {
+    console.log(`Brevo: no BREVO_API_KEY here, so ${organizerUids.length} organizer contacts update on their next login.`);
+  }
 }
 
 async function undo() {
