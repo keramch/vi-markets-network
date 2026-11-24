@@ -171,27 +171,27 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   const TierPill = () => {
     if (isFoundingMember) {
       return (
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-teal-100 text-teal-700">
+        <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-teal-100 text-teal-700">
           Founding Member
         </span>
       );
     }
     if (tier === 'pro' || tier === 'superPro') {
       return (
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-violet-100 text-violet-700">
+        <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-violet-100 text-violet-700">
           Pro
         </span>
       );
     }
     if (tier === 'standard') {
       return (
-        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+        <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
           Standard
         </span>
       );
     }
     return (
-      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
+      <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">
         Free
       </span>
     );
@@ -227,7 +227,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
             <span className="mx-2 text-gray-300">·</span>
             <button
               onClick={onNavigateToProfile}
-              className="text-brand-teal hover:text-brand-blue transition-colors"
+              className="text-brand-light-blue hover:text-brand-blue transition-colors"
             >
               Edit profile
             </button>
@@ -240,7 +240,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         ) : (
         <div className="flex items-center gap-2 flex-shrink-0 mt-1">
           <TierPill />
-          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+          <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700">
             Active
           </span>
         </div>
@@ -258,7 +258,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-800">Event manager</span>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+            <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
               Live
             </span>
           </div>
@@ -274,7 +274,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         </div>
 
         {/* Coming soon note */}
-        <p className="px-5 pt-3 text-xs text-gray-400 italic">
+        <p className="px-5 pt-3 text-sm text-gray-400 italic">
           Per-occurrence editing and more event management features coming soon.
         </p>
 
@@ -304,13 +304,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     </span>
                     <button
                       onClick={() => handleDeleteConfirm(event.id)}
-                      className="text-xs font-semibold bg-red-100 text-red-700 px-3 py-2 rounded hover:bg-red-200"
+                      className="text-sm font-semibold bg-red-100 text-red-700 px-3 py-2 rounded hover:bg-red-200"
                     >
                       Confirm
                     </button>
                     <button
                       onClick={() => setConfirmDeleteId(null)}
-                      className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200"
+                      className="text-sm font-semibold bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200"
                     >
                       Cancel
                     </button>
@@ -322,7 +322,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0"
                   >
                     {/* Date */}
-                    <div className="text-xs text-gray-500 flex-shrink-0 min-w-[6.875rem]">
+                    <div className="text-sm text-gray-500 flex-shrink-0 min-w-[6.875rem]">
                       {event.type === 'oneTime' && event.schedule.date
                         ? formatOneTimeDate(event.schedule.date)
                         : formatRecurringDate(event)}
@@ -331,19 +331,19 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                     {/* Name + location */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate text-sm">{event.name}</p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-sm text-gray-500 truncate">
                         {event.location.venueName} · {event.location.city}
                       </p>
                     </div>
 
                     {/* Type pill */}
-                    <span className="hidden sm:inline-flex text-xs px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 flex-shrink-0">
+                    <span className="hidden sm:inline-flex text-sm px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 flex-shrink-0">
                       {typeLabel(event.type)}
                     </span>
 
                     {/* Status badge */}
                     <span
-                      className={`text-xs font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 ${
+                      className={`text-sm font-medium px-2.5 py-0.5 rounded-full flex-shrink-0 ${
                         event.status === 'published'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-amber-100 text-amber-800'
@@ -365,13 +365,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
                       )}
                       <button
                         onClick={() => openEdit(event)}
-                        className="text-brand-teal border border-brand-teal/40 rounded text-xs px-3 py-2 hover:bg-teal-50 transition-colors"
+                        className="text-brand-light-blue border border-brand-light-blue/40 rounded text-sm px-3 py-2 hover:bg-teal-50 transition-colors"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(event.id)}
-                        className="text-brand-rhubarb border border-brand-rhubarb/30 rounded text-xs px-3 py-2 hover:bg-red-50 transition-colors"
+                        className="text-brand-gold border border-brand-gold/30 rounded text-sm px-3 py-2 hover:bg-red-50 transition-colors"
                       >
                         Delete
                       </button>
@@ -391,7 +391,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-800">Application manager</span>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+            <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
               Phase 2
             </span>
           </div>
@@ -406,7 +406,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
             Create and manage applications for your markets. Review vendor profiles, accept or decline applicants, and build your vendor roster — all in one place.
           </p>
           <div className="mt-4 border-l-2 border-gray-200 pl-3 text-left max-w-lg">
-            <p className="text-xs italic text-gray-400">
+            <p className="text-sm italic text-gray-400">
               Founding members get early access as soon as this feature launches.
             </p>
           </div>
@@ -419,7 +419,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-800">Communication portal</span>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
+            <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
               Phase 3
             </span>
           </div>
@@ -434,7 +434,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
             Send announcements, updates, and direct messages to your confirmed vendors. Build a communication thread for each market season.
           </p>
           <div className="mt-4 border-l-2 border-gray-200 pl-3 text-left max-w-lg">
-            <p className="text-xs italic text-gray-400">
+            <p className="text-sm italic text-gray-400">
               Founding members get early access as soon as this feature launches.
             </p>
           </div>

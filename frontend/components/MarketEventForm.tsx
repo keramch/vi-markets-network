@@ -300,7 +300,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
       {/* Location */}
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
-        <legend className="text-xs font-semibold text-gray-500 px-1 uppercase tracking-wide">Location</legend>
+        <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Location</legend>
         <div>
           <label className={labelCls}>Venue Name *</label>
           <input className={inputCls} value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="e.g. Centennial Square" />
@@ -323,7 +323,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
       {/* Schedule */}
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
-        <legend className="text-xs font-semibold text-gray-500 px-1 uppercase tracking-wide">Schedule</legend>
+        <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Schedule</legend>
 
         {type === 'oneTime' ? (
           <div>
@@ -351,7 +351,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
                     key={d}
                     type="button"
                     onClick={() => toggleDay(i)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    className={`px-2.5 py-1 rounded-full text-sm font-semibold border transition-colors ${
                       recurrenceDays.includes(i)
                         ? 'bg-brand-blue text-white border-brand-blue'
                         : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
@@ -399,7 +399,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
               key={tag}
               type="button"
               onClick={() => toggleTag(tag)}
-              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
                 selectedTags.includes(tag)
                   ? 'bg-brand-blue text-white border-brand-blue'
                   : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
