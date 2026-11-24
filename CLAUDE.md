@@ -110,6 +110,8 @@ firestore.rules, storage.rules
 
 ## How key parts work
 
+**Markets vs organizers (decided Nov 23, 2026; OD-16).** A *market* is the event people go to: one-off, seasonal or recurring. An *organizer* is the person or group who puts markets on. In the code, the `markets` collection and "market profile" pages are really **organizer** profiles, and `marketEvents` are the markets. The rebuild that fixes this is T128–T132. Until it ships, read "market" in the code as "organizer", and ask which one Kera means. Vendors get Saved; markets get Saved; organizers get Followed. Vendors never change a claimed market's dates.
+
 **Calendar and events.** A recurring series is one `marketEvents` document holding a rule. Dates are expanded in the browser by `expandOccurrences` in `frontend/utils.ts`, with `exceptions` able to cancel or change one date. No per-event pages or admin calendar screen exist. `GET /market-events/:id` has no caller.
 
 **Reviews.** The `reviews` collection is the single source of truth. `GET /markets` and `GET /vendors` attach approved reviews (`utils/reviews.ts`), computed and never stored on the listing. Only admins approve or decline. Owners see their own listing's reviews through `GET /reviews/mine` and can request removal, but never remove a review themselves. One review per member per listing, and a declined one doesn't count. Owners can review their own listing (Kera's choice).
