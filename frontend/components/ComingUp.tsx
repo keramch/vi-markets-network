@@ -5,13 +5,38 @@ import { upcomingOccurrences, formatTime, eventPath } from '../utils';
 
 // "Coming up" on the home page banner (T122): the next three market dates,
 // live from published events, each linking to its event page. Beside them,
-// the market's own branding: the poster of the soonest market that has one,
-// else that market's logo. Nothing to show means nothing is rendered.
+// the first market's own poster, else a simple calendar graphic. Nothing
+// upcoming means nothing is rendered.
 
 interface ComingUpProps {
   events: MarketEvent[];
   markets: Market[]; // active markets only
 }
+
+// A simple calendar page in the brand colours, drawn from shapes: no dates,
+// so it never goes out of date. Decorative; the link around it is labelled.
+const CalendarGraphic: React.FC = () => {
+  const dots: Record<number, string> = { 5: '#D43B6A', 12: '#2E7A72', 13: '#2E7A72', 19: '#D43B6A', 26: '#2E7A72', 27: '#D43B6A' };
+  return (
+    <svg viewBox="0 0 192 200" className="block w-48 h-auto" aria-hidden="true">
+      <rect x="16" y="22" width="160" height="162" rx="12" fill="#FFFFFF" stroke="#4A4243" strokeWidth="2.5" />
+      <path d="M16 34a12 12 0 0 1 12-12h136a12 12 0 0 1 12 12v18H16z" fill="#2E7A72" />
+      {[52, 84, 108, 140].map(x => (
+        <rect key={x} x={x - 4} y="12" width="8" height="22" rx="4" fill="#FBF7EE" stroke="#4A4243" strokeWidth="2.5" />
+      ))}
+      {Array.from({ length: 35 }).map((_, i) => {
+        const x = 28 + (i % 7) * 20.5;
+        const y = 64 + Math.floor(i / 7) * 22.5;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width="16" height="16" rx="4" fill="#EBF5EC" />
+            {dots[i] && <circle cx={x + 8} cy={y + 8} r="5" fill={dots[i]} />}
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
 
 const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
   const upcoming = useMemo(() => {
@@ -30,33 +55,36 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
 
   if (upcoming.length === 0) return null;
 
-  const withPoster = upcoming.find(o => o.event.posterUrl);
-  const brand = withPoster
-    ? { kind: 'poster' as const, o: withPoster, src: withPoster.event.posterUrl! }
-    : upcoming[0].market!.logoUrl
-      ? { kind: 'logo' as const, o: upcoming[0], src: upcoming[0].market!.logoUrl! }
-      : null;
+  // The picture always belongs to the first card: its poster, else a simple
+  // calendar graphic (drawn below, no dates on it) linking to the calendar
+  const first = upcoming[0];
+  const poster = first.event.posterUrl;
 
   const day = (iso: string, opts: Intl.DateTimeFormatOptions) =>
     new Date(`${iso}T12:00:00`).toLocaleDateString('en-CA', opts).replace('.', '');
 
   return (
-    <aside aria-labelledby="coming-up-title" className="w-full lg:w-[31rem] flex-shrink-0 flex gap-4 items-stretch text-left">
-      {brand && (
+    <aside aria-labelledby="coming-up-title" className="w-full lg:w-[31rem] flex-shrink-0 flex gap-4 items-start text-left">
+      {poster ? (
         <Link
-          to={eventPath(brand.o.market!.slug!, brand.o.event, brand.o.date)}
-          className="hidden lg:block relative w-48 flex-shrink-0 self-start rounded-xl overflow-hidden shadow-xl bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+          to={eventPath(first.market!.slug!, first.event, first.date)}
+          className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
-          {brand.kind === 'poster' ? (
-            <img src={brand.src} alt={`${brand.o.event.name} poster`} className="w-48 h-72 object-cover" />
-          ) : (
-            <div className="w-48 h-56 flex items-center justify-center p-5">
-              <img src={brand.src} alt={`${brand.o.market!.name} logo`} className="max-w-full max-h-full object-contain" />
-            </div>
-          )}
-          <span className="absolute inset-x-0 bottom-0 px-3 py-2 bg-[rgba(44,40,40,0.82)] text-white text-sm leading-snug">
-            <strong className="font-semibold">Next up:</strong> {brand.o.event.name}, {day(brand.o.date, { weekday: 'short', month: 'short', day: 'numeric' })}
+          <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
+            <strong className="font-semibold">Next up:</strong> {first.event.name}, {day(first.date, { weekday: 'short', month: 'short', day: 'numeric' })}
           </span>
+          {/* Shown at its own proportions, never cropped */}
+          <img src={poster} alt={`${first.event.name} poster`} className="block w-48 h-auto max-h-80 object-contain bg-white" />
+        </Link>
+      ) : (
+        <Link
+          to="/calendar"
+          className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-[#FBF7EE] focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+        >
+          <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
+            <strong className="font-semibold">Plan your weekend:</strong> see the full calendar
+          </span>
+          <CalendarGraphic />
         </Link>
       )}
 
