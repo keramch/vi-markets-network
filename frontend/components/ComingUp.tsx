@@ -82,7 +82,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ events, markets }) => {
           className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-[#FBF7EE] focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
           <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
-            <strong className="font-semibold">Plan your weekend:</strong> see the full calendar
+            <strong className="font-semibold">Plan ahead:</strong> see the full calendar
           </span>
           <CalendarGraphic />
         </Link>
