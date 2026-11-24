@@ -3,7 +3,7 @@
 // Facebook, iMessage, WhatsApp, Slack and similar read a shared link without
 // running the site's JavaScript, so they only ever saw the homepage's preview
 // tags. vercel.json sends those apps (recognised by their user agent) here for
-// market, vendor and event links. People clicking a link never come here.
+// market, organizer and vendor links (and old /markets/<organizer>/<event> ones). People clicking a link never come here.
 // This asks the backend's /share-preview for the page's title, description and
 // image, and answers with a tiny page holding just those preview tags. If
 // anything fails, it answers with the site-wide card instead.
@@ -19,7 +19,7 @@ const escapeHtml = (s) =>
 
 async function fetchPreview(path) {
   const api = process.env.VITE_API_URL;
-  if (!api || !/^\/(markets|vendors)\/[^?#]+$/.test(path)) return null;
+  if (!api || !/^\/(markets|organizers|vendors)\/[^?#]+$/.test(path)) return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4000); // a slow card beats no card
   try {
