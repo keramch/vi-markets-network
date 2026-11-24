@@ -97,6 +97,11 @@ async function plan() {
   say("");
   say("## Markets from today's events");
   for (const e of sortedEvents) {
+    // Kera, Nov 23: every draft on the admin page was a test. Left out (still in the backup).
+    if (adminPageIds.has(e.marketPageId) && e.status === "draft") {
+      say(`- ${e.name} [draft, admin page test] → LEFT OUT`);
+      continue;
+    }
     const org = organizerById.get(e.marketPageId);
     const unclaimed = !org || adminPageIds.has(e.marketPageId);
     const { marketPageId, ...rest } = withoutId(e);
@@ -229,18 +234,33 @@ async function plan() {
   // ── 5. vendors' "Find us at" links ───────────────────────────────────────
   say("");
   say("## Vendor links (Find us at)");
+  // Links to markets Kera deleted in HQ before stage 1 (T133), decided Nov 23:
+  // the deleted River City duplicate's link moves to the River City market kept;
+  // the deleted test market's link is dropped.
+  const riverCity = newMarkets.find(m => norm(m.name) === norm("River City Christmas Market"));
+  const DELETED_MOVES: Record<string, string | null> = {
+    Ikl04feE9OXk94DxmSnV: riverCity?.id ?? null, // River City duplicate
+    GyOK0pGBvzjkIB4f65e1: null,                  // "Winter Bazaar In My Dreams" test
+  };
   for (const v of vendors) {
     const list: any[] = v.attendingMarkets ?? [];
     let changed = false;
-    const next = list.map(a => {
-      if (marketIds.has(a.marketId)) return a;
+    const next = list.flatMap(a => {
+      if (marketIds.has(a.marketId)) return [a];
+      if (a.marketId in DELETED_MOVES) {
+        changed = true;
+        const to = DELETED_MOVES[a.marketId];
+        if (!to) { say(`- ${v.name} on ${a.date}: link to a deleted test market removed`); return []; }
+        say(`- ${v.name} on ${a.date}: link to the deleted duplicate → ${riverCity!.name}`);
+        return [{ ...a, marketId: to }];
+      }
       const org = organizerById.get(a.marketId);
-      if (!org) { problems.push(`${v.name} links to a missing market ${a.marketId} (${a.date}): left as is, sorted in stage 3`); return a; }
+      if (!org) { problems.push(`${v.name} links to a missing market ${a.marketId} (${a.date}): left as is, sorted in stage 3`); return [a]; }
       const to = onlyMarket(org.id);
-      if (!to) { say(`- ${v.name} at ${org.name} on ${a.date}: organizer has ${marketsOf(org.id).length} markets — left for stage 3`); return a; }
+      if (!to) { say(`- ${v.name} at ${org.name} on ${a.date}: organizer has ${marketsOf(org.id).length} markets — left for stage 3`); return [a]; }
       changed = true;
       say(`- ${v.name} at ${org.name} on ${a.date} → ${to.name}`);
-      return { ...a, marketId: to.id };
+      return [{ ...a, marketId: to.id }];
     });
     if (changed) writes.push({ col: "vendors", id: v.id, data: { ...withoutId(v), attendingMarkets: next }, note: v.name });
   }
