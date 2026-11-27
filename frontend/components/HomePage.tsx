@@ -7,6 +7,7 @@ import type {
   VendorType,
   Review,
   Market,
+  User,
 } from "../types";
 import { MarketCategories, VendorTypes } from "../types";
 import MarketCard from "./MarketCard";
@@ -20,6 +21,7 @@ interface HomePageProps {
   organizers: Organizer[];
   markets: Market[]; // published markets (the events people go to, T128)
   vendors: Vendor[];
+  currentUser: User | null;
   isLoading: boolean;
   onSelectMarket: (id: string) => void;
   onSelectVendor: (id: string) => void;
@@ -137,6 +139,7 @@ const HomePage: React.FC<HomePageProps> = ({
   organizers,
   markets,
   vendors,
+  currentUser,
   isLoading,
   onSelectMarket,
   onSelectVendor,
@@ -657,7 +660,7 @@ const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
           {/* Next market dates, live (T122); hidden while search results are showing */}
-          {!showSearchResults && <ComingUp markets={activeMarkets} />}
+          {!showSearchResults && <ComingUp markets={activeMarkets} currentUser={currentUser} />}
         </div>
       </div>
 

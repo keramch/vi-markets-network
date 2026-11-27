@@ -1334,6 +1334,7 @@ const App: React.FC = () => {
                 organizers={organizers}
                 markets={markets.filter(m => m.status === 'published')}
                 vendors={vendors}
+                currentUser={currentUser}
                 isLoading={isDataLoading}
                 onSelectMarket={(id) => { const m = markets.find(m => m.id === id); if (m) navigate(marketPath(m)); }}
                 onSelectVendor={(id) => { const v = vendors.find(v => v.id === id); if (v?.slug) navigate(`/vendors/${v.slug}`); }}

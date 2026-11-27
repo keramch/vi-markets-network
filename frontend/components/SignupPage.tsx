@@ -84,7 +84,10 @@ const SignupPage: React.FC<SignupPageProps> = ({
   useEffect(() => { window.scrollTo(0, 0); }, [wizardStep]);
 
   // Step 1
-  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  // "Add your market!" links here with ?as=organizer, so Organizer starts chosen (T137)
+  const [accountType, setAccountType] = useState<AccountType | null>(() =>
+    new URLSearchParams(window.location.search).get('as') === 'organizer' ? 'organizer' : null
+  );
 
   // Step 3 (account details)
   const [firstName, setFirstName] = useState('');

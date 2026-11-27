@@ -42,8 +42,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, onMembership, onLogin, onLo
               </button>
               <button
                 onClick={() => onNavigate({ type: 'calendar' })}
-                className={`${navTone} px-3 py-3 rounded-md text-sm font-medium`}
+                className={`${navTone} vim-cal-link inline-flex items-center gap-1.5 px-3 py-3 rounded-md text-sm font-medium`}
               >
+                {/* Its page flips on hover (T137) */}
+                <svg className="vim-cal-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
                 Calendar
               </button>
                {currentUser ? (

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { Market } from '../types';
+import type { Market, User } from '../types';
+import AddYourMarketButton from './AddYourMarketButton';
 import { upcomingOccurrences, formatTime, marketPath, recurrenceSummary, shortSeriesRange } from '../utils';
 
 // "Coming up" on the home page banner (T122): the next three market dates,
@@ -10,6 +11,7 @@ import { upcomingOccurrences, formatTime, marketPath, recurrenceSummary, shortSe
 
 interface ComingUpProps {
   markets: Market[]; // published markets
+  currentUser: User | null; // for the "Add your market!" button (T137)
 }
 
 // A simple calendar page in the brand colours, drawn from shapes: no dates,
@@ -37,7 +39,7 @@ const CalendarGraphic: React.FC = () => {
   );
 };
 
-const ComingUp: React.FC<ComingUpProps> = ({ markets }) => {
+const ComingUp: React.FC<ComingUpProps> = ({ markets, currentUser }) => {
   const upcoming = useMemo(() => {
     const seen = new Set<string>();
     return upcomingOccurrences(markets, 120)
@@ -62,10 +64,12 @@ const ComingUp: React.FC<ComingUpProps> = ({ markets }) => {
 
   return (
     <aside aria-labelledby="coming-up-title" className="w-full lg:w-[31rem] flex-shrink-0 flex gap-4 items-start text-left">
+      {/* The picture, with "Add your market!" under it (wide screens) */}
+      <div className="hidden lg:flex flex-col items-center gap-4 w-48 flex-shrink-0">
       {poster ? (
         <Link
           to={marketPath(first.event, first.date)}
-          className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+          className="block w-48 rounded-xl overflow-hidden shadow-xl bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
           <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
             <strong className="font-semibold">Next up:</strong> {first.event.name}, {shortSeriesRange(first.event) || day(first.date, { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -76,7 +80,7 @@ const ComingUp: React.FC<ComingUpProps> = ({ markets }) => {
       ) : (
         <Link
           to="/calendar"
-          className="hidden lg:block w-48 flex-shrink-0 rounded-xl overflow-hidden shadow-xl bg-[#FBF7EE] focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
+          className="block w-48 rounded-xl overflow-hidden shadow-xl bg-[#FBF7EE] focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
         >
           <span className="block px-3 py-2 bg-[rgba(44,40,40,0.9)] text-white text-sm leading-snug">
             <strong className="font-semibold">Plan ahead:</strong> see the full calendar
@@ -84,6 +88,8 @@ const ComingUp: React.FC<ComingUpProps> = ({ markets }) => {
           <CalendarGraphic />
         </Link>
       )}
+      <AddYourMarketButton currentUser={currentUser} onDark />
+      </div>
 
       <div className="flex-1 min-w-0 flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">
@@ -116,6 +122,9 @@ const ComingUp: React.FC<ComingUpProps> = ({ markets }) => {
             </li>
           ))}
         </ul>
+        <div className="lg:hidden pt-2">
+          <AddYourMarketButton currentUser={currentUser} onDark />
+        </div>
       </div>
     </aside>
   );

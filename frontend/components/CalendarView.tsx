@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import AddYourMarketButton from './AddYourMarketButton';
 import type { Organizer, Market, MarketTag, User } from '../types';
 import * as api from '../services/api.live';
 import {
@@ -408,15 +409,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, markets: event
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Add Event button — organizers only */}
-          {isOrganizer && (
-            <button
-              onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-3 bg-brand-blue text-white rounded-lg text-sm font-semibold hover:bg-brand-blue/90 min-h-[3rem]"
-            >
-              <Plus className="w-4 h-4" />
-              Add a market
-            </button>
-          )}
+          {/* Organizers add one here; everyone else is invited to (T137) */}
+          <AddYourMarketButton currentUser={currentUser ?? null} onClick={isOrganizer ? () => setIsFormOpen(true) : undefined} />
 
           {/* Month navigation */}
           <div className="flex items-center gap-1 bg-white rounded-lg shadow-sm px-2 py-1">
