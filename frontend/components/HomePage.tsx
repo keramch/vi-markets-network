@@ -277,14 +277,18 @@ const HomePage: React.FC<HomePageProps> = ({
     return uniqueItems.slice(0, FEATURED_COUNT);
   }, [activeOrganizers, activeVendors]);
 
-  // Newest markets and vendors (T128: markets, not organizer profiles). A market
-  // only shows while it has a date coming up, so past ones drop off (T134).
+  // Newest markets, organizers and vendors. A market only shows while it has a
+  // date coming up, so past ones drop off (T134).
   const whatsNewItems = useMemo(() => {
-    const allItems: { id: string; name: string; type: "market" | "vendor"; image?: string; added: string }[] = [
+    const allItems: { id: string; name: string; type: "market" | "organizer" | "vendor"; image?: string; added: string }[] = [
       ...activeMarkets.filter((m) => nextOccurrence(m) !== null).map((m) => ({
         id: m.id, name: m.name, type: "market" as const,
         image: m.posterUrl || m.logoUrl || (m.organizerId ? organizerById.get(m.organizerId)?.logoUrl : undefined),
         added: m.createdAt ?? "",
+      })),
+      ...activeOrganizers.map((o) => ({
+        id: o.id, name: o.name, type: "organizer" as const,
+        image: o.logoUrl || o.photos?.[0], added: o.joinDate ?? "",
       })),
       ...activeVendors.map((v) => ({
         id: v.id, name: v.name, type: "vendor" as const,
@@ -294,7 +298,7 @@ const HomePage: React.FC<HomePageProps> = ({
     return allItems
       .sort((a, b) => new Date(b.added).getTime() - new Date(a.added).getTime())
       .slice(0, 20);
-  }, [activeMarkets, activeVendors, organizerById]);
+  }, [activeMarkets, activeOrganizers, activeVendors, organizerById]);
 
   useEffect(() => {
     const STORAGE_KEY = "vi_markets_geolocation";
@@ -815,11 +819,13 @@ const HomePage: React.FC<HomePageProps> = ({
                     })();
                     return (
                       <div
-                        key={item.id}
+                        key={`${item.type}-${item.id}`}
                         className="flex-shrink-0 w-36 snap-start bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => item.type === "market"
-                          ? openMarketFrom(whatsNewItems.filter((w) => w.type === "market").map((w) => w.id), "Back to What's New")(item.id)
-                          : openVendorFrom(whatsNewItems.filter((w) => w.type !== "market").map((w) => w.id), "Back to What's New")(item.id)}
+                        onClick={() => {
+                          const sameType = whatsNewItems.filter((w) => w.type === item.type).map((w) => w.id);
+                          const open = item.type === "market" ? openMarketFrom : item.type === "organizer" ? openOrganizerFrom : openVendorFrom;
+                          open(sameType, "Back to What's New")(item.id);
+                        }}
                       >
                         {imageSrc
                           ? <img src={imageSrc} alt={item.name} className="w-full h-24 object-cover" />
@@ -828,8 +834,8 @@ const HomePage: React.FC<HomePageProps> = ({
                             </div>
                         }
                         <div className="p-2">
-                          <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-gold" : "text-brand-light-blue"}`}>
-                            {item.type === "market" ? "Market" : "Vendor"}
+                          <span className={`text-xs font-semibold uppercase tracking-wide ${item.type === "market" ? "text-brand-gold" : item.type === "organizer" ? "text-brand-violet" : "text-brand-light-blue"}`}>
+                            {item.type === "market" ? "Market" : item.type === "organizer" ? "Organizer" : "Vendor"}
                           </span>
                           <p className="text-sm font-bold text-brand-blue truncate leading-tight">{item.name}</p>
                           {joinLabel && <p className="text-xs text-gray-400 mt-0.5">{joinLabel}</p>}
