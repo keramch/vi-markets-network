@@ -8,7 +8,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   // Opt-in: clicking outside the window or pressing Escape calls this. Left off
   // by default so login and payment windows can't be closed by a stray tap.
   onClickOutside?: () => void;
@@ -34,6 +34,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, maxWidt
     lg: 'max-w-lg',
     xl: 'max-w-xl',
     '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
   };
 
   return (

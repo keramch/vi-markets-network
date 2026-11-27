@@ -461,7 +461,7 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         onClose={closeEdit}
         onClickOutside={confirmingDiscard ? undefined : closeFromOutside}
         title={selectedEvent ? 'Edit market' : 'Add a market'}
-        maxWidth="lg"
+        maxWidth="3xl"
       >
         <MarketEventForm
           currentUser={currentUser}

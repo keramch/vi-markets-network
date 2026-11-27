@@ -224,7 +224,7 @@ const UnclaimedMarkets: React.FC<UnclaimedMarketsProps> = ({ markets, organizers
         onClose={closeEdit}
         onClickOutside={confirmingDiscard ? undefined : () => (formDirty.current ? setConfirmingDiscard(true) : closeEdit())}
         title={editing ? `Edit ${editing.name}` : 'Edit market'}
-        maxWidth="lg"
+        maxWidth="3xl"
       >
         {editing && (
           <MarketEventForm

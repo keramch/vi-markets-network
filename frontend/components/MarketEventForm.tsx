@@ -298,7 +298,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           <div>
             <label htmlFor="market-new-date" className={labelCls}>Dates{isAdmin ? '' : ' *'}</label>
             {dates.length > 0 && (
-              <ul className="mb-2 space-y-1.5">
+              <ul className="mb-2 grid sm:grid-cols-2 gap-1.5">
                 {dates.map(d => (
                   <li key={d} className="flex flex-wrap items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
                     <span className="font-medium text-brand-text">

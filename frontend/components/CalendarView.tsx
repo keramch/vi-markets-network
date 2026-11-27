@@ -506,7 +506,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, markets: event
             else setIsFormOpen(false);
           }}
           title={`Add a market to ${ownOrganizer.name}`}
-          maxWidth="xl"
+          maxWidth="3xl"
         >
           <MarketEventForm
             currentUser={currentUser}
