@@ -579,13 +579,15 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         </div>
       )}
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
 
       {existingEvent && type === 'recurring' && (
         <p className="text-gray-600 text-sm">Changes apply to every date it repeats on.</p>
       )}
 
-      {/* Actions */}
+      {/* Actions: pinned to the bottom of the window, so Save is always in reach
+          on a long form (Kera, Nov 26). The error shows here so it's seen. */}
+      <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-3 bg-white border-t border-gray-200 z-10 space-y-2">
+      {error && <p className="text-red-600 text-sm" role="alert">{error}</p>}
       {confirmingUnpublish ? (
         <div className="border border-amber-300 bg-amber-50 rounded-lg p-4 space-y-3" role="alert">
           <p className="text-sm text-gray-800">
@@ -605,18 +607,18 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
               type="button"
               onClick={() => handleSubmit('draft')}
               disabled={saving}
-              className="flex-1 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
+              className="flex-1 py-2 min-h-[2.75rem] bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Yes, unpublish'}
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium"
+            className="flex-1 py-2 min-h-[2.75rem] border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium"
           >
             Cancel
           </button>
@@ -624,7 +626,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
             type="button"
             onClick={() => (isLive ? setConfirmingUnpublish(true) : handleSubmit('draft'))}
             disabled={saving}
-            className="flex-1 py-2 border border-brand-blue text-brand-blue rounded-lg hover:bg-brand-blue/5 font-medium disabled:opacity-50"
+            className="flex-1 py-2 min-h-[2.75rem] border border-brand-blue text-brand-blue rounded-lg hover:bg-brand-blue/5 font-medium disabled:opacity-50"
           >
             {isLive ? 'Unpublish' : 'Save Draft'}
           </button>
@@ -632,12 +634,13 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
             type="button"
             onClick={() => handleSubmit('published')}
             disabled={saving}
-            className="flex-1 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
+            className="flex-1 py-2 min-h-[2.75rem] bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 font-medium disabled:opacity-50"
           >
             {saving ? 'Saving…' : isLive ? 'Save Changes' : 'Publish'}
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 };
