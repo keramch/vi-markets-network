@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Organizer, Market, MarketTag, User } from '../types';
 import * as api from '../services/api.live';
 import {
@@ -70,9 +71,20 @@ const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const CalendarView: React.FC<CalendarViewProps> = ({ currentUser, markets: events, ownOrganizer, onMarketAdded, onSelectEvent, onBack }) => {
   const today = new Date();
-  const [currentDate, setCurrentDate] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1)
-  );
+  // The month shown is in the address (?month=2026-12), so a reload or a shared
+  // link stays on it instead of jumping back to this month
+  const [searchParams, setSearchParams] = useSearchParams();
+  const monthParam = searchParams.get('month');
+  const currentDate = /^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam ?? '')
+    ? new Date(Number(monthParam!.slice(0, 4)), Number(monthParam!.slice(5, 7)) - 1, 1)
+    : new Date(today.getFullYear(), today.getMonth(), 1);
+  const setCurrentDate = (d: Date) => {
+    const isThisMonth = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    const next = new URLSearchParams(searchParams);
+    if (isThisMonth) next.delete('month');
+    else next.set('month', `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    setSearchParams(next, { replace: true });
+  };
   const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
   const loading = false; // markets arrive with the rest of the site's data
   const [activeTag, setActiveTag] = useState<MarketTag | null>(null);
