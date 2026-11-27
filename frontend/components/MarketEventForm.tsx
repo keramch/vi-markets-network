@@ -237,6 +237,18 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   return (
     <div className="space-y-5 text-sm">
 
+      {/* Name */}
+      <div>
+        <label className={labelCls}>Market name *</label>
+        <input
+          className={inputCls}
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="e.g. Saturday Farmers Market"
+          maxLength={200}
+        />
+      </div>
+
       {/* When it's on */}
       <div>
         <p className={labelCls} id="market-when">When is it on?</p>
@@ -271,90 +283,9 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
         )}
       </div>
 
-      {/* Name */}
-      <div>
-        <label className={labelCls}>Market name *</label>
-        <input
-          className={inputCls}
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="e.g. Saturday Farmers Market"
-          maxLength={200}
-        />
-      </div>
-
-      {/* Market Type */}
-      <div>
-        <label className={labelCls}>Market Type <span className="text-gray-400 font-normal">(select up to 3)</span></label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {Object.values(MarketCategories).map(cat => {
-            const checked = marketType.includes(cat);
-            const disabled = !checked && marketType.length >= 3;
-            return (
-              <label key={cat} className={`flex items-center gap-2 bg-gray-50 border rounded-lg px-3 py-2 transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 border-gray-200'} ${checked ? 'border-brand-blue bg-brand-blue/5' : 'border-gray-200'}`}>
-                <input
-                  type="checkbox"
-                  value={cat}
-                  checked={checked}
-                  disabled={disabled}
-                  onChange={() => {
-                    if (checked) {
-                      setMarketType(prev => prev.filter(t => t !== cat));
-                    } else if (marketType.length < 3) {
-                      setMarketType(prev => [...prev, cat]);
-                    }
-                  }}
-                  className="h-3.5 w-3.5 text-brand-blue border-gray-300 focus:ring-brand-gold"
-                />
-                <span className="text-sm text-gray-600 leading-tight">{cat}</span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Description */}
-      <div>
-        <label htmlFor="event-description" className={labelCls}>About this market</label>
-        <p id="event-description-help" className="text-sm text-gray-500 mb-2">
-          Optional. Shown on the market's page. If you leave it empty, the organizer's own description is shown instead.
-        </p>
-        <textarea
-          id="event-description"
-          aria-describedby="event-description-help"
-          className={`${inputCls} min-h-[7rem]`}
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          maxLength={2000}
-        />
-      </div>
-
-      {/* Location */}
-      <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
-        <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Location</legend>
-        <div>
-          <label className={labelCls}>Venue name{isAdmin ? '' : ' *'}</label>
-          <input className={inputCls} value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="e.g. Centennial Square" />
-        </div>
-        <div>
-          <label className={labelCls}>Address{isAdmin ? '' : ' *'}</label>
-          <input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. 1 Centennial Square" />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>City</label>
-            <input className={inputCls} value={city} onChange={e => setCity(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelCls}>Province</label>
-            <input className={inputCls} value={province} onChange={e => setProvince(e.target.value)} maxLength={2} />
-          </div>
-        </div>
-      </fieldset>
-
       {/* Schedule */}
       <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
-        <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Schedule</legend>
+        <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Dates and times</legend>
 
         {type === 'dates' ? (
           <div>
@@ -464,6 +395,75 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           </div>
         </div>
       </fieldset>
+
+      {/* Location */}
+      <fieldset className="border border-gray-200 rounded-lg p-3 space-y-3">
+        <legend className="text-sm font-semibold text-gray-500 px-1 uppercase tracking-wide">Location</legend>
+        <div>
+          <label className={labelCls}>Venue name{isAdmin ? '' : ' *'}</label>
+          <input className={inputCls} value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="e.g. Centennial Square" />
+        </div>
+        <div>
+          <label className={labelCls}>Address{isAdmin ? '' : ' *'}</label>
+          <input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. 1 Centennial Square" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>City</label>
+            <input className={inputCls} value={city} onChange={e => setCity(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls}>Province</label>
+            <input className={inputCls} value={province} onChange={e => setProvince(e.target.value)} maxLength={2} />
+          </div>
+        </div>
+      </fieldset>
+
+      {/* Market Type */}
+      <div>
+        <label className={labelCls}>Market Type <span className="text-gray-400 font-normal">(select up to 3)</span></label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {Object.values(MarketCategories).map(cat => {
+            const checked = marketType.includes(cat);
+            const disabled = !checked && marketType.length >= 3;
+            return (
+              <label key={cat} className={`flex items-center gap-2 bg-gray-50 border rounded-lg px-3 py-2 transition-colors ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 border-gray-200'} ${checked ? 'border-brand-blue bg-brand-blue/5' : 'border-gray-200'}`}>
+                <input
+                  type="checkbox"
+                  value={cat}
+                  checked={checked}
+                  disabled={disabled}
+                  onChange={() => {
+                    if (checked) {
+                      setMarketType(prev => prev.filter(t => t !== cat));
+                    } else if (marketType.length < 3) {
+                      setMarketType(prev => [...prev, cat]);
+                    }
+                  }}
+                  className="h-3.5 w-3.5 text-brand-blue border-gray-300 focus:ring-brand-gold"
+                />
+                <span className="text-sm text-gray-600 leading-tight">{cat}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Description */}
+      <div>
+        <label htmlFor="event-description" className={labelCls}>About this market</label>
+        <p id="event-description-help" className="text-sm text-gray-500 mb-2">
+          Optional. Shown on the market's page. If you leave it empty, the organizer's own description is shown instead.
+        </p>
+        <textarea
+          id="event-description"
+          aria-describedby="event-description-help"
+          className={`${inputCls} min-h-[7rem]`}
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          maxLength={2000}
+        />
+      </div>
 
       {/* Market Tags */}
       <div>
