@@ -98,7 +98,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     isLive && (existingEvent!.type === 'recurring') !== (type === 'recurring');
 
   const snapshot = JSON.stringify([
-    type, name, venueName, address, city, province, startTime, endTime, dates, dateSources, startDate, endDate,
+    type, name, venueName, address, city, province, startTime, endTime, dates, newDate, dateSources, startDate, endDate,
     recurrenceDays, recurrenceFrequency, selectedTags, marketType, externalUrl, description,
     posterUrl, tileUrl, posterFile?.name ?? '', tileFile?.name ?? '', moveTo,
   ]);
@@ -137,11 +137,18 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
     if (!venueName.trim() && !address.trim() && !city.trim()) return 'Please add a venue, address or town.';
     if (!!startTime !== !!endTime) return 'Please add both a start and an end time, or neither.';
     if (!isAdmin && (!startTime || !endTime)) return 'Start and end times are required';
-    if (type === 'dates' && !isAdmin && dates.length === 0) return 'Please add at least one date.';
+    if (type === 'dates' && !isAdmin && allDates().length === 0) return 'Please add at least one date.';
     if (type === 'recurring' && !startDate) return 'Start date is required for a repeating market';
     if (type === 'recurring' && recurrenceDays.length === 0) return 'Select at least one day it repeats on';
     return null;
   };
+
+  // The listed dates plus one picked in the date box but not yet added with
+  // "Add date": saving shouldn't drop it (Kera lost Dec 5 that way, Nov 26)
+  function allDates(): string[] {
+    const pending = /^\d{4}-\d{2}-\d{2}$/.test(newDate) ? [newDate] : [];
+    return [...new Set([...dates, ...pending])].sort();
+  }
 
   const handleSubmit = async (status: 'draft' | 'published') => {
     const validationError = validate();
@@ -175,7 +182,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       startTime,
       endTime,
       ...(type === 'dates'
-        ? { dates }
+        ? { dates: allDates() }
         : {
             startDate,
             // An emptied end date is sent as '' so the server's merge clears
@@ -215,7 +222,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       ...(finalTileUrl ? { tileUrl: finalTileUrl } : existingEvent?.tileUrl ? { tileUrl: '' } : {}),
       // An organizer's own dates are confirmed; HQ keeps "from a vendor" marks it hasn't confirmed
       dateSources: isAdmin
-        ? Object.fromEntries(Object.entries(dateSources).filter(([d]) => dates.includes(d)))
+        ? Object.fromEntries(Object.entries(dateSources).filter(([d]) => allDates().includes(d)))
         : {},
     } as Partial<Market>;
 
