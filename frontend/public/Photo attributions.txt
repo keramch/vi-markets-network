@@ -1,0 +1,89 @@
+Photo attributions
+• Watch out for Non-Commercial (NC) tags: When filtering on Flickr or Wikimedia Commons, stick to CC-BY or CC-BY-SA licenses if your website will eventually generate revenue or promote a business, as CC-BY-NC restricts commercial use.
+
+
+
+<a href="https://commons.wikimedia.org/wiki/File:Cobble_Hill_Mountain_(50232145838).jpg">David Stanley from Nanaimo, Canada</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:A_small_inlet_along_the_Coastal_Trail,_East_Sooke_Regional_Park,_British_Columbia,_Canada_002.jpg">Michal Klajban</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Boats_at_Union_Bay_-_Flickr_-_marneejill.jpg">marneejill from Canada</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Chatham_Point_(50146054481).jpg">David Stanley from Nanaimo, Canada</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Coast_of_East_Sooke_Regional_Park,_British_Columbia,_Canada_23.jpg">Michal Klajban</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:D%C3%A4mmerung_auf_Vancouver_island_(30853267058).jpg">dronepicr</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Ferry_to_Vancouver_island_(43814393855).jpg">dronepicr</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+
+
+<a href="https://commons.wikimedia.org/wiki/File:Gowlland_Tod_Provincial_Park,_Vancouver_Island,_Canada_14.jpg">Michal Klajban</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Helliwell_Provincial_Park_(16438058070).jpg">David Stanley from Nanaimo, Canada</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Kennedy_Lake,_Vancouver_Island_(27922080).jpg">Gerry Thomasen from Nanaimo, Canada</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Lower_Qualicum_Falls_(2)_(28712641263).jpg">Kristina D.C. Hoeppner from Wellington, New Zealand</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Cape_Scott_Trail_(9550754197).jpg">Tim Gage</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Paradise_Meadows_Strathcona_Provincial_Park_01.jpg">Susan Daly</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Lone_Cone_Summit.jpg">Joltex</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Owen_Point.JPG">Paxson Woelber</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:KeehaBeachTrail.jpg">Colin Stepney</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Ross_Bay_shoreline._INFO_IN_PANORAMIO_DESCRIPTION_-_panoramio.jpg">John Newcomb</a>, <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:P1020203_(1351796158).jpg">Travis Isaacs from Seattle, WA, USA</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Triple_Falls_(Lower_Falls)_-_panoramio_(1).jpg">Kiwibirdman</a>, <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Gold_River_Viewpoint_-_panoramio.jpg">Kiwibirdman</a>, <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Hot_Springs_Cove_Tofino_(16061825346).jpg">Kevin He</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:On_the_boardwalk_to_Hot_Springs_Cove_(16)_(29260915426).jpg">Kristina D.C. Hoeppner from Wellington, New Zealand</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:GlenLakeLangford.png">ABetterTomorrow101</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Goldstream_Falls,_Goldstream_Provincial_Park,_Vancouver_Island,_Canada_05.jpg">Michal Klajban</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Beach_Side_Seawall,_Parksville,_Vancouver_Island_(36450603420).jpg">GoToVan from Vancouver, Canada</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Estuary_-_Flickr_-_marneejill.jpg">marneejill from Canada</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Port_Hardy_IMG_6029a.jpg">Christof46</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Storey%27s_Beach_(29133103092).jpg">David Stanley from Nanaimo, Canada</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Black_Bear_in_Telegraph_Cove.jpg">Buiobuione</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Buiobuione_Humpback_Whale_on_the_coast_of_Telegraph_Cove_British_Columbia_03.jpg">Buiobuione</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Buiobuione_Killer_whale_near_the_beach_offshore_in_Telegraph_Cove_Vancouver_Island_01.jpg">Buiobuione</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Strongylocentrotus_franciscanus_at_Telegraph_Cove.jpg">Ed Bierman</a>, <a href="https://creativecommons.org/licenses/by/2.0">CC BY 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Telegraph_Cove_-_panoramio_(2).jpg">qwesy qwesy</a>, <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:West_Coast_beauty_of_Vancouver_Island.jpg">marneejill</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:WinterHarbourPanorama_1200W.jpg">The original uploader was JohnHarvey at English Wikipedia.</a>, <a href="https://creativecommons.org/licenses/by-sa/2.5">CC BY-SA 2.5</a>, via Wikimedia Commons
+
+<a href="https://commons.wikimedia.org/wiki/File:Zeballosdock.jpg">Alexis Harrison</a>, <a href="http://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>, via Wikimedia Commons
+
+Photo by <a href="https://unsplash.com/@theluckyspade?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Laurent Beique</a> on <a href="https://unsplash.com/photos/green-trees-under-blue-sky-during-daytime-nVKMAD8dHbY?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a>
+
+Photo by <a href="https://unsplash.com/@theluckyspade?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Laurent Beique</a> on <a href="https://unsplash.com/photos/people-on-beach-during-daytime-wiuaLtdZzrM?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a>
+
+Photo by <a href="https://unsplash.com/@profwicks?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Ben Wicks</a> on <a href="https://unsplash.com/photos/ship-near-isles-during-day-g2ballCSr9g?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a>
+
+Photo by <a href="https://unsplash.com/@lderksen?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Lesly Derksen</a> on <a href="https://unsplash.com/photos/green-leafed-trees-near-body-of-water-during-daytime-5xqI5PIf6mE?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText">Unsplash</a>
+
+Photo by James Wheeler: https://www.pexels.com/photo/brown-wood-logs-on-beach-3882514/
+

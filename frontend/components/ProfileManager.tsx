@@ -25,6 +25,8 @@ interface ProfileManagerProps {
   isAdmin: boolean;
   onToggleAutoRenew: (autoRenew: boolean) => void;
   onOpenUpgradeModal?: () => void;
+  // The member's account after their contact name changes here
+  onUserUpdated?: (user: User) => void;
 }
 
 const isOrganizer = (profile: Organizer | Vendor): profile is Organizer => {
@@ -53,7 +55,8 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     onUpdateApplicationStatus,
     isAdmin,
     onToggleAutoRenew,
-    onOpenUpgradeModal
+    onOpenUpgradeModal,
+    onUserUpdated
 }) => {
   // The editor used to have two Website boxes (contact and socials); start from
   // whichever one was filled in, and save the same value to both
@@ -157,6 +160,15 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   // Storage folder: organizers/<id> since stage 1 (T128), vendors/<id>
   const profileType = isOrganizer(formData) ? 'organizers' : 'vendors';
   const [showPageError, setShowPageError] = useState('');
+  // The organizer's contact person: the names on their account, never shown publicly
+  const showContactPerson = isOrganizer(profileData) && !isAdmin && !!user;
+  const [contactFirst, setContactFirst] = useState(user?.firstName ?? '');
+  const [contactLast, setContactLast] = useState(user?.lastName ?? '');
+  // Quick-fill choices for the organizer name (T140)
+  const ownName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+  const ownMarketNames = isOrganizer(profileData)
+    ? [...new Set(allMarkets.filter(m => m.organizerId === profileData.id).map(m => m.name))]
+    : [];
 
   // extra: fields to change on this save only (showing a hidden organizer page, T140)
   const saveWithUploads = async (extra: Partial<Organizer> = {}) => {
@@ -220,6 +232,24 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
         }
         const existing = vendor.attendingMarkets || [];
         updatedData = { ...vendor, attendingMarkets: [...existing, ...linkedEntries, ...newMarketEntries] };
+      }
+      // Contact person changed: it lives on their account (users), not the listing
+      if (showContactPerson && user && (contactFirst.trim() !== (user.firstName ?? '') || contactLast.trim() !== (user.lastName ?? ''))) {
+        if (!contactFirst.trim() || !contactLast.trim()) {
+          setUploadError('Please fill in both contact names.');
+          return;
+        }
+        try {
+          const updatedUser = await api.updateUser(user.id, {
+            firstName: contactFirst.trim(),
+            lastName: contactLast.trim(),
+            displayName: `${contactFirst.trim()} ${contactLast.trim()}`,
+          });
+          onUserUpdated?.(updatedUser);
+        } catch {
+          setUploadError("Your contact name couldn't be saved. Please try again.");
+          return;
+        }
       }
       await onSaveChanges(updatedData);
       setPendingLinks([]);
@@ -510,8 +540,30 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             {activeTab === 'details' && (
                 <>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Name</label>
-                        <input type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
+                        <label htmlFor="profile-name" className="block text-sm font-medium text-gray-700">{isOrganizer(formData) ? 'Organizer name' : 'Name'}</label>
+                        {isOrganizer(formData) && (
+                          <p id="profile-name-help" className="text-sm text-gray-500 mt-1">
+                            Your group or business, or your own name if you run markets yourself. Shown on your organizer page and your markets.
+                          </p>
+                        )}
+                        <input id="profile-name" aria-describedby={isOrganizer(formData) ? 'profile-name-help' : undefined} type="text" name="name" value={formData.name ?? ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
+                        {isOrganizer(formData) && !isAdmin && (ownName || ownMarketNames.length > 0) && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {[...(ownName ? [{ label: `Use my name (${ownName})`, value: ownName }] : []),
+                              ...ownMarketNames.map(n => ({ label: `Use my market's name (${n})`, value: n }))]
+                              .filter(o => o.value !== formData.name)
+                              .map(o => (
+                                <button
+                                  key={o.label}
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, name: o.value }))}
+                                  className="min-h-[2.75rem] px-3 rounded-lg border border-brand-light-blue/40 text-brand-light-blue text-sm font-semibold hover:bg-brand-cream"
+                                >
+                                  {o.label}
+                                </button>
+                              ))}
+                          </div>
+                        )}
                     </div>
                     {!isOrganizer(formData) && (
                         <div>
@@ -522,6 +574,22 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
                     )}
                     <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold text-brand-blue mb-2">Contact Info</h3>
+                        {showContactPerson && (
+                          <fieldset className="mb-4">
+                            <legend className="block text-sm font-medium text-gray-700">Contact person</legend>
+                            <p className="text-sm text-gray-500 mb-2">Not shown publicly. For VI Markets to reach you.</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label htmlFor="contact-first" className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                                <input id="contact-first" type="text" autoComplete="given-name" maxLength={100} value={contactFirst} onChange={e => setContactFirst(e.target.value)} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
+                              </div>
+                              <div>
+                                <label htmlFor="contact-last" className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                                <input id="contact-last" type="text" autoComplete="family-name" maxLength={100} value={contactLast} onChange={e => setContactLast(e.target.value)} className="block w-full border border-gray-300 rounded-md shadow-sm py-3 px-3"/>
+                              </div>
+                            </div>
+                          </fieldset>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>

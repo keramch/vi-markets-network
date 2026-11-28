@@ -262,8 +262,9 @@ const SignupPage: React.FC<SignupPageProps> = ({
           }
         }
         onSignupSuccess(user);
-        setIsSuccess(true);
-        window.scrollTo(0, 0);
+        // Straight to their market (Kera, Nov 27): no welcome screen in between.
+        // The verification email still goes out.
+        navigate('/dashboard/my-markets?add=1');
       } catch (err) {
         handleSubmitError(err);
       } finally {
