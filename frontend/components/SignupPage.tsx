@@ -232,7 +232,45 @@ const SignupPage: React.FC<SignupPageProps> = ({
   const goNext = async () => {
     if (isSubmittingRef.current) return;
     if (!validate()) return;
-    if (wizardStep === 3 && accountType === 'community') {
+    if (wizardStep === 3 && accountType === 'organizer') {
+      // Organizers start with their first market (T140): the account is made
+      // here, with a hidden organizer record behind it, and the success screen
+      // opens the market form. Their organizer page is named later.
+      setIsSubmitting(true);
+      isSubmittingRef.current = true;
+      setSubmitError('');
+      try {
+        const profileFields = {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          accountType: 'organizer' as AccountType,
+        };
+        let user: User;
+        if (googleEmail) {
+          user = await api.registerOAuth(profileFields);
+        } else {
+          user = await api.register({
+            ...profileFields,
+            email: email.trim(),
+            password,
+            ...guardFields(),
+          });
+          await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+          const firebaseUser = firebaseAuth.currentUser;
+          if (firebaseUser) {
+            await sendCustomVerificationEmail(firebaseUser);
+          }
+        }
+        onSignupSuccess(user);
+        setIsSuccess(true);
+        window.scrollTo(0, 0);
+      } catch (err) {
+        handleSubmitError(err);
+      } finally {
+        setIsSubmitting(false);
+        isSubmittingRef.current = false;
+      }
+    } else if (wizardStep === 3 && accountType === 'community') {
       setIsSubmitting(true);
       isSubmittingRef.current = true;
       setSubmitError('');
@@ -362,7 +400,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const totalSteps = accountType === 'community' ? 3 : 4;
+  const totalSteps = accountType === 'vendor' ? 4 : 3;
 
   return (
     <main className="min-h-screen bg-brand-cream">
@@ -404,7 +442,7 @@ const SignupPage: React.FC<SignupPageProps> = ({
                         type: 'organizer' as AccountType,
                         emoji: '🏪',
                         title: 'Organizer',
-                        desc: 'I run markets — one or many — and want to list them for vendors and shoppers.',
+                        desc: 'I run a market (or several) and want to list it for vendors and shoppers. Start with your market; your organizer page can come later.',
                       },
                       {
                         type: 'community' as AccountType,
@@ -813,6 +851,8 @@ const SignupPage: React.FC<SignupPageProps> = ({
                     ? 'Create Profile'
                     : accountType === 'community' && wizardStep === 3
                     ? 'Create Account'
+                    : accountType === 'organizer' && wizardStep === 3
+                    ? 'Create account and add my market'
                     : 'Continue →'}
                 </button>
               </div>
@@ -841,14 +881,18 @@ const SignupPage: React.FC<SignupPageProps> = ({
               </>)}
               <button
                 type="button"
-                onClick={() => accountType === 'community' ? navigate('/') : navigate('/dashboard/profile')}
-                disabled={accountType !== 'community' && isUploadingLogo}
+                onClick={() => accountType === 'community' ? navigate('/')
+                  : accountType === 'organizer' ? navigate('/dashboard/my-markets?add=1')
+                  : navigate('/dashboard/profile')}
+                disabled={accountType === 'vendor' && isUploadingLogo}
                 className="bg-brand-blue text-white font-semibold px-10 py-3 rounded-full hover:bg-brand-blue/90 transition-colors text-lg disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {accountType !== 'community' && isUploadingLogo
+                {accountType === 'vendor' && isUploadingLogo
                   ? 'Finishing up…'
                   : accountType === 'community'
                   ? 'Explore VI Markets →'
+                  : accountType === 'organizer'
+                  ? 'Add your market →'
                   : 'Go to Your Hub →'}
               </button>
             </div>

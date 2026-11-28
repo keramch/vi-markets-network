@@ -337,6 +337,9 @@ export interface Organizer {
   externalEventUrl?: string;
   status: MemberStatus;
   updatedAt?: string;
+  // Not public yet (T140): made at signup so the member can manage their
+  // markets; shown once they name it. Others get just { id, pageHidden, status }.
+  pageHidden?: boolean;
 }
 
 // ── Views ─────────────────────────────────────────────────────────────────────
@@ -406,6 +409,7 @@ export interface Market {
   name: string;
   slug?: string; // readable link part, unique across all markets; never changes once set
   description?: string; // optional; the market page falls back to the organizer's description
+  organizedBy?: string; // optional "Run by" text, shown while there's no public organizer page (T140)
   posterUrl?: string;   // vertical poster, shown on the market page
   tileUrl?: string;     // horizontal share image (1200 × 628), used for link previews
   logoUrl?: string;     // carried over from unclaimed listings that had one

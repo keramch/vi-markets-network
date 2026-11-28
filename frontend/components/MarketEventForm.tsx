@@ -75,6 +75,9 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
   );
   const [externalUrl, setExternalUrl] = useState(existingEvent?.externalEventUrl ?? '');
   const [description, setDescription] = useState(existingEvent?.description ?? '');
+  // "Organized by": only while there's no public organizer page to show instead (T140)
+  const [organizedBy, setOrganizedBy] = useState(existingEvent?.organizedBy ?? '');
+  const showOrganizedBy = !organizer || !!organizer.pageHidden || !!existingEvent?.organizedBy;
   // Saved image addresses ('' once removed) and newly chosen files, uploaded on save
   const [posterUrl, setPosterUrl]     = useState(existingEvent?.posterUrl ?? '');
   const [tileUrl, setTileUrl]         = useState(existingEvent?.tileUrl ?? '');
@@ -99,7 +102,7 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
 
   const snapshot = JSON.stringify([
     type, name, venueName, address, city, province, startTime, endTime, dates, newDate, dateSources, startDate, endDate,
-    recurrenceDays, recurrenceFrequency, selectedTags, marketType, externalUrl, description,
+    recurrenceDays, recurrenceFrequency, selectedTags, marketType, externalUrl, description, organizedBy,
     posterUrl, tileUrl, posterFile?.name ?? '', tileFile?.name ?? '', moveTo,
   ]);
   const initialSnapshot = useRef(snapshot);
@@ -218,6 +221,9 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
       ...(description.trim()
         ? { description: description.trim() }
         : existingEvent?.description ? { description: '' } : {}),
+      ...(organizedBy.trim()
+        ? { organizedBy: organizedBy.trim() }
+        : existingEvent?.organizedBy ? { organizedBy: '' } : {}),
       ...(finalPosterUrl ? { posterUrl: finalPosterUrl } : existingEvent?.posterUrl ? { posterUrl: '' } : {}),
       ...(finalTileUrl ? { tileUrl: finalTileUrl } : existingEvent?.tileUrl ? { tileUrl: '' } : {}),
       // An organizer's own dates are confirmed; HQ keeps "from a vendor" marks it hasn't confirmed
@@ -255,6 +261,24 @@ const MarketEventForm: React.FC<MarketEventFormProps> = ({
           maxLength={200}
         />
       </div>
+
+      {showOrganizedBy && (
+        <div>
+          <label htmlFor="market-organized-by" className={labelCls}>Organized by</label>
+          <p id="market-organized-by-help" className="text-sm text-gray-500 mb-2">
+            Optional. The group or business that runs it, if it has one. Shown on the market's page as "Run by".
+          </p>
+          <input
+            id="market-organized-by"
+            aria-describedby="market-organized-by-help"
+            className={inputCls}
+            value={organizedBy}
+            onChange={e => setOrganizedBy(e.target.value)}
+            placeholder="e.g. Comox Valley Arts Council"
+            maxLength={200}
+          />
+        </div>
+      )}
 
       {/* When it's on */}
       <div>

@@ -378,6 +378,8 @@ const isOrganizer = (profile: Organizer | Vendor): profile is Organizer => {
 
 const App: React.FC = () => {
   const [organizers, setOrganizers] = useState<Organizer[]>([]);
+  // Organizers with a public page: what lists, search and links use (T140)
+  const publicOrganizers = useMemo(() => organizers.filter(o => !o.pageHidden), [organizers]);
   // Markets: the events people go to (OD-16). Published ones for everyone; an
   // admin also gets drafts and unclaimed ones (reloaded when an admin logs in).
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -901,8 +903,15 @@ const App: React.FC = () => {
   const handleUpdateProfile = async (updatedProfileData: Organizer | Vendor) => {
     try {
         if (isOrganizer(updatedProfileData)) {
+            const wasHidden = !!organizers.find(o => o.id === updatedProfileData.id)?.pageHidden;
             const updatedMarket = await api.updateOrganizer(updatedProfileData.id, updatedProfileData);
             setOrganizers(prev => prev.map(m => m.id === updatedMarket.id ? updatedMarket : m));
+            // Just showed their organizer page (T140): take them to it
+            if (wasHidden && !updatedMarket.pageHidden && updatedMarket.slug) {
+                showNotification("Your organizer page is on the site!");
+                navigate(`/organizers/${updatedMarket.slug}`);
+                return;
+            }
         } else {
             const updatedVendor = await api.updateVendor(updatedProfileData.id, updatedProfileData);
             setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
@@ -1331,7 +1340,7 @@ const App: React.FC = () => {
           ) : <Routes>
             <Route path="/" element={
               <HomePage
-                organizers={organizers}
+                organizers={publicOrganizers}
                 markets={markets.filter(m => m.status === 'published')}
                 vendors={vendors}
                 currentUser={currentUser}
@@ -1347,7 +1356,7 @@ const App: React.FC = () => {
               <BrowsePage
                 mode="markets"
                 markets={markets.filter(m => m.status === 'published')}
-                organizers={organizers}
+                organizers={publicOrganizers}
                 onSelect={(id) => { const m = markets.find(m => m.id === id); if (m) navigate(marketPath(m)); }}
                 onBack={() => navigate('/')}
                 onSwitchMode={() => navigate('/vendors')}
@@ -1365,7 +1374,7 @@ const App: React.FC = () => {
             <Route path="/markets/:slug" element={
               <MarketPageRoute
                 markets={markets}
-                organizers={organizers}
+                organizers={publicOrganizers}
                 vendors={vendors}
                 savedMarketIds={favoritedMarketIds}
                 currentUser={currentUser}
@@ -1375,11 +1384,11 @@ const App: React.FC = () => {
               />
             } />
             <Route path="/markets/:slug/:eventSlug" element={
-              <LegacyMarketLinkRoute markets={markets} organizers={organizers} isDataLoading={isDataLoading} />
+              <LegacyMarketLinkRoute markets={markets} organizers={publicOrganizers} isDataLoading={isDataLoading} />
             } />
             <Route path="/organizers/:slug" element={
               <OrganizerProfileRoute
-                organizers={organizers}
+                organizers={publicOrganizers}
                 markets={markets}
                 vendors={vendors}
                 applications={applications}
@@ -1435,6 +1444,11 @@ const App: React.FC = () => {
                 onSignupSuccess={async (user: User) => {
                   setCurrentUser(user);
                   showNotification(`Welcome to VI Markets, ${user.firstName || user.email}!`);
+                  // Organizers go straight to My Markets (T140) and have no logo to wait for
+                  if (user.accountType === 'organizer') {
+                    api.getOrganizers().then(setOrganizers).catch(() => {});
+                    return;
+                  }
                   // Delay refetch to allow logo upload to complete before
                   // refreshing organizer/vendor data from Firestore
                   setTimeout(async () => {
@@ -1475,7 +1489,8 @@ const App: React.FC = () => {
             } />
             <Route path="/dashboard/my-market" element={<Navigate to="/dashboard/my-markets" replace />} />
             <Route path="/dashboard/my-markets" element={
-              isDataLoading && currentUser?.ownedOrganizerId ? (
+              // (or their organizer record is still loading, just after signup)
+              currentUser?.ownedOrganizerId && (isDataLoading || !ownedOrganizer) ? (
                 <div className="min-h-screen flex items-center justify-center bg-brand-cream">
                   <div className="text-brand-blue text-sm">Loading...</div>
                 </div>

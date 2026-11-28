@@ -24,7 +24,9 @@ const TAG_LABELS: Record<string, string> = {
 
 interface MarketPageProps {
   market: Market;
-  organizer?: Organizer; // undefined = unclaimed
+  // The organizer, when their page is public. Undefined with market.organizerId
+  // set means the organizer's page isn't public yet (T140); with none, unclaimed.
+  organizer?: Organizer;
   vendorsAttending: { vendor: Vendor; dates: string[] }[];
   selectedDate?: string; // from ?date= on a shared link
   currentUser: User | null;
@@ -77,6 +79,9 @@ const MarketPage: React.FC<MarketPageProps> = ({
   const { venueName, address, city, province } = market.location;
   const place = [venueName, city].filter(Boolean).join(' · ');
   const hasWhere = !!(venueName || address || city);
+  const unclaimed = !market.organizerId;
+  // Shown as plain text when there's no public organizer page to link to (T140)
+  const organizedBy = market.organizedBy?.trim() ?? '';
   const claimHref = `mailto:hello@vimarkets.ca?subject=${encodeURIComponent(`This is my market: ${market.name}`)}`;
 
   const handleShare = async () => {
@@ -145,6 +150,10 @@ const MarketPage: React.FC<MarketPageProps> = ({
                     <Link to={`/organizers/${organizer.slug}`} className="font-semibold text-brand-light-blue underline hover:text-brand-blue">
                       {organizer.name}
                     </Link>
+                  </p>
+                ) : organizedBy ? (
+                  <p className="text-base text-brand-text">
+                    Run by <span className="font-semibold">{organizedBy}</span>
                   </p>
                 ) : null}
                 {saveButton}
@@ -371,7 +380,7 @@ const MarketPage: React.FC<MarketPageProps> = ({
                   </div>
                 </div>
               </section>
-            ) : (
+            ) : unclaimed ? (
               <section className={card}>
                 <h2 className={h2}>Is this your market?</h2>
                 <p className="text-base text-brand-text">
@@ -384,7 +393,7 @@ const MarketPage: React.FC<MarketPageProps> = ({
                   Tell us it's yours
                 </a>
               </section>
-            )}
+            ) : null}
           </aside>
         </div>
       </div>

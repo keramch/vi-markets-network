@@ -156,8 +156,10 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   
   // Storage folder: organizers/<id> since stage 1 (T128), vendors/<id>
   const profileType = isOrganizer(formData) ? 'organizers' : 'vendors';
+  const [showPageError, setShowPageError] = useState('');
 
-  const saveWithUploads = async () => {
+  // extra: fields to change on this save only (showing a hidden organizer page, T140)
+  const saveWithUploads = async (extra: Partial<Organizer> = {}) => {
     setIsSaving(true);
     setSaveSuccess(false);
     setUploadError(null);
@@ -167,7 +169,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
       if (socials[platform] && socialUrl(platform, socials[platform])) socials[platform] = cleanSocial(platform, socials[platform]);
     }
     const website = (formData.contact?.website ?? '').trim();
-    let updatedData: Organizer | Vendor = { ...formData, contact: { ...formData.contact, website, socials: { ...socials, website } } };
+    let updatedData: Organizer | Vendor = { ...formData, ...extra, contact: { ...formData.contact, website, socials: { ...socials, website } } };
     const totalFiles = (pendingLogoFile ? 1 : 0) + pendingGalleryFiles.length;
 
     if (totalFiles > 0) {
@@ -414,7 +416,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             <button type="button" onClick={onBack} className="text-sm text-gray-600 hover:text-gray-800 px-3 py-3 rounded-md hover:bg-gray-100 transition-colors min-h-[3rem]">Cancel</button>
             <button
               type="button"
-              onClick={saveWithUploads}
+              onClick={() => saveWithUploads()}
               disabled={uploadProgress !== null || isSaving}
               className="bg-brand-blue text-white text-sm font-semibold py-3 px-5 rounded-md hover:bg-opacity-90 transition-colors disabled:opacity-60 min-h-[3rem]"
             >
@@ -445,9 +447,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           </div>
           {/* Opens in a new tab so unsaved edits here aren't lost. Owners also
               see their "Help shoppers find you" checklist there (T119). */}
-          {profileData.slug && (
+          {profileData.slug && !(isOrganizer(profileData) && profileData.pageHidden) && (
             <a
-              href={`/${isOrganizer(profileData) ? 'markets' : 'vendors'}/${profileData.slug}`}
+              href={`/${isOrganizer(profileData) ? 'organizers' : 'vendors'}/${profileData.slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 min-h-[3rem] px-5 rounded-full border-2 border-brand-light-blue text-brand-light-blue text-sm font-semibold hover:bg-brand-cream"
@@ -458,6 +460,33 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
             </a>
           )}
         </div>
+
+        {/* Made at signup with their first market, not public yet (T140) */}
+        {isOrganizer(profileData) && profileData.pageHidden && (
+          <div className="bg-brand-cream border border-brand-light-blue/30 rounded-xl p-5 mb-6">
+            <h3 className="font-serif text-xl text-brand-blue">Your organizer page isn't on the site yet</h3>
+            <p className="mt-1 text-base text-brand-text">
+              Only your markets show for now. Give your organizer page a name below (your group, business or your own name),
+              add anything else you'd like, then show it. Your markets will link to it.
+            </p>
+            {showPageError && <p className="mt-2 text-sm text-red-600" role="alert">{showPageError}</p>}
+            <button
+              type="button"
+              disabled={uploadProgress !== null || isSaving}
+              onClick={() => {
+                if (!(formData.name ?? '').trim()) {
+                  setShowPageError('Please add a name for your organizer page first.');
+                  return;
+                }
+                setShowPageError('');
+                saveWithUploads({ pageHidden: false });
+              }}
+              className="mt-4 min-h-[3rem] px-5 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90 disabled:opacity-60"
+            >
+              Save and show my organizer page
+            </button>
+          </div>
+        )}
 
         <div className="border-b mb-6">
             <div className="flex space-x-2 flex-wrap">

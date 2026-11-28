@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ClipboardList, MessageSquare } from 'lucide-react';
 import type { User, Organizer, Market } from '../types';
 import * as api from '../services/api.live';
@@ -122,6 +123,19 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizer.id]);
 
+  // ?add=1 (straight after an organizer signs up, T140) opens the market form
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('add') !== '1') return;
+    setSelectedEvent(null);
+    setEditModalOpen(true);
+    setSearchParams({}, { replace: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Their organizer page isn't public yet (T140): set it up from the profile editor
+  const pageHidden = !!organizer.pageHidden;
+
   // ── edit handlers ────────────────────────────────────────────────────────────
 
   const openEdit = (event: Market) => {
@@ -235,13 +249,13 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
         <div>
           <h1 className="text-3xl font-serif text-brand-blue">{adminView ? 'Their markets' : 'My Markets'}</h1>
           <p className="text-gray-500 mt-1 text-sm">
-            {organizer.name}
+            {organizer.name || (adminView ? 'Organizer page not set up yet' : `${currentUser.firstName} ${currentUser.lastName}`.trim())}
             <span className="mx-2 text-gray-300">·</span>
             <button
               onClick={onNavigateToProfile}
               className="text-brand-light-blue hover:text-brand-blue transition-colors"
             >
-              Edit profile
+              {pageHidden && !adminView ? 'Set up organizer page' : 'Edit profile'}
             </button>
           </p>
         </div>
@@ -395,6 +409,25 @@ const OrganizerHub: React.FC<OrganizerHubProps> = ({
           )}
         </div>
       </div>
+
+      {!adminView && pageHidden && !loading && (
+        <div className="bg-brand-cream border border-brand-light-blue/30 rounded-xl p-5 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <h2 className="font-serif text-xl text-brand-blue">Running more than one market?</h2>
+            <p className="mt-1 text-base text-brand-text">
+              Set up your organizer page: all your markets in one place, people can follow you for news,
+              and you get organizer tools and resources as they arrive. Until then, only your markets show on the site.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToProfile}
+            className="flex-shrink-0 min-h-[3rem] px-5 rounded-lg bg-brand-light-blue text-white font-semibold hover:bg-brand-light-blue/90"
+          >
+            Set up my organizer page
+          </button>
+        </div>
+      )}
 
       {!adminView && (<>
       {/* ── SECTION 2: Application Manager (Phase 2) ────────────────────────── */}

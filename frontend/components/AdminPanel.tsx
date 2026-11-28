@@ -382,7 +382,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   {/* Member cell */}
                   <div className="flex items-center gap-1.5 min-w-0">
                     <TypeIcon className={`w-3.5 h-3.5 flex-shrink-0 ${typeColor}`} />
-                    <span className="text-sm font-medium text-gray-900 truncate">{member.data.name}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {member.data.name || <span className="italic text-gray-500">Organizer page not set up</span>}
+                    </span>
                     {user?.subscription?.foundingMember && (
                       <RibbonIcon className="w-3.5 h-3.5 flex-shrink-0 text-brand-gold" />
                     )}
