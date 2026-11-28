@@ -159,11 +159,16 @@ async function createMemberRecords(
         const userDoc = await db.collection("users").doc(userId).get();
         return { status: 200, body: { id: userId, ...userDoc.data(), ownedOrganizerId: existingOrganizer.docs[0].id } };
       }
-      const slug = await generateUniqueSlug(businessName!, "organizers");
+      // With no name (the market-first signup, T140) the organizer record is
+      // hidden: it gives the member edit rights over their markets, and goes
+      // public once they name it and choose to show it. The slug is made then.
+      const organizerName = String(businessName ?? "").trim();
+      const slug = organizerName ? await generateUniqueSlug(organizerName, "organizers") : "";
       const organizerDoc = {
         ownerId: userId,
-        name: businessName,
+        name: organizerName,
         slug,
+        pageHidden: !organizerName,
         description: description || "",
         marketTypes: marketCategories || [],
         photos: [],
@@ -251,7 +256,9 @@ router.post("/register", accountCreationRateLimiter, spamGuard({ status: 400, bo
   if (!isAccountType(accountType)) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-  if (accountType !== "community" && !String(profile.businessName ?? "").trim()) {
+  // Vendors name their business at signup. Organizers start with their first
+  // market instead and name their organizer page later (T140).
+  if (accountType === "vendor" && !String(profile.businessName ?? "").trim()) {
     return res.status(400).json({ error: "Missing required fields" });
   }
   const tooLong = (value: unknown, max: number) => typeof value === "string" && value.length > max;
@@ -342,7 +349,7 @@ router.post("/register-oauth", accountCreationRateLimiter, async (req, res) => {
   if (!isAccountType(accountType)) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-  if (accountType !== "community" && !body.businessName?.trim()) {
+  if (accountType === "vendor" && !body.businessName?.trim()) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 

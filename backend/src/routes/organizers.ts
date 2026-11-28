@@ -25,7 +25,9 @@ async function uniqueOrganizerSlug(name: string, ownId?: string): Promise<string
 }
 
 // GET /organizers → every organizer. Hidden ones (archived, e.g. the admin
-// page, T036) only for admins.
+// page, T036) only for admins. An organizer whose page isn't public yet
+// (pageHidden, T140) comes back to everyone else as just its id, so its
+// markets still count as claimed but nothing about the member shows.
 router.get("/", async (req, res) => {
   try {
     const [snapshot, foundingUids, reviewsByEntity, callerIsAdmin] = await Promise.all([
@@ -36,13 +38,15 @@ router.get("/", async (req, res) => {
     ]);
     const organizers = snapshot.docs
       .filter(doc => callerIsAdmin || doc.data().status !== "archived")
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        ownerFoundingMember: foundingUids.has(doc.data().ownerId),
-        // Approved reviews from the reviews collection (computed, never stored)
-        reviews: reviewsByEntity.get(doc.id) ?? [],
-      }));
+      .map(doc => (doc.data().pageHidden === true && !callerIsAdmin && doc.data().ownerId !== req.user?.uid
+        ? { id: doc.id, pageHidden: true, status: doc.data().status }
+        : {
+            id: doc.id,
+            ...doc.data(),
+            ownerFoundingMember: foundingUids.has(doc.data().ownerId),
+            // Approved reviews from the reviews collection (computed, never stored)
+            reviews: reviewsByEntity.get(doc.id) ?? [],
+          }));
     res.json(organizers);
   } catch (err) {
     console.error("Error fetching organizers:", err);
@@ -65,6 +69,16 @@ router.patch("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "You can only edit your own organizer profile." });
     }
     const updates = sanitizeListingUpdate((req.body ?? {}) as Record<string, unknown>, callerIsAdmin, "organizers") as Record<string, any>;
+    if ("pageHidden" in updates) {
+      if (typeof updates.pageHidden !== "boolean") {
+        return res.status(400).json({ error: "pageHidden must be true or false" });
+      }
+      // A page can only go public with a name (it makes the page's address)
+      const name = "name" in updates ? String(updates.name ?? "").trim() : String((await db.collection("organizers").doc(id).get()).data()?.name ?? "").trim();
+      if (updates.pageHidden === false && !name) {
+        return res.status(400).json({ error: "Please give your organizer page a name before showing it." });
+      }
+    }
     const urlProblem = checkListingUrls(updates);
     if (urlProblem) {
       return res.status(400).json({ error: urlProblem });

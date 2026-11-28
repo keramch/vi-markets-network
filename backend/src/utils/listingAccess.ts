@@ -47,6 +47,7 @@ const OWNER_EDITABLE_FIELDS: Record<ListingCollection, Set<string>> = {
     "applicationFormQuestions",
     "allowedVendorCategories",
     "externalEventUrl",
+    "pageHidden",
   ]),
   vendors: new Set([
     ...SHARED_OWNER_FIELDS,

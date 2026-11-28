@@ -100,7 +100,7 @@ async function publishedMarket(field: "slug" | "legacyPaths", value: string) {
 async function activeListing(collection: "organizers" | "vendors", slug: string) {
   const snap = await db.collection(collection).where("slug", "==", slug).limit(1).get();
   const doc = snap.docs[0];
-  if (!doc || doc.data().status !== "active") return null;
+  if (!doc || doc.data().status !== "active" || doc.data().pageHidden === true) return null;
   return { id: doc.id, ...doc.data() } as FirebaseFirestore.DocumentData & { id: string };
 }
 
@@ -147,9 +147,12 @@ router.get("/", async (req, res) => {
         ? await publishedMarket("legacyPaths", `${slug}/${eventSlug}`)
         : (await publishedMarket("slug", slug)) ?? (await publishedMarket("legacyPaths", slug));
       if (market) {
-        const organizer = market.organizerId
+        const organizerData = market.organizerId
           ? (await db.collection("organizers").doc(market.organizerId).get()).data()
           : undefined;
+        // An organizer page that isn't public yet (T140) stays out of the preview
+        const organizer = organizerData?.pageHidden === true ? undefined : organizerData;
+        const runBy = organizer?.name || (typeof market.organizedBy === "string" ? market.organizedBy.trim() : "");
         const every = repeats(market) || nextListedDate(market);
         const hours = [shortTime(market.schedule?.startTime), shortTime(market.schedule?.endTime)].filter(Boolean).join(" – ");
         const when = [every, hours].filter(Boolean).join(", ");
@@ -159,7 +162,7 @@ router.get("/", async (req, res) => {
           title: every ? `${market.name} · ${every}` : String(market.name ?? "VI Markets market"),
           // e.g. "Every Sat, 9am – 2pm at Waterfront Park, Nanaimo. Run by Harbourside Market Society."
           description: clip(
-            `${lead}${lead ? ". " : ""}${organizer?.name ? `Run by ${organizer.name}.` : ""}`.trim() || market.description
+            `${lead}${lead ? ". " : ""}${runBy ? `Run by ${runBy}.` : ""}`.trim() || market.description
           ),
           image: httpsUrl(market.tileUrl) ?? httpsUrl(organizer?.headerPhotoUrl) ?? httpsUrl(organizer?.logoUrl) ?? httpsUrl(market.logoUrl),
         };

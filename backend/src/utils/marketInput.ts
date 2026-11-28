@@ -165,6 +165,8 @@ export function sanitizeMarketInput(body: unknown, opts: { isAdmin: boolean }): 
       out.externalEventUrl = url;
     }
     if ("description" in b) out.description = text(b.description, "Description", MAX_DESCRIPTION);
+    // Optional "Organized by" line, shown while the market has no public organizer page (T140)
+    if ("organizedBy" in b) out.organizedBy = text(b.organizedBy, "Organized by");
     for (const key of ["posterUrl", "tileUrl"]) {
       if (key in b) {
         const url = b[key];
